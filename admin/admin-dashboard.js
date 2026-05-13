@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-    // Solo traemos los usuarios para contarlos
+    // Traemos usuarios para actualizar el contador de la tarjeta azul
     try {
         const response = await fetch('http://localhost:8081/api/v1/user/all-users', {
             method: 'GET',

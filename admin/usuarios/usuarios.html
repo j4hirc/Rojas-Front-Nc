@@ -2,50 +2,173 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Usuarios - Rojas Remodeling</title>
-    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../admin.css"> 
+    <link rel="stylesheet" href="usuarios.css">
 </head>
 <body>
-    <div class="dashboard-layout">
-        
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Rojas Remodeling</h2>
-                <p id="admin-email-display">Cargando...</p> 
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fa-solid fa-helmet-safety"></i>
+                <span>Rojas Admin</span>
             </div>
-            <ul class="nav-links">
-                <li><a href="admin-dashboard.html" class="nav-item">🏠 Inicio</a></li>
-                <li><a href="usuarios.html" class="nav-item active">👥 Gestión de Usuarios</a></li>
-                <li><a href="#" class="nav-item">🛠️ Trabajos</a></li>
-                <li><a href="#" class="logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a></li>
+            <ul class="nav-menu">
+                <li><a href="../admin-dashboard.html"><i class="fa-solid fa-house"></i> Volver al Inicio</a></li>
+                <li><a href="#" id="btnCerrarSesion" class="btn-logout" onclick="cerrarSesion()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir
+                </a></li>
             </ul>
-        </aside>
+        </div>
+    </nav>
 
-        <main class="main-content">
-            <div class="usuarios-container">
-                <div class="header-section">
-                    <h2>Gestión de Usuarios</h2>
-                    <button class="btn-add">+ Nuevo Usuario</button>
-                </div>
-
-                <div class="table-container">
-                    <table class="user-table">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Email</th>
-                                <th>Teléfono</th>
-                                <th>Rol</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="userTableBody"></tbody>
-                    </table>
-                </div>
-
-                <div class="mobile-cards" id="mobileCardsContainer"></div>
+    <header class="header" style="padding-bottom: 4rem;">
+        <div class="header-overlay"></div>
+        <div class="header-content">
+            <div class="header-text">
+                <h1>Gestión de Usuarios</h1>
+                <p>Administra los accesos y roles del personal del sistema.</p>
             </div>
-        </main>
+            <div class="user-badge">
+                <div class="user-avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
+                <span id="admin-email-display">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="usuarios-container">
+            <div class="header-section">
+                <h2 style="margin: 0; color: #2B3674;">Directorio del Personal</h2>
+                <button class="btn-add" onclick="abrirModalCrear()">+ Nuevo Usuario</button>
+            </div>
+
+            <div class="table-container">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Rol</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="mobile-cards" id="mobileCardsContainer"></div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modalUsuario">
+        <div class="modal-container">
+            <div class="modal-header">
+                <span id="modalTitulo"><i class="fa-solid fa-user-plus"></i> Nuevo Usuario</span>
+                <button onclick="cerrarModal()" class="btn-close-modal">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="formUsuario">
+                    <input type="hidden" id="userId"> 
+                    <div class="form-grid">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>DNI</label>
+                                <input type="text" id="userDni" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Título (Ej. Ingeniero)</label>
+                                <input type="text" id="userTitle" class="input-field" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Primer Nombre</label>
+                                <input type="text" id="userFirstName" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Segundo Nombre</label>
+                                <input type="text" id="userMiddleName" class="input-field">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Primer Apellido</label>
+                                <input type="text" id="userLastName" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Segundo Apellido</label>
+                                <input type="text" id="userSecondSurname" class="input-field">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Correo Electrónico</label>
+                                <input type="email" id="userEmail" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono</label>
+                                <input type="text" id="userPhone" class="input-field" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Contraseña</label>
+                                <input type="password" id="userPassword" class="input-field" placeholder="Requerida para nuevos" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Estado</label>
+                                <select id="userStatus" class="input-field" required>
+                                    <option value="Active">Activo</option>
+                                    <option value="Unemployed">Inactivo / Despedido</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Fecha de Nacimiento</label>
+                                <input type="date" id="userBirth" class="input-field" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha de Ingreso</label>
+                                <input type="date" id="userEntry" class="input-field" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Roles (Puedes seleccionar varios)</label>
+                            <div style="display: flex; gap: 15px; background: #F9FAFC; padding: 12px 18px; border: 1px solid #E0E5F2; border-radius: 12px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                                    <input type="checkbox" name="userRoles" value="ROLE_EMPLOYEE"> Empleado
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                                    <input type="checkbox" name="userRoles" value="ROLE_JEFE"> Jefe
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                                    <input type="checkbox" name="userRoles" value="ROLE_ADMIN"> Administrador
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button onclick="cerrarModal()" class="btn-secondary">Cancelar</button>
+                <button onclick="guardarUsuario()" class="btn-primary">Guardar</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="usuarios.js"></script>

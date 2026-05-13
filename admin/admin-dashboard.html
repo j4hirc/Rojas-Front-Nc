@@ -2,45 +2,83 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inicio - Rojas Remodeling</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
-    <div class="dashboard-layout">
-        
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Rojas Remodeling</h2>
-                <p id="admin-email-display">Cargando...</p> 
-            </div>
-            <ul class="nav-links">
-                <li><a href="admin-dashboard.html" class="nav-item active">🏠 Inicio</a></li>
-                <li><a href="usuarios.html" class="nav-item">👥 Gestión de Usuarios</a></li>
-                <li><a href="#" class="nav-item">🛠️ Trabajos</a></li>
-                <li><a href="#" class="logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a></li>
-            </ul>
-        </aside>
 
-        <main class="main-content">
-            <h1>Panel de Control</h1>
-            <p style="color: #666;">Bienvenido al sistema de administración.</p>
-            
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Total Usuarios</h3>
-                    <p id="stat-total-users">...</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Trabajos Activos</h3>
-                    <p>12</p>
-                </div>
-                <div class="stat-card">
-                    <h3>Materiales</h3>
-                    <p>45</p>
-                </div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fa-solid fa-helmet-safety"></i>
+                <span>Rojas Admin</span>
             </div>
-        </main>
-    </div>
+            <ul class="nav-menu">
+                <li><a href="#" id="btnCerrarSesion" class="btn-logout" onclick="cerrarSesion()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="header">
+        <div class="header-overlay"></div>
+        <div class="header-content">
+            <div class="header-text">
+                <h1>Centro de Control</h1>
+                <p>Gestiona los usuarios, trabajos y materiales del sistema.</p>
+            </div>
+            <div class="user-badge">
+                <div class="user-avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
+                <span id="admin-email-display">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="section-header">
+            <h2 class="section-title">Accesos Rápidos y Resumen</h2>
+            <div class="section-line"></div>
+        </div>
+
+        <div class="grid-cards">
+            <div class="card card-blue" onclick="window.location.href='usuarios/usuarios.html'">
+                <div class="card-icon-container">
+                    <i class="fa-solid fa-users-gear"></i>
+                </div>
+                <div class="card-info">
+                    <h3>Usuarios</h3>
+                    <p>Total registrados: <strong id="stat-total-users">...</strong></p>
+                </div>
+                <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+
+            <div class="card card-orange" onclick="alert('Pronto: Módulo de Trabajos')">
+                <div class="card-icon-container">
+                    <i class="fa-solid fa-hammer"></i>
+                </div>
+                <div class="card-info">
+                    <h3>Trabajos Activos</h3>
+                    <p>12 en progreso</p>
+                </div>
+                <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+
+            <div class="card card-slate" onclick="alert('Pronto: Módulo de Materiales')">
+                <div class="card-icon-container">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+                <div class="card-info">
+                    <h3>Materiales</h3>
+                    <p>45 disponibles</p>
+                </div>
+                <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+        </div>
+    </main>
 
     <script type="module" src="admin-dashboard.js"></script>
 </body>
