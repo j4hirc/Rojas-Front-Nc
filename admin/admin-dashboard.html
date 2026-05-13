@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio - Rojas Remodeling</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Rojas Remodeling</h2>
+                <p id="admin-email-display">Cargando...</p> 
+            </div>
+            <ul class="nav-links">
+                <li><a href="admin-dashboard.html" class="nav-item active">🏠 Inicio</a></li>
+                <li><a href="usuarios.html" class="nav-item">👥 Gestión de Usuarios</a></li>
+                <li><a href="#" class="nav-item">🛠️ Trabajos</a></li>
+                <li><a href="#" class="logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <h1>Panel de Control</h1>
+            <p style="color: #666;">Bienvenido al sistema de administración.</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Usuarios</h3>
+                    <p id="stat-total-users">...</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Trabajos Activos</h3>
+                    <p>12</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Materiales</h3>
+                    <p>45</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="admin-dashboard.js"></script>
+</body>
+</html>

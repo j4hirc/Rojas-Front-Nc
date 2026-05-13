@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuarios - Rojas Remodeling</title>
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Rojas Remodeling</h2>
+                <p id="admin-email-display">Cargando...</p> 
+            </div>
+            <ul class="nav-links">
+                <li><a href="admin-dashboard.html" class="nav-item">🏠 Inicio</a></li>
+                <li><a href="usuarios.html" class="nav-item active">👥 Gestión de Usuarios</a></li>
+                <li><a href="#" class="nav-item">🛠️ Trabajos</a></li>
+                <li><a href="#" class="logout" onclick="cerrarSesion()">🚪 Cerrar Sesión</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="usuarios-container">
+                <div class="header-section">
+                    <h2>Gestión de Usuarios</h2>
+                    <button class="btn-add">+ Nuevo Usuario</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Rol</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="mobile-cards" id="mobileCardsContainer"></div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="usuarios.js"></script>
+</body>
+</html>
