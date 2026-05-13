@@ -37,12 +37,16 @@ function renderizarUsuarios(usuarios) {
     tableBody.innerHTML = ''; mobileContainer.innerHTML = '';
 
     usuarios.forEach(user => {
-        // En UserResponseDto, los roles vienen como un array de objetos
+        // Formateamos los roles quitando el prefijo ROLE_
         const rolesNombres = user.roles.map(r => r.name.replace('ROLE_', '')).join(', ');
+
+        // Verificamos si está inactivo para pintarlo diferente (opcional)
+        const estadoHTML = user.status === 'Unemployed' ? '<span style="color:red; font-size:12px;">(Inactivo)</span>' : '';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${user.name}</td> <td>${user.email}</td>
+            <td>${user.firstName} ${user.lastName} ${estadoHTML}</td>
+            <td>${user.email}</td>
             <td>${user.phone}</td>
             <td><span class="badge rol">${rolesNombres}</span></td>
             <td>
@@ -55,7 +59,8 @@ function renderizarUsuarios(usuarios) {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-            <div class="card-header"><strong>${user.name}</strong></div> <p style="margin: 5px 0; font-size: 14px;">Email: ${user.email}</p>
+            <div class="card-header"><strong>${user.firstName} ${user.lastName} ${estadoHTML}</strong></div>
+            <p style="margin: 5px 0; font-size: 14px;">Email: ${user.email}</p>
             <p style="margin: 5px 0; font-size: 14px;">Teléfono: ${user.phone}</p>
             <p style="margin: 5px 0; font-size: 14px;">Rol: <span class="badge rol">${rolesNombres}</span></p>
             <div class="card-actions">
@@ -67,13 +72,13 @@ function renderizarUsuarios(usuarios) {
     });
 }
 
-// --- LÓGICA DEL MODAL Y CRUD ---
+// --- LOGICA DEL MODAL Y CRUD ---
 
 window.abrirModalCrear = () => {
     document.getElementById('formUsuario').reset();
     document.getElementById('userId').value = '';
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-user-plus"></i> Nuevo Usuario';
-    document.getElementById('userPassword').setAttribute('required', 'true'); // Contraseña obligatoria al crear
+    document.getElementById('userPassword').setAttribute('required', 'true');
     
     // Limpiamos los checkboxes
     document.querySelectorAll('input[name="userRoles"]').forEach(cb => cb.checked = false);
@@ -95,22 +100,20 @@ window.abrirModalEditar = async (id) => {
         if(response.ok) {
             const data = await response.json();
             
-            // SEPARAMOS EL NOMBRE COMPLETO ("Juan Perez" -> "Juan", "Perez")
-            const nombreCompleto = data.name || '';
-            const partesNombre = nombreCompleto.split(' ');
-            const primerNombre = partesNombre[0] || '';
-            const apellidos = partesNombre.slice(1).join(' ') || ''; // Todo lo que esté después del primer espacio será apellido
-            
+            // Llenamos el formulario con la data que ahora sí envía el Backend
             document.getElementById('userDni').value = data.dni || '';
-            document.getElementById('userFirstName').value = primerNombre;
-            document.getElementById('userLastName').value = apellidos;
+            document.getElementById('userTitle').value = data.title || '';
+            document.getElementById('userFirstName').value = data.firstName || '';
+            document.getElementById('userMiddleName').value = data.middleName || '';
+            document.getElementById('userLastName').value = data.lastName || '';
+            document.getElementById('userSecondSurname').value = data.secondSurname || '';
             document.getElementById('userEmail').value = data.email || '';
             document.getElementById('userPhone').value = data.phone || '';
+            document.getElementById('userBirth').value = data.dateOfBirth || '';
+            document.getElementById('userEntry').value = data.dateOfEntry || '';
+            document.getElementById('userStatus').value = data.status || 'Active';
 
-            // NOTA: middleName, secondSurname, title, dateOfBirth, dateOfEntry y status 
-            // no vienen en la respuesta de Spring Boot, por lo que el usuario tendrá que llenarlos al editar.
-
-            // Marcamos los checkboxes según lo que devuelva el backend
+            // Marcamos los checkboxes
             const checkboxes = document.querySelectorAll('input[name="userRoles"]');
             checkboxes.forEach(cb => {
                 cb.checked = data.roles.some(r => r.name === cb.value);
@@ -131,7 +134,6 @@ window.guardarUsuario = async () => {
     const id = document.getElementById('userId').value;
     const isEditing = id !== '';
     
-    // Checkboxes seleccionados a Array
     const roleCheckboxes = document.querySelectorAll('input[name="userRoles"]:checked');
     const selectedRoles = Array.from(roleCheckboxes).map(cb => cb.value);
 
@@ -140,7 +142,6 @@ window.guardarUsuario = async () => {
         return;
     }
 
-    // Armamos el UserRequestDto con todos los datos que pide Spring Boot
     const payload = {
         dni: document.getElementById('userDni').value,
         firstName: document.getElementById('userFirstName').value,
@@ -148,7 +149,7 @@ window.guardarUsuario = async () => {
         lastName: document.getElementById('userLastName').value,
         secondSurname: document.getElementById('userSecondSurname').value,
         email: document.getElementById('userEmail').value,
-        password: document.getElementById('userPassword').value || "123456", 
+        password: document.getElementById('userPassword').value || "123456", // Valor por defecto si no cambian la contraseña
         phone: document.getElementById('userPhone').value,
         dateOfBirth: document.getElementById('userBirth').value,
         dateOfEntry: document.getElementById('userEntry').value,
@@ -173,10 +174,10 @@ window.guardarUsuario = async () => {
         if (response.ok) {
             alert(isEditing ? 'Usuario actualizado con éxito' : 'Usuario creado con éxito');
             cerrarModal();
-            await cargarUsuarios(); // Refresca la tabla automáticamente
+            await cargarUsuarios();
         } else {
             const errorData = await response.json();
-            alert("Error del backend: " + (errorData.message || "Verifica los datos y recuerda que el correo/DNI no debe estar duplicado"));
+            alert("Error del backend: " + (errorData.message || "Verifica los datos"));
         }
     } catch (error) {
         console.error('Error al guardar:', error);
@@ -184,18 +185,35 @@ window.guardarUsuario = async () => {
 };
 
 window.eliminarUsuario = async (id) => { 
-    if(confirm("¿Estás seguro de inhabilitar/eliminar a este usuario de la base de datos?")) {
+    if(confirm("¿Estás seguro de que quieres inhabilitar a este usuario?")) {
         try {
-            const response = await fetch(`${API_URL}/delete/${id}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${userToken}` }
-            });
+            // No tienes Endpoint DELETE, hacemos Soft Delete obteniendo al usuario y actualizando su status
+            const resGet = await fetch(`${API_URL}/id-user/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` }});
+            if(resGet.ok) {
+                const user = await resGet.json();
+                
+                // Preparamos el objeto para actualizarlo a Unemployed (Inactivo)
+                const payload = {
+                    dni: user.dni, title: user.title, firstName: user.firstName, middleName: user.middleName,
+                    lastName: user.lastName, secondSurname: user.secondSurname, email: user.email,
+                    phone: user.phone, dateOfBirth: user.dateOfBirth, dateOfEntry: user.dateOfEntry,
+                    password: "dummyPassword", // Solo para pasar la validación
+                    status: 'Unemployed', // AQUÍ LO DAMOS DE BAJA
+                    roles: user.roles.map(r => r.name) 
+                };
 
-            if (response.ok) {
-                alert("Usuario eliminado correctamente.");
-                await cargarUsuarios();
-            } else {
-                alert("Hubo un error al eliminar al usuario.");
+                const resPut = await fetch(`${API_URL}/update-user/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                    body: JSON.stringify(payload)
+                });
+
+                if (resPut.ok) {
+                    alert("Usuario inhabilitado correctamente.");
+                    await cargarUsuarios();
+                } else {
+                    alert("Hubo un error al inhabilitar al usuario.");
+                }
             }
         } catch (error) {
             console.error("Error al eliminar:", error);
