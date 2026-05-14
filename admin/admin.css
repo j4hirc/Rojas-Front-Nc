@@ -123,7 +123,9 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
 .header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f0f2f5; }
 .btn-add { background: linear-gradient(135deg, var(--primary) 0%, #1a73e8 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Poppins'; font-weight: 600; transition: 0.3s; box-shadow: 0 4px 10px rgba(15, 76, 129, 0.2); }
 .btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(15, 76, 129, 0.3); }
-
+.user-table th, .user-table td {
+    white-space: nowrap; 
+}
 .table-container { overflow-x: auto; }
 .user-table { width: 100%; border-collapse: collapse; }
 .user-table th { background: #F4F7FE; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; padding: 15px; text-align: left; }
@@ -138,9 +140,48 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
 
 /* RESPONSIVE MÓVIL */
 @media (max-width: 768px) {
-    .app-layout { flex-direction: column; overflow: auto; }
-    .sidebar { width: 100%; height: auto; box-shadow: none; border-bottom: 1px solid #f0f2f5; }
-    .sidebar-nav { flex-direction: row; flex-wrap: wrap; justify-content: center; }
-    .sidebar-nav a { padding: 10px; font-size: 0.85rem; border-right: none; }
-    .main-content { overflow: visible; }
+    .app-layout { flex-direction: column; overflow: auto; height: 100vh; }
+    .sidebar { width: 100%; height: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-bottom: 1px solid #f0f2f5; z-index: 100; }
+    
+    /* Menú deslizable horizontalmente (Scrolleable) */
+    .sidebar-nav { 
+        flex-direction: row; 
+        flex-wrap: nowrap; 
+        justify-content: flex-start; 
+        overflow-x: auto; /* Permite deslizar con el dedo */
+        padding: 5px 10px;
+    }
+    
+    /* Ocultar barra de scroll en navegadores webkit para que se vea más limpio */
+    .sidebar-nav::-webkit-scrollbar { height: 4px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+
+    .sidebar-nav a { 
+        padding: 10px 15px; 
+        font-size: 0.85rem; 
+        border-right: none; 
+        border-bottom: 3px solid transparent; 
+        white-space: nowrap; /* Evita que el texto del botón se rompa en 2 líneas */
+    }
+    
+    .sidebar-nav a:hover, .sidebar-nav a.active { 
+        background: transparent; 
+        border-right-color: transparent;
+        border-bottom-color: var(--primary); 
+    }
+    
+    .sidebar-footer { padding: 10px; }
+    
+    /* Ajustes del Navbar Superior */
+    .top-navbar { 
+        height: auto; 
+        padding: 15px; 
+        flex-direction: column; 
+        gap: 10px; 
+        text-align: center;
+    }
+    
+    /* Contenido Principal y Tarjetas */
+    .content-body { padding: 15px; }
+    .grid-cards { grid-template-columns: 1fr; } /* Fuerza las tarjetas a 1 sola columna en celular */
 }

@@ -258,11 +258,31 @@ select.input-field {
 }
 
 
-/* --- TARJETAS PARA CELULAR (Responsive) --- */
+
 .mobile-cards { display: none; }
 
 @media (max-width: 768px) {
-    .table-container { display: none; } /* Oculta la tabla en móvil */
+    /* Ajustes para el Modal Flotante */
+    .modal-container {
+        width: 95%;
+        max-height: 90vh; /* Evita que el modal sea más alto que la pantalla */
+    }
+    .modal-body { padding: 15px; }
+    .modal-header { padding: 15px 20px; }
+    
+    /* Botones del modal a ancho completo en celular */
+    .modal-footer { 
+        padding: 15px 20px; 
+        flex-direction: column; 
+    }
+    .btn-secondary, .btn-primary { 
+        width: 100%; 
+        text-align: center; 
+        margin-bottom: 10px;
+    }
+
+    /* Oculta la tabla en móvil y muestra las tarjetas (Esto ya lo tenías, mantenlo) */
+    .table-container { display: none; } 
     .mobile-cards { display: grid; gap: 15px; margin-top: 20px;}
     
     .card {
