@@ -3,49 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trabajos - Rojas Remodeling</title>
+    <title>Mis Trabajos - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <link rel="stylesheet" href="../admin.css"> 
-    <link rel="stylesheet" href="../usuarios/usuarios.css"> 
+    <link rel="stylesheet" href="../../admin/admin.css"> 
+    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 </head>
 <body>
 
     <div class="app-layout">
-        
         <aside class="sidebar">
-            <div class="sidebar-logo">
-                <i class="fa-solid fa-helmet-safety"></i>
-                <span>Rojas Admin</span>
+            <div class="sidebar-logo" style="color: #198754;">
+                <i class="fa-solid fa-hard-hat"></i>
+                <span>Portal Jefe</span>
             </div>
-            
             <nav class="sidebar-nav">
-                <a href="../admin-dashboard.html">
-                    <i class="fa-solid fa-house"></i> Inicio
-                </a>
-                <a href="../usuarios/usuarios.html">
-                    <i class="fa-solid fa-users-gear"></i> Usuarios
-                </a>
-                <a href="../categorias/categorias.html">
-                    <i class="fa-solid fa-tags"></i> Categorías
-                </a>
-                <a href="trabajos.html" class="active">
-                    <i class="fa-solid fa-hammer"></i> Trabajos
-                </a>
-                <a href="../materiales/materiales.html">
-                    <i class="fa-solid fa-boxes-stacked"></i> Materiales
-                </a>
-                <a href="../evidencias/evidencias.html">
+                <a href="../jefe-dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
+                <a href="../usuarios/usuarios.html"><i class="fa-solid fa-users-gear"></i> Mi Personal</a>
+                <a href="trabajos.html" class="active"><i class="fa-solid fa-hammer"></i> Mis Trabajos</a>
+                <a href="#" onclick="Swal.fire('¡Pronto!', 'Módulo de Evidencias en construcción', 'info')">
                     <i class="fa-solid fa-camera"></i> Evidencias
                 </a>
             </nav>
-
             <div class="sidebar-footer">
                 <button class="btn-logout-sidebar" onclick="cerrarSesion()">
                     <i class="fa-solid fa-right-from-bracket"></i> Salir
@@ -55,18 +37,17 @@
 
         <main class="main-content">
             <header class="top-navbar">
-                <div class="page-title">Gestión de Trabajos (Proyectos)</div>
-                <div class="user-profile">
+                <div class="page-title">Gestión de Mis Trabajos</div>
+                <div class="user-profile" style="color: #198754; background: #E8F5E9;">
                     <i class="fa-solid fa-user-tie"></i>
-                    <span id="admin-email-display">Cargando...</span>
+                    <span id="jefe-email-display">Cargando...</span>
                 </div>
             </header>
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-                    
                     <div class="header-section">
-                        <h2 style="margin: 0; color: #2B3674;">Proyectos Asignados</h2>
+                        <h2 style="margin: 0; color: #2B3674;">Proyectos a mi Cargo</h2>
                         <button class="btn-add" onclick="abrirModalCrearJob()" style="background: #e65100;">
                             <i class="fa-solid fa-plus"></i> Nuevo Trabajo
                         </button>
@@ -78,7 +59,7 @@
                                 <tr>
                                     <th>Cliente</th>
                                     <th>Dirección</th>
-                                    <th>Empleado / Manager</th>
+                                    <th>Empleado Asignado</th>
                                     <th>Estado</th>
                                     <th>Pago ($)</th>
                                     <th>Acciones</th>
@@ -117,40 +98,35 @@
 
                     <div class="form-group" style="margin-top: 15px;">
                         <label>Descripción del Trabajo</label>
-                        <textarea id="jobDesc" class="input-field" rows="2" required placeholder="Ej: Remodelación completa de cocina..."></textarea>
+                        <textarea id="jobDesc" class="input-field" rows="2" required placeholder="Ej: Remodelación..."></textarea>
                     </div>
 
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">Ubicación y Logística</h4>
+                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">Ubicación</h4>
                     <div class="form-group">
-                        <label>Dirección (Texto)</label>
+                        <label>Dirección</label>
                         <input type="text" id="jobAddress" class="input-field" required placeholder="Dirección exacta">
                     </div>
                     
                     <div class="form-group" style="margin-top: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <label style="margin-bottom: 0;">Selecciona en el mapa (Arrastra el marcador o haz clic)</label>
-                            <button type="button" onclick="obtenerMiUbicacion()" style="background: #e65100; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold; transition: 0.3s;">
+                            <label style="margin-bottom: 0;">Selecciona en el mapa</label>
+                            <button type="button" onclick="obtenerMiUbicacion()" style="background: #e65100; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
                                 <i class="fa-solid fa-location-crosshairs"></i> Mi Ubicación
                             </button>
                         </div>
                         <div id="jobMap" style="height: 250px; width: 100%; border-radius: 12px; border: 1px solid #E0E5F2; z-index: 1;"></div>
                     </div>
 
-                    <div class="form-row" style="margin-top: 15px;">
-                        <div class="form-group">
-                            <label>Latitud</label>
-                            <input type="number" id="jobLat" class="input-field" step="any" required readonly style="background:#e9ecef; cursor:not-allowed;">
-                        </div>
-                        <div class="form-group">
-                            <label>Longitud</label>
-                            <input type="number" id="jobLng" class="input-field" step="any" required readonly style="background:#e9ecef; cursor:not-allowed;">
+                    <div class="form-row" style="margin-top: 15px; display: none;"> <div class="form-group">
+                            <input type="number" id="jobLat" class="input-field" step="any" required readonly>
+                            <input type="number" id="jobLng" class="input-field" step="any" required readonly>
                         </div>
                     </div>
 
                     <div class="form-row" style="margin-top: 15px;">
                         <div class="form-group">
-                            <label>Código Caja de Seguridad (Opcional)</label>
-                            <input type="text" id="jobSafeBox" class="input-field" placeholder="Ej: 1234">
+                            <label>Código Caja de Seguridad</label>
+                            <input type="text" id="jobSafeBox" class="input-field" placeholder="Opcional">
                         </div>
                         <div class="form-group">
                             <label>Pago Asignado ($)</label>
@@ -158,28 +134,20 @@
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label>Estado del Trabajo</label>
-                        <select id="jobStatus" class="input-field" required>
-                            <option value="PENDING">Pendiente</option>
-                            <option value="IN_PROGRESS">En Progreso</option>
-                            <option value="COMPLETED">Completado</option>
-                            <option value="CANCELLED">Cancelado</option>
-                        </select>
-                    </div>
-
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">Asignaciones</h4>
-                    <div class="form-row">
+                    <div class="form-row" style="margin-top: 15px;">
+                        <div class="form-group">
+                            <label>Estado del Trabajo</label>
+                            <select id="jobStatus" class="input-field" required>
+                                <option value="PENDING">Pendiente</option>
+                                <option value="IN_PROGRESS">En Progreso</option>
+                                <option value="COMPLETED">Completado</option>
+                                <option value="CANCELLED">Cancelado</option>
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label>Empleado Asignado</label>
                             <select id="jobEmployee" class="input-field" required>
                                 <option value="">Cargando empleados...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Manager Asignado</label>
-                            <select id="jobManager" class="input-field" required>
-                                <option value="">Cargando managers...</option>
                             </select>
                         </div>
                     </div>
@@ -201,6 +169,6 @@
         </div>
     </div>
 
-    <script type="module" src="trabajos.js"></script>
+    <script type="module" src="trabajos-jefe.js"></script>
 </body>
 </html>

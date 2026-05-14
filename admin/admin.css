@@ -109,10 +109,12 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
 .card-info h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 5px; color: var(--text-main); }
 .card-info p { font-size: 0.9rem; color: var(--text-muted); }
 
+/* Colores de Cards */
 .card-blue .card-icon-container { background: #E3F2FD; color: #1e88e5; }
 .card-green .card-icon-container { background: #E8F5E9; color: #2e7d32; }
 .card-orange .card-icon-container { background: #FFF3E0; color: var(--accent); }
 .card-slate .card-icon-container { background: #ECEFF1; color: #546e7a; }
+.card-purple .card-icon-container { background: #F3E5F5; color: #8E24AA; } /* NUEVA TARJETA EVIDENCIAS */
 
 /* =========================================
    ESTILOS COMPARTIDOS (Tablas y Botones)

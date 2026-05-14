@@ -3,42 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usuarios - Rojas Remodeling</title>
+    <title>Mi Personal - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <link rel="stylesheet" href="../admin.css"> 
-    <link rel="stylesheet" href="usuarios.css">
+    <link rel="stylesheet" href="../../admin/admin.css"> 
+    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css">
 </head>
 <body>
 
     <div class="app-layout">
         
         <aside class="sidebar">
-            <div class="sidebar-logo">
-                <i class="fa-solid fa-helmet-safety"></i>
-                <span>Rojas Admin</span>
+            <div class="sidebar-logo" style="color: #198754;">
+                <i class="fa-solid fa-hard-hat"></i>
+                <span>Portal Jefe</span>
             </div>
             
             <nav class="sidebar-nav">
-                <a href="../admin-dashboard.html">
+                <a href="../jefe-dashboard.html">
                     <i class="fa-solid fa-house"></i> Inicio
                 </a>
                 <a href="usuarios.html" class="active">
-                    <i class="fa-solid fa-users-gear"></i> Usuarios
-                </a>
-                <a href="../categorias/categorias.html">
-                    <i class="fa-solid fa-tags"></i> Categorías
+                    <i class="fa-solid fa-users-gear"></i> Mi Personal
                 </a>
                 <a href="../trabajos/trabajos.html">
-                    <i class="fa-solid fa-hammer"></i> Trabajos
+                    <i class="fa-solid fa-hammer"></i> Mis Trabajos
                 </a>
-                <a href="../materiales/materiales.html">
-                    <i class="fa-solid fa-boxes-stacked"></i> Materiales
-                </a>
-                <a href="../evidencias/evidencias.html">
+                <a href="#" onclick="Swal.fire('¡Pronto!', 'Módulo de Evidencias en construcción', 'info')">
                     <i class="fa-solid fa-camera"></i> Evidencias
                 </a>
             </nav>
@@ -53,8 +47,8 @@
         <main class="main-content">
             
             <header class="top-navbar">
-                <div class="page-title">Gestión de Usuarios</div>
-                <div class="user-profile">
+                <div class="page-title">Gestión de Personal</div>
+                <div class="user-profile" style="color: #198754; background: #E8F5E9;">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="admin-email-display">Cargando...</span>
                 </div>
@@ -193,7 +187,7 @@
                                 <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
                                     <input type="checkbox" name="userRoles" value="ROLE_JEFE"> Jefe
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                                <label style="display: none; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
                                     <input type="checkbox" name="userRoles" value="ROLE_ADMIN"> Administrador
                                 </label>
                             </div>

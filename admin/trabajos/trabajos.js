@@ -1,7 +1,11 @@
-    const API_URL = 'http://localhost:8081/api/v1/jobs';
+const API_URL = 'http://localhost:8081/api/v1/jobs';
 const USERS_URL = 'http://localhost:8081/api/v1/user/all-users';
 const MATERIALS_URL = 'http://localhost:8081/api/v1/materials/all';
 let userToken = '';
+
+// Variables globales para el Mapa
+let mapa;
+let marcador;
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -20,14 +24,109 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-    await cargarUsuariosYMateriales(); // Llenamos selects y checkboxes primero
-    await cargarTrabajos();            // Luego cargamos la tabla
+    await cargarUsuariosYMateriales(); 
+    await cargarTrabajos();            
 });
+
+// --- INICIALIZAR EL MAPA INTERACTIVO ---
+function inicializarMapa(lat, lng) {
+    if (!mapa) {
+        // Se crea el mapa si no existe
+        mapa = L.map('jobMap').setView([lat, lng], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap Rojas Remodeling'
+        }).addTo(mapa);
+
+        // Crear marcador arrastrable
+        marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
+
+        // Cuando sueltan el marcador, actualiza los inputs
+        marcador.on('dragend', function (e) {
+            const posicion = marcador.getLatLng();
+            document.getElementById('jobLat').value = posicion.lat.toFixed(6);
+            document.getElementById('jobLng').value = posicion.lng.toFixed(6);
+        });
+
+        // Cuando hacen clic en cualquier parte del mapa, mueve el marcador ahí
+        mapa.on('click', function(e) {
+            marcador.setLatLng(e.latlng);
+            document.getElementById('jobLat').value = e.latlng.lat.toFixed(6);
+            document.getElementById('jobLng').value = e.latlng.lng.toFixed(6);
+        });
+    } else {
+        // Si ya existe, solo le cambiamos el centro y movemos el marcador
+        mapa.setView([lat, lng], 14);
+        marcador.setLatLng([lat, lng]);
+    }
+
+    // Llenamos los inputs iniciales
+    document.getElementById('jobLat').value = lat.toFixed(6);
+    document.getElementById('jobLng').value = lng.toFixed(6);
+
+    setTimeout(() => { mapa.invalidateSize(); }, 300);
+}
+
+// --- NUEVO: FUNCIÓN PARA OBTENER LA UBICACIÓN GPS DEL USUARIO ---
+window.obtenerMiUbicacion = () => {
+    if (navigator.geolocation) {
+        Swal.fire({
+            title: 'Buscando tu ubicación...',
+            text: 'Por favor, acepta los permisos de ubicación en tu navegador.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
+                // Actualizar mapa y marcador
+                if (mapa && marcador) {
+                    mapa.setView([lat, lng], 16); // 16 es más cerca (más zoom)
+                    marcador.setLatLng([lat, lng]);
+                } else {
+                    inicializarMapa(lat, lng);
+                }
+
+                // Actualizar inputs visuales
+                document.getElementById('jobLat').value = lat.toFixed(6);
+                document.getElementById('jobLng').value = lng.toFixed(6);
+
+                Swal.close();
+                
+                // Notificación pequeña en la esquina
+                Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                }).fire({ icon: 'success', title: 'Ubicación actualizada' });
+            },
+            (error) => {
+                Swal.close();
+                let msj = 'No se pudo obtener tu ubicación.';
+                if (error.code === 1) msj = 'Denegaste el permiso de ubicación.';
+                if (error.code === 2) msj = 'La red de ubicación no responde.';
+                if (error.code === 3) msj = 'El tiempo de espera se agotó.';
+                Swal.fire('Error', msj, 'error');
+            },
+            {
+                enableHighAccuracy: true // Intenta usar el GPS para mayor precisión
+            }
+        );
+    } else {
+        Swal.fire('No soportado', 'Tu navegador no soporta geolocalización.', 'warning');
+    }
+};
+
 
 // 1. CARGAR SELECTS DE USUARIOS Y CHECKBOXES DE MATERIALES
 async function cargarUsuariosYMateriales() {
     try {
-        // Cargar Usuarios
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (resUsers.ok) {
             const users = await resUsers.json();
@@ -36,14 +135,14 @@ async function cargarUsuariosYMateriales() {
             selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
             selectMan.innerHTML = '<option value="">-- Seleccione Manager --</option>';
             
-            // Asumiendo que cualquier usuario activo puede ser elegido, si quieres filtrar por rol, puedes agregar un 'if' aquí
-            users.filter(u => u.status !== 'Unemployed').forEach(u => {
-                selectEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`;
-                selectMan.innerHTML += `<option value="${u.userId}">${u.name}</option>`;
-            });
+            // Filtro estricto de roles
+            const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
+            const jefes = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_JEFE'));
+
+            empleados.forEach(u => selectEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
+            jefes.forEach(u => selectMan.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
         }
 
-        // Cargar Materiales
         const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (resMat.ok) {
             const materials = await resMat.json();
@@ -57,7 +156,7 @@ async function cargarUsuariosYMateriales() {
                     containerMat.innerHTML += `
                         <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2b3674; font-size: 14px;">
                             <input type="checkbox" name="jobMaterials" value="${mat.materialId}"> 
-                            ${mat.name} <small style="color:#A3AED0;">(Stock: ${mat.stock || 'N/A'})</small>
+                            ${mat.name} 
                         </label>
                     `;
                 });
@@ -93,14 +192,12 @@ function renderizarTrabajos(trabajos) {
     }
 
     trabajos.forEach(job => {
-        // Estilo del badge según estado
         let statusBadge = '';
         if(job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
         else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
         else if(job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
-        const safeDesc = job.description ? job.description.replace(/'/g, "\\'") : '';
         const empName = job.nameEmployee || 'Sin asignar';
         const manName = job.nameManager || 'Sin asignar';
 
@@ -129,7 +226,7 @@ function renderizarTrabajos(trabajos) {
     });
 }
 
-// --- LOGICA DEL MODAL Y CRUD ---
+// --- LÓGICA DEL MODAL Y CRUD ---
 
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
@@ -137,6 +234,9 @@ window.abrirModalCrearJob = () => {
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
+    
+    // Coordenadas base (Centro de Cuenca, Ecuador)
+    inicializarMapa(-2.900128, -79.005896);
 };
 
 window.abrirModalEditarJob = async (id) => {
@@ -164,15 +264,17 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
-            // Marcamos los materiales que ya tiene el trabajo
             if(data.materials && data.materials.length > 0) {
                 const checkboxes = document.querySelectorAll('input[name="jobMaterials"]');
                 checkboxes.forEach(cb => {
-                    cb.checked = data.materials.some(m => m.materialId == cb.value); // El DTO trae materialId
+                    cb.checked = data.materials.some(m => m.materialId == cb.value);
                 });
             }
 
             document.getElementById('modalJob').style.display = 'flex';
+            
+            // Inicializar el mapa con las coordenadas exactas de este trabajo
+            inicializarMapa(data.latitude, data.longitude);
         }
     } catch(error) { console.error("Error al obtener trabajo:", error); }
 };
@@ -185,7 +287,6 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
     
-    // Obtener array de IDs de materiales seleccionados (Parseamos a entero porque DTO pide List<Long>)
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
 
@@ -206,10 +307,8 @@ window.guardarTrabajo = async () => {
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: parseInt(document.getElementById('jobManager').value),
         materialIds: selectedMaterials
-        // jobUpdateId no es obligatorio mandarlo en la creación general según el DTO
     };
     
-    // Validaciones básicas de campos vacíos o numéricos NaN
     if(!payload.clientName || !payload.employeeId || !payload.managerId || isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire('Error', 'Por favor llena todos los campos obligatorios.', 'error');
     }
@@ -251,7 +350,6 @@ window.eliminarTrabajo = async (id) => {
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
-                // Endpoint correcto según JobsController.java
                 const res = await fetch(`${API_URL}/delete-job/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${userToken}` }

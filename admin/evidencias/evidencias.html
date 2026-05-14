@@ -3,14 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Materiales - Rojas Remodeling</title>
+    <title>Evidencias - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <link rel="stylesheet" href="../admin.css"> 
     <link rel="stylesheet" href="../usuarios/usuarios.css"> 
+
+    <style>
+        /* Estilos específicos para la galería de evidencias */
+        .timeline-update {
+            background: #F9FAFC; border-left: 4px solid #0f4c81; padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
+        }
+        .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
+        .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
+        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+        .gallery-img { 
+            width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; 
+            border: 2px solid #E0E5F2; transition: transform 0.2s;
+        }
+        .gallery-img:hover { transform: scale(1.05); border-color: #0f4c81; }
+        .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
+    </style>
 </head>
 <body>
 
@@ -35,10 +49,10 @@
                 <a href="../trabajos/trabajos.html">
                     <i class="fa-solid fa-hammer"></i> Trabajos
                 </a>
-                <a href="materiales.html" class="active">
+                <a href="../materiales/materiales.html">
                     <i class="fa-solid fa-boxes-stacked"></i> Materiales
                 </a>
-                <a href="../evidencias/evidencias.html">
+                <a href="evidencias.html" class="active">
                     <i class="fa-solid fa-camera"></i> Evidencias
                 </a>
             </nav>
@@ -51,9 +65,8 @@
         </aside>
 
         <main class="main-content">
-            
             <header class="top-navbar">
-                <div class="page-title">Gestión de Materiales</div>
+                <div class="page-title">Evidencias y Progreso de Trabajos</div>
                 <div class="user-profile">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="admin-email-display">Cargando...</span>
@@ -63,63 +76,41 @@
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
                     
-                    <div class="header-section">
-                        <h2 style="margin: 0; color: #2B3674;">Listado de Materiales</h2>
-                        <button class="btn-add" onclick="abrirModalCrearMat()" style="background: #546e7a;">
-                            <i class="fa-solid fa-plus"></i> Nuevo Material
-                        </button>
+                    <div class="header-section" style="flex-wrap: wrap;">
+                        <h2 style="margin: 0; color: #2B3674;">Supervisión de Proyectos</h2>
+                        
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <label style="font-weight: 600; font-size: 0.9rem; color:#2B3674;">Filtrar por Jefe:</label>
+                            <select id="filterManager" class="input-field" style="width: auto; padding: 10px;" onchange="filtrarTrabajos()">
+                                <option value="ALL">Todos los Jefes</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="table-container">
-                        <table class="user-table">
-                            <thead>
-                                <tr>
-                                    <th>Material</th>
-                                    <th>Categoría Asociada</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="matTableBody"></tbody>
-                        </table>
-                    </div>
+                    <div id="jobsGrid" class="grid-cards" style="margin-top: 20px;">
+                        </div>
+
                 </div>
             </div>
         </main>
     </div>
 
-    <div class="modal-overlay" id="modalMat">
-        <div class="modal-container" style="max-width: 450px;">
+    <div class="modal-overlay" id="modalEvidencias">
+        <div class="modal-container" style="max-width: 600px;">
             <div class="modal-header">
-                <span id="modalTitulo"><i class="fa-solid fa-box"></i> Material</span>
-                <button onclick="cerrarModalMat()" class="btn-close-modal">✕</button>
+                <span id="modalTitulo"><i class="fa-solid fa-images"></i> Historial del Proyecto</span>
+                <button onclick="cerrarModalEvidencias()" class="btn-close-modal">✕</button>
             </div>
             
-            <div class="modal-body">
-                <form id="formMat">
-                    <input type="hidden" id="matId"> 
-                    
-                    <div class="form-group">
-                        <label>Nombre del Material</label>
-                        <input type="text" id="matName" class="input-field" required placeholder="Ej: Cemento Portland">
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label>Categoría</label>
-                        <select id="matCategory" class="input-field" required>
-                            <option value="">Cargando categorías...</option>
-                        </select>
-                    </div>
-
-                </form>
-            </div>
+            <div class="modal-body" id="evidencesTimeline">
+                </div>
             
             <div class="modal-footer">
-                <button onclick="cerrarModalMat()" class="btn-secondary">Cancelar</button>
-                <button onclick="guardarMaterial()" class="btn-primary" style="background: #546e7a;">Guardar</button>
+                <button onclick="cerrarModalEvidencias()" class="btn-secondary">Cerrar</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="materiales.js"></script>
+    <script type="module" src="evidencias.js"></script>
 </body>
 </html>

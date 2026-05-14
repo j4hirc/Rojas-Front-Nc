@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Jefe - Rojas Remodeling</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="../admin/admin.css"> </head>
+<body>
+
+    <div class="app-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-logo" style="color: #198754;">
+                <i class="fa-solid fa-hard-hat"></i>
+                <span>Portal Jefe</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="jefe-dashboard.html" class="active">
+                    <i class="fa-solid fa-house"></i> Inicio
+                </a>
+                <a href="usuarios/usuarios.html">
+                    <i class="fa-solid fa-users-gear"></i> Mi Personal
+                </a>
+                <a href="trabajos/trabajos.html">
+                    <i class="fa-solid fa-hammer"></i> Mis Trabajos
+                </a>
+                <a href="#" onclick="Swal.fire('¡Pronto!', 'Módulo de Evidencias en construcción', 'info')">
+                    <i class="fa-solid fa-camera"></i> Evidencias
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">Resumen de Operaciones</div>
+                <div class="user-profile" style="color: #198754; background: #E8F5E9;">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span id="jefe-email-display">Cargando...</span>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="grid-cards">
+                    <div class="card card-blue" onclick="window.location.href='usuarios/usuarios.html'">
+                        <div class="card-icon-container"><i class="fa-solid fa-users-gear"></i></div>
+                        <div class="card-info">
+                            <h3>Gestión de Personal</h3>
+                            <p>Administrar empleados</p>
+                        </div>
+                    </div>
+
+                    <div class="card card-orange" onclick="window.location.href='trabajos/trabajos.html'">
+                        <div class="card-icon-container"><i class="fa-solid fa-hammer"></i></div>
+                        <div class="card-info">
+                            <h3>Mis Trabajos</h3>
+                            <p>Proyectos a mi cargo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="jefe-dashboard.js"></script>
+</body>
+</html>
