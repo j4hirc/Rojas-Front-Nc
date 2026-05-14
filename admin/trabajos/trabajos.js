@@ -24,58 +24,61 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
+    // --- PANTALLA DE CARGA INICIAL ---
+    Swal.fire({ 
+        title: 'Preparando tu área de trabajo...', 
+        text: 'Cargando personal, materiales y proyectos',
+        allowOutsideClick: false, 
+        didOpen: () => { Swal.showLoading(); }
+    });
+
     await cargarUsuariosYMateriales(); 
     await cargarTrabajos();            
+
+    // --- CERRAMOS PANTALLA DE CARGA ---
+    Swal.close();
 });
 
 // --- INICIALIZAR EL MAPA INTERACTIVO ---
 function inicializarMapa(lat, lng) {
     if (!mapa) {
-        // Se crea el mapa si no existe
         mapa = L.map('jobMap').setView([lat, lng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap Rojas Remodeling'
         }).addTo(mapa);
 
-        // Crear marcador arrastrable
         marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
 
-        // Cuando sueltan el marcador, actualiza los inputs
         marcador.on('dragend', function (e) {
             const posicion = marcador.getLatLng();
             document.getElementById('jobLat').value = posicion.lat.toFixed(6);
             document.getElementById('jobLng').value = posicion.lng.toFixed(6);
         });
 
-        // Cuando hacen clic en cualquier parte del mapa, mueve el marcador ahí
         mapa.on('click', function(e) {
             marcador.setLatLng(e.latlng);
             document.getElementById('jobLat').value = e.latlng.lat.toFixed(6);
             document.getElementById('jobLng').value = e.latlng.lng.toFixed(6);
         });
     } else {
-        // Si ya existe, solo le cambiamos el centro y movemos el marcador
         mapa.setView([lat, lng], 14);
         marcador.setLatLng([lat, lng]);
     }
 
-    // Llenamos los inputs iniciales
     document.getElementById('jobLat').value = lat.toFixed(6);
     document.getElementById('jobLng').value = lng.toFixed(6);
 
     setTimeout(() => { mapa.invalidateSize(); }, 300);
 }
 
-// --- NUEVO: FUNCIÓN PARA OBTENER LA UBICACIÓN GPS DEL USUARIO ---
+// --- FUNCIÓN PARA OBTENER LA UBICACIÓN GPS DEL USUARIO ---
 window.obtenerMiUbicacion = () => {
     if (navigator.geolocation) {
         Swal.fire({
             title: 'Buscando tu ubicación...',
             text: 'Por favor, acepta los permisos de ubicación en tu navegador.',
             allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
+            didOpen: () => { Swal.showLoading(); }
         });
 
         navigator.geolocation.getCurrentPosition(
@@ -83,21 +86,17 @@ window.obtenerMiUbicacion = () => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 
-                // Actualizar mapa y marcador
                 if (mapa && marcador) {
-                    mapa.setView([lat, lng], 16); // 16 es más cerca (más zoom)
+                    mapa.setView([lat, lng], 16); 
                     marcador.setLatLng([lat, lng]);
                 } else {
                     inicializarMapa(lat, lng);
                 }
 
-                // Actualizar inputs visuales
                 document.getElementById('jobLat').value = lat.toFixed(6);
                 document.getElementById('jobLng').value = lng.toFixed(6);
 
                 Swal.close();
-                
-                // Notificación pequeña en la esquina
                 Swal.mixin({
                     toast: true,
                     position: 'top-end',
@@ -114,15 +113,12 @@ window.obtenerMiUbicacion = () => {
                 if (error.code === 3) msj = 'El tiempo de espera se agotó.';
                 Swal.fire('Error', msj, 'error');
             },
-            {
-                enableHighAccuracy: true // Intenta usar el GPS para mayor precisión
-            }
+            { enableHighAccuracy: true }
         );
     } else {
         Swal.fire('No soportado', 'Tu navegador no soporta geolocalización.', 'warning');
     }
 };
-
 
 // 1. CARGAR SELECTS DE USUARIOS Y CHECKBOXES DE MATERIALES
 async function cargarUsuariosYMateriales() {
@@ -135,7 +131,6 @@ async function cargarUsuariosYMateriales() {
             selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
             selectMan.innerHTML = '<option value="">-- Seleccione Manager --</option>';
             
-            // Filtro estricto de roles
             const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
             const jefes = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_JEFE'));
 
@@ -178,7 +173,7 @@ async function cargarTrabajos() {
             renderizarTrabajos(trabajos);
         }
     } catch (error) { 
-        Swal.fire('Error de conexión', 'No se pudo cargar la lista de trabajos.', 'error');
+        console.error("Error al cargar trabajos", error);
     }
 }
 
@@ -246,6 +241,8 @@ window.abrirModalEditarJob = async (id) => {
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
     
     try {
+        Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
         const response = await fetch(`${API_URL}/find-id/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` } });
 
         if(response.ok) {
@@ -271,12 +268,14 @@ window.abrirModalEditarJob = async (id) => {
                 });
             }
 
+            Swal.close();
             document.getElementById('modalJob').style.display = 'flex';
-            
-            // Inicializar el mapa con las coordenadas exactas de este trabajo
             inicializarMapa(data.latitude, data.longitude);
         }
-    } catch(error) { console.error("Error al obtener trabajo:", error); }
+    } catch(error) { 
+        Swal.close();
+        console.error("Error al obtener trabajo:", error); 
+    }
 };
 
 window.cerrarModalJob = () => {
@@ -312,6 +311,9 @@ window.guardarTrabajo = async () => {
     if(!payload.clientName || !payload.employeeId || !payload.managerId || isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire('Error', 'Por favor llena todos los campos obligatorios.', 'error');
     }
+
+    // --- PANTALLA DE CARGA PARA GUARDAR ---
+    Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
     
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
@@ -349,6 +351,9 @@ window.eliminarTrabajo = async (id) => {
         cancelButtonText: 'Cancelar'
     }).then(async (result) => {
         if (result.isConfirmed) {
+            // --- PANTALLA DE CARGA PARA ELIMINAR ---
+            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
             try {
                 const res = await fetch(`${API_URL}/delete-job/${id}`, {
                     method: 'DELETE',
@@ -361,7 +366,10 @@ window.eliminarTrabajo = async (id) => {
                 } else {
                     Swal.fire('Error', 'No se pudo eliminar el trabajo.', 'error');
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error(e); 
+                Swal.fire('Error', 'Fallo de red', 'error');
+            }
         }
     });
 };

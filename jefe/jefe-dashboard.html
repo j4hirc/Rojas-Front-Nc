@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../admin/admin.css"> </head>
+    <link rel="stylesheet" href="../admin/admin.css"> 
+</head>
 <body>
 
     <div class="app-layout">
@@ -28,7 +29,7 @@
                 <a href="trabajos/trabajos.html">
                     <i class="fa-solid fa-hammer"></i> Mis Trabajos
                 </a>
-                <a href="#" onclick="Swal.fire('¡Pronto!', 'Módulo de Evidencias en construcción', 'info')">
+                <a href="evidencias/evidencias.html">
                     <i class="fa-solid fa-camera"></i> Evidencias
                 </a>
             </nav>
@@ -66,6 +67,15 @@
                             <p>Proyectos a mi cargo</p>
                         </div>
                     </div>
+
+                    <div class="card card-purple" onclick="window.location.href='evidencias/evidencias.html'">
+                        <div class="card-icon-container"><i class="fa-solid fa-images"></i></div>
+                        <div class="card-info">
+                            <h3>Mis Evidencias</h3>
+                            <p>Supervisión de proyectos</p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </main>

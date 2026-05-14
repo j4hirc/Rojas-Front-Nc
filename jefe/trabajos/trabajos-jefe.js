@@ -3,7 +3,7 @@ const USERS_URL = 'http://localhost:8081/api/v1/user/all-users';
 const MATERIALS_URL = 'http://localhost:8081/api/v1/materials/all';
 
 let userToken = '';
-let myManagerId = null; // Guardará el ID del Jefe actual
+let myManagerId = null; 
 let mapa, marcador;
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -25,6 +25,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 // BUSCA QUIÉN ES EL JEFE ACTUAL Y CARGA TODO
 async function inicializarDatosDelJefe(emailActual) {
     try {
+        // --- NUEVO: PANTALLA DE CARGA INICIAL ---
+        Swal.fire({ 
+            title: 'Preparando tu área de trabajo...', 
+            text: 'Cargando personal, materiales y proyectos',
+            allowOutsideClick: false, 
+            didOpen: () => { Swal.showLoading(); }
+        });
+
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         const users = await resUsers.json();
         
@@ -52,7 +60,7 @@ async function inicializarDatosDelJefe(emailActual) {
             containerMat.innerHTML += `
                 <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2b3674; font-size: 14px;">
                     <input type="checkbox" name="jobMaterials" value="${mat.materialId}"> 
-                    ${mat.name} 
+                    ${mat.name} <small style="color:#A3AED0;">(Stock: ${mat.stock || 0})</small>
                 </label>
             `;
         });
@@ -60,7 +68,13 @@ async function inicializarDatosDelJefe(emailActual) {
         // Finalmente, traemos los trabajos de este Jefe
         await cargarMisTrabajos();
 
-    } catch (error) { console.error("Error al inicializar datos:", error); }
+        // --- NUEVO: OCULTAMOS LA PANTALLA DE CARGA ---
+        Swal.close();
+
+    } catch (error) { 
+        console.error("Error al inicializar datos:", error); 
+        Swal.fire('Error', 'Hubo un problema al cargar los datos.', 'error');
+    }
 }
 
 // CARGA SOLO LOS TRABAJOS DEL JEFE ACTUAL
@@ -86,10 +100,10 @@ function renderizarTrabajos(trabajos) {
     }
 
     trabajos.forEach(job => {
-        let badge = job.status === 'PENDING' ? `<span style="color:#ff9800; font-weight:bold;">Pendiente</span>` : 
-                    job.status === 'IN_PROGRESS' ? `<span style="color:#1e88e5; font-weight:bold;">En Progreso</span>` : 
-                    job.status === 'COMPLETED' ? `<span style="color:#2e7d32; font-weight:bold;">Completado</span>` : 
-                    `<span style="color:#d32f2f; font-weight:bold;">Cancelado</span>`;
+        let badge = job.status === 'PENDING' ? `<span style="background:#FFF3E0; color:#ff9800; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Pendiente</span>` : 
+                    job.status === 'IN_PROGRESS' ? `<span style="background:#E3F2FD; color:#1e88e5; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">En Progreso</span>` : 
+                    job.status === 'COMPLETED' ? `<span style="background:#E8F5E9; color:#2e7d32; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Completado</span>` : 
+                    `<span style="background:#FFEBEE; color:#d32f2f; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Cancelado</span>`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -207,7 +221,6 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         
-        // AQUÍ ESTÁ EL TRUCO: Siempre le mandamos el ID del Jefe que está logueado
         managerId: myManagerId, 
         
         materialIds: selectedMaterials
@@ -215,6 +228,9 @@ window.guardarTrabajo = async () => {
     
     if(!payload.clientName || !payload.employeeId) return Swal.fire('Error', 'Llena todos los campos obligatorios.', 'error');
     
+    // Mostramos un loader mientras se guarda/actualiza
+    Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -225,7 +241,7 @@ window.guardarTrabajo = async () => {
             body: JSON.stringify(payload)
         });
         if (response.ok) {
-            Swal.fire('¡Éxito!', 'Trabajo guardado.', 'success');
+            Swal.fire('¡Éxito!', 'Trabajo guardado correctamente.', 'success');
             cerrarModalJob();
             await cargarMisTrabajos(); 
         } else {
@@ -238,8 +254,18 @@ window.eliminarTrabajo = async (id) => {
     Swal.fire({ title: '¿Eliminar Trabajo?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: 'Sí, eliminar'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            const res = await fetch(`${API_URL}/delete-job/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${userToken}` }});
-            if(res.ok) { Swal.fire('Eliminado', '', 'success'); cargarMisTrabajos(); }
+            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            try {
+                const res = await fetch(`${API_URL}/delete-job/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${userToken}` }});
+                if(res.ok) { 
+                    Swal.fire('Eliminado', '', 'success'); 
+                    await cargarMisTrabajos(); 
+                } else {
+                    Swal.fire('Error', 'No se pudo eliminar', 'error');
+                }
+            } catch(e) {
+                Swal.fire('Error', 'Fallo de red', 'error');
+            }
         }
     });
 };

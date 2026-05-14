@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evidencias - Rojas Remodeling</title>
+    <title>Mis Evidencias - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../admin.css"> 
-    <link rel="stylesheet" href="../usuarios/usuarios.css"> 
+    
+    <link rel="stylesheet" href="../../admin/admin.css"> 
+    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 
     <style>
         /* Estilos específicos para la galería de evidencias */
         .timeline-update {
-            background: #F9FAFC; border-left: 4px solid #0f4c81; padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
+            background: #F9FAFC; border-left: 4px solid #198754; padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
         }
         .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
         .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
@@ -22,7 +23,7 @@
             width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; 
             border: 2px solid #E0E5F2; transition: transform 0.2s;
         }
-        .gallery-img:hover { transform: scale(1.05); border-color: #0f4c81; }
+        .gallery-img:hover { transform: scale(1.05); border-color: #198754; }
         .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
     </style>
 </head>
@@ -31,26 +32,20 @@
     <div class="app-layout">
         
         <aside class="sidebar">
-            <div class="sidebar-logo">
-                <i class="fa-solid fa-helmet-safety"></i>
-                <span>Rojas Admin</span>
+            <div class="sidebar-logo" style="color: #198754;">
+                <i class="fa-solid fa-hard-hat"></i>
+                <span>Portal Jefe</span>
             </div>
             
             <nav class="sidebar-nav">
-                <a href="../admin-dashboard.html">
+                <a href="../jefe-dashboard.html">
                     <i class="fa-solid fa-house"></i> Inicio
                 </a>
                 <a href="../usuarios/usuarios.html">
-                    <i class="fa-solid fa-users-gear"></i> Usuarios
-                </a>
-                <a href="../categorias/categorias.html">
-                    <i class="fa-solid fa-tags"></i> Categorías
+                    <i class="fa-solid fa-users-gear"></i> Mi Personal
                 </a>
                 <a href="../trabajos/trabajos.html">
-                    <i class="fa-solid fa-hammer"></i> Trabajos
-                </a>
-                <a href="../materiales/materiales.html">
-                    <i class="fa-solid fa-boxes-stacked"></i> Materiales
+                    <i class="fa-solid fa-hammer"></i> Mis Trabajos
                 </a>
                 <a href="evidencias.html" class="active">
                     <i class="fa-solid fa-camera"></i> Evidencias
@@ -67,27 +62,20 @@
         <main class="main-content">
             <header class="top-navbar">
                 <div class="page-title">Evidencias y Progreso de Trabajos</div>
-                <div class="user-profile">
+                <div class="user-profile" style="color: #198754; background: #E8F5E9;">
                     <i class="fa-solid fa-user-tie"></i>
-                    <span id="admin-email-display">Cargando...</span>
+                    <span id="jefe-email-display">Cargando...</span>
                 </div>
             </header>
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
                     
-                    <div class="header-section" style="flex-wrap: wrap;">
-                        <h2 style="margin: 0; color: #2B3674;">Supervisión de Proyectos</h2>
-                        
-                        <div style="display: flex; gap: 15px; align-items: center;">
-                            <label style="font-weight: 600; font-size: 0.9rem; color:#2B3674;">Filtrar por Jefe:</label>
-                            <select id="filterManager" class="input-field" style="width: auto; padding: 10px;" onchange="filtrarTrabajos()">
-                                <option value="ALL">Todos los Jefes</option>
-                            </select>
-                        </div>
+                    <div class="header-section">
+                        <h2 style="margin: 0; color: #2B3674;">Supervisión de mis Proyectos</h2>
                     </div>
 
-                    <div id="jobsGrid" class="grid-cards" style="margin-top: 20px;">
+                    <div id="jobsGrid" class="grid-cards">
                         </div>
 
                 </div>
@@ -103,7 +91,7 @@
             </div>
             
             <div class="modal-body">
-                <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E3F2FD; border: 1px solid #BBDEFB; border-radius: 8px; color: #0f4c81; font-size: 0.9rem;">
+                <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 8px; color: #2e7d32; font-size: 0.9rem;">
                     </div>
 
                 <div id="evidencesTimeline">
@@ -116,6 +104,6 @@
         </div>
     </div>
 
-    <script type="module" src="evidencias.js"></script>
+    <script type="module" src="evidencias-jefe.js"></script>
 </body>
-</html>s
+</html>
