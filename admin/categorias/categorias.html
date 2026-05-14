@@ -10,67 +10,89 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <link rel="stylesheet" href="../admin.css"> 
-    <link rel="stylesheet" href="../usuarios/usuarios.css"> </head>
+    <link rel="stylesheet" href="../usuarios/usuarios.css"> 
+</head>
 <body>
 
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
+    <div class="app-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-logo">
                 <i class="fa-solid fa-helmet-safety"></i>
                 <span>Rojas Admin</span>
             </div>
-            <ul class="nav-menu">
-                <li><a href="../admin-dashboard.html"><i class="fa-solid fa-house"></i> Volver al Inicio</a></li>
-                <li><a href="#" class="btn-logout" onclick="cerrarSesion()">
+            
+            <nav class="sidebar-nav">
+                <a href="../admin-dashboard.html">
+                    <i class="fa-solid fa-house"></i> Inicio
+                </a>
+                <a href="../usuarios/usuarios.html">
+                    <i class="fa-solid fa-users-gear"></i> Usuarios
+                </a>
+                <a href="categorias.html" class="active">
+                    <i class="fa-solid fa-tags"></i> Categorías
+                </a>
+                <a href="#" onclick="Swal.fire('¡Pronto!', 'Módulo en construcción', 'info')">
+                    <i class="fa-solid fa-hammer"></i> Trabajos
+                </a>
+                <a href="#" onclick="Swal.fire('¡Pronto!', 'Módulo en construcción', 'info')">
+                    <i class="fa-solid fa-boxes-stacked"></i> Materiales
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
                     <i class="fa-solid fa-right-from-bracket"></i> Salir
-                </a></li>
-            </ul>
-        </div>
-    </nav>
+                </button>
+            </div>
+        </aside>
 
-    <header class="header" style="padding-bottom: 4rem;">
-        <div class="header-overlay"></div>
-        <div class="header-content">
-            <div class="header-text">
-                <h1>Gestión de Categorías</h1>
-                <p>Administra los tipos de proyectos y servicios que ofrece la empresa.</p>
-            </div>
-            <div class="user-badge">
-                <div class="user-avatar-placeholder"><i class="fa-solid fa-tags"></i></div>
-                <span id="admin-email-display">Cargando...</span>
-            </div>
-        </div>
-    </header>
+        <main class="main-content">
+            
+            <header class="top-navbar">
+                <div class="page-title">Gestión de Categorías</div>
+                <div class="user-profile">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span id="admin-email-display">Cargando...</span>
+                </div>
+            </header>
 
-    <main class="dashboard-container">
-        <div class="usuarios-container">
-            <div class="header-section">
-                <h2 style="margin: 0; color: #2B3674;">Lista de Categorías</h2>
-                <button class="btn-add" onclick="abrirModalCrearCat()" style="background: #2e7d32;">+ Nueva Categoría</button>
-            </div>
+            <div class="content-body">
+                <div class="usuarios-container" style="margin-top: 0;">
+                    
+                    <div class="header-section">
+                        <h2 style="margin: 0; color: #2B3674;">Lista de Categorías</h2>
+                        <button class="btn-add" onclick="abrirModalCrearCat()" style="background: #2e7d32;">
+                            <i class="fa-solid fa-plus"></i> Nueva Categoría
+                        </button>
+                    </div>
 
-            <div class="table-container">
-                <table class="user-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nombre de la Categoría</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="catTableBody"></tbody>
-                </table>
+                    <div class="table-container">
+                        <table class="user-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre de la Categoría</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="catTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mobile-cards" id="mobileCardsContainer"></div>
+                </div>
             </div>
-            <div class="mobile-cards" id="mobileCardsContainer"></div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <div class="modal-overlay" id="modalCat">
-        <div class="modal-container" style="max-width: 400px;">
+        <div class="modal-container" style="max-width: 450px;">
             <div class="modal-header">
                 <span id="modalTitulo"><i class="fa-solid fa-tag"></i> Categoría</span>
                 <button onclick="cerrarModalCat()" class="btn-close-modal">✕</button>
             </div>
+            
             <div class="modal-body">
                 <form id="formCat">
                     <input type="hidden" id="catId"> 
@@ -80,6 +102,7 @@
                     </div>
                 </form>
             </div>
+            
             <div class="modal-footer">
                 <button onclick="cerrarModalCat()" class="btn-secondary">Cancelar</button>
                 <button onclick="guardarCategoria()" class="btn-primary" style="background: #2e7d32;">Guardar</button>

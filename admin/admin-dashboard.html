@@ -3,96 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio - Rojas Remodeling</title>
+    <title>Dashboard - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
 
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
+    <div class="app-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-logo">
                 <i class="fa-solid fa-helmet-safety"></i>
                 <span>Rojas Admin</span>
             </div>
-            <ul class="nav-menu">
-                <li><a href="#" id="btnCerrarSesion" class="btn-logout" onclick="cerrarSesion()">
+            
+            <nav class="sidebar-nav">
+                <a href="admin-dashboard.html" class="active">
+                    <i class="fa-solid fa-house"></i> Inicio
+                </a>
+                <a href="usuarios/usuarios.html">
+                    <i class="fa-solid fa-users-gear"></i> Usuarios
+                </a>
+                <a href="categorias/categorias.html">
+                    <i class="fa-solid fa-tags"></i> Categorías
+                </a>
+                <a href="#" onclick="Swal.fire('¡Pronto!', 'Módulo en construcción', 'info')">
+                    <i class="fa-solid fa-hammer"></i> Trabajos
+                </a>
+                <a href="#" onclick="Swal.fire('¡Pronto!', 'Módulo en construcción', 'info')">
+                    <i class="fa-solid fa-boxes-stacked"></i> Materiales
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
                     <i class="fa-solid fa-right-from-bracket"></i> Salir
-                </a></li>
-            </ul>
-        </div>
-    </nav>
-
-    <header class="header">
-        <div class="header-overlay"></div>
-        <div class="header-content">
-            <div class="header-text">
-                <h1>Centro de Control</h1>
-                <p>Gestiona los usuarios, trabajos y materiales del sistema.</p>
+                </button>
             </div>
-            <div class="user-badge">
-                <div class="user-avatar-placeholder"><i class="fa-solid fa-user-tie"></i></div>
-                <span id="admin-email-display">Cargando...</span>
-            </div>
-        </div>
-    </header>
+        </aside>
 
-    <main class="dashboard-container">
-        <div class="section-header">
-            <h2 class="section-title">Accesos Rápidos y Resumen</h2>
-            <div class="section-line"></div>
-        </div>
+        <main class="main-content">
+            
+            <header class="top-navbar">
+                <div class="page-title">Panel de Control General</div>
+                <div class="user-profile">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span id="admin-email-display">Cargando...</span>
+                </div>
+            </header>
 
-        <div class="grid-cards">
-            <div class="card card-blue" onclick="window.location.href='usuarios/usuarios.html'">
-                <div class="card-icon-container">
-                    <i class="fa-solid fa-users-gear"></i>
-                </div>
-                <div class="card-info">
-                    <h3>Usuarios</h3>
-                    <p>Total registrados: <strong id="stat-total-users">...</strong></p>
-                </div>
-                <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
-            </div>
+            <div class="content-body">
+                <div class="grid-cards">
+                    <div class="card card-blue" onclick="window.location.href='usuarios/usuarios.html'">
+                        <div class="card-icon-container"><i class="fa-solid fa-users-gear"></i></div>
+                        <div class="card-info">
+                            <h3>Usuarios</h3>
+                            <p>Total registrados: <strong id="stat-total-users">...</strong></p>
+                        </div>
+                    </div>
 
-            <div class="card card-green" onclick="window.location.href='categorias/categorias.html'">
-                <div class="card-icon-container">
-                    <i class="fa-solid fa-tags"></i>
-                </div>
-                <div class="card-info">
-                    <h3>Categorías</h3>
-                    <p>Tipos de proyectos</p>
-                </div>
-                <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
-            </div>
+                    <div class="card card-green" onclick="window.location.href='categorias/categorias.html'">
+                        <div class="card-icon-container"><i class="fa-solid fa-tags"></i></div>
+                        <div class="card-info">
+                            <h3>Categorías</h3>
+                            <p>Tipos de proyectos</p>
+                        </div>
+                    </div>
 
-            <div class="card card-orange" onclick="Swal.fire('¡Próximamente!', 'El módulo de Trabajos estará disponible muy pronto.', 'info')">
-                <div class="card-icon-container">
-                    <i class="fa-solid fa-hammer"></i>
+                    <div class="card card-orange" onclick="Swal.fire('¡Próximamente!', 'Módulo de Trabajos.', 'info')">
+                        <div class="card-icon-container"><i class="fa-solid fa-hammer"></i></div>
+                        <div class="card-info">
+                            <h3>Trabajos Activos</h3>
+                            <p>En progreso</p>
+                        </div>
+                    </div>
+
+                    <div class="card card-slate" onclick="Swal.fire('¡Próximamente!', 'Módulo de Materiales.', 'info')">
+                        <div class="card-icon-container"><i class="fa-solid fa-boxes-stacked"></i></div>
+                        <div class="card-info">
+                            <h3>Materiales</h3>
+                            <p>Gestión de inventario</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-info">
-                    <h3>Trabajos Activos</h3>
-                    <p>12 en progreso</p>
-                </div>
-                <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
             </div>
 
-            <div class="card card-slate" onclick="Swal.fire('¡Próximamente!', 'El módulo de Materiales estará disponible muy pronto.', 'info')">
-                <div class="card-icon-container">
-                    <i class="fa-solid fa-boxes-stacked"></i>
-                </div>
-                <div class="card-info">
-                    <h3>Materiales</h3>
-                    <p>45 disponibles</p>
-                </div>
-                <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
-            </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <script type="module" src="admin-dashboard.js"></script>
 </body>

@@ -1,143 +1,144 @@
+/* =========================================
+   NUEVO DISEÑO DE PANEL (SIDEBAR MODERNO)
+   ========================================= */
 :root {
-    /* Paleta Rojas Remodeling (Azul Marino y Naranja) */
     --primary: #0f4c81;
     --primary-dark: #0a365c;
     --accent: #ff9800;
-    
-    --bg-body: #F4F7FE;
-    --bg-card: #FFFFFF;
-    
-    --text-main: #2B3674; 
-    --text-secondary: #A3AED0;
-    
+    --bg-body: #f4f7fe;
+    --sidebar-bg: #ffffff;
+    --text-main: #2b3674;
+    --text-muted: #a3aed0;
     --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.04);
-    --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.08);
-    --radius-card: 20px;
+    --shadow-hover: 0 10px 30px rgba(0, 0, 0, 0.08);
+    --radius-card: 16px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: var(--text-main); }
 
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: var(--bg-body);
-    color: var(--text-main);
-    min-height: 100vh;
-}
-
-/* --- NAVBAR --- */
-.navbar {
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    padding: 1rem 2rem;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.02);
-}
-
-.nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
+/* --- ESTRUCTURA DEL PANEL --- */
+.app-layout {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    height: 100vh;
+    overflow: hidden;
 }
 
-.nav-logo {
+/* --- SIDEBAR (Menú Lateral) --- */
+.sidebar {
+    width: 260px;
+    background: var(--sidebar-bg);
     display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 1.3rem;
+    flex-direction: column;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.03);
+    z-index: 100;
+}
+
+.sidebar-logo {
+    padding: 25px 20px;
+    font-size: 1.4rem;
     font-weight: 700;
     color: var(--primary);
-    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid #f0f2f5;
 }
 
-.nav-menu { display: flex; list-style: none; }
-.nav-menu a { text-decoration: none; font-weight: 500; font-size: 0.95rem; }
-.btn-logout {
-    color: #E03131; background: #FFF5F5; padding: 8px 16px; border-radius: 30px; transition: all 0.3s ease;
-}
-.btn-logout:hover { background: #E03131; color: white; transform: translateY(-2px); }
-
-/* --- HEADER FLOTANTE --- */
-.header {
-    background: linear-gradient(120deg, var(--primary) 0%, #1a73e8 100%);
-    padding: 3rem 2rem 5rem;
-    color: white;
-    position: relative;
-    border-bottom-right-radius: 40px;
-    border-bottom-left-radius: 40px;
-    margin-bottom: -3.5rem; /* Efecto overlap de Loopi */
+.sidebar-nav {
+    flex: 1;
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    overflow-y: auto;
 }
 
-.header-content {
-    max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; flex-wrap: wrap; gap: 20px;
+.sidebar-nav a {
+    padding: 14px 25px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+    border-right: 4px solid transparent;
 }
 
-.header-text h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
-.header-text p { font-weight: 300; opacity: 0.9; }
-
-.user-badge {
-    background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(8px); padding: 8px 20px 8px 8px; border-radius: 50px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255, 255, 255, 0.2);
+.sidebar-nav a:hover, .sidebar-nav a.active {
+    background: #f8faff;
+    color: var(--primary);
+    border-right-color: var(--primary);
 }
-.user-avatar-placeholder { background: white; color: var(--primary); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
 
-/* --- CONTENEDOR Y CARDS --- */
-.dashboard-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem 40px; position: relative; z-index: 10; }
-.section-header { display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem; margin-top: 1rem; }
-.section-title { font-size: 1.3rem; font-weight: 700; }
-.section-line { flex-grow: 1; height: 2px; background: #E0E5F2; }
+.sidebar-nav a i { font-size: 1.2rem; width: 20px; text-align: center; }
 
-.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.8rem; }
-.card { background: var(--bg-card); border-radius: var(--radius-card); padding: 1.5rem; display: flex; align-items: center; gap: 1.2rem; cursor: pointer; transition: all 0.3s ease; box-shadow: var(--shadow-sm); border: 1px solid transparent; min-height: 110px;}
-.card:hover { transform: translateY(-8px); box-shadow: var(--shadow-hover); }
+.sidebar-footer { padding: 20px; border-top: 1px solid #f0f2f5; }
 
-.card-icon-container { width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; transition: transform 0.3s ease; }
+.btn-logout-sidebar {
+    display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+    padding: 12px; background: #fff5f5; color: #d32f2f; text-decoration: none;
+    border-radius: 10px; font-weight: 600; transition: 0.3s; border: none;
+    cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 1rem;
+}
+.btn-logout-sidebar:hover { background: #d32f2f; color: white; }
+
+/* --- CONTENIDO PRINCIPAL --- */
+.main-content {
+    flex: 1; display: flex; flex-direction: column; background: var(--bg-body); overflow-y: auto;
+}
+
+/* TOP NAVBAR */
+.top-navbar {
+    height: 70px; background: white; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); z-index: 50;
+}
+.page-title { font-size: 1.25rem; font-weight: 600; color: var(--text-main); }
+.user-profile { display: flex; align-items: center; gap: 10px; background: #f4f7fe; padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; color: var(--primary); }
+
+/* CUERPO DEL CONTENIDO */
+.content-body { padding: 30px; }
+
+/* --- CARDS (Tarjetas del Dashboard) --- */
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+.card { background: var(--sidebar-bg); border-radius: var(--radius-card); padding: 25px; display: flex; align-items: center; gap: 20px; cursor: pointer; transition: all 0.3s ease; box-shadow: var(--shadow-sm); border: 1px solid #f0f2f5; }
+.card:hover { transform: translateY(-5px); box-shadow: var(--shadow-hover); border-color: #e0e5f2; }
+.card-icon-container { width: 65px; height: 65px; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; transition: transform 0.3s ease; }
 .card:hover .card-icon-container { transform: scale(1.1) rotate(5deg); }
+.card-info h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 5px; color: var(--text-main); }
+.card-info p { font-size: 0.9rem; color: var(--text-muted); }
 
-.card-info h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
-.card-info p { font-size: 0.85rem; color: var(--text-secondary); }
-
-/* Colores de Cards */
 .card-blue .card-icon-container { background: #E3F2FD; color: #1e88e5; }
+.card-green .card-icon-container { background: #E8F5E9; color: #2e7d32; }
 .card-orange .card-icon-container { background: #FFF3E0; color: var(--accent); }
 .card-slate .card-icon-container { background: #ECEFF1; color: #546e7a; }
 
-.card-arrow { margin-left: auto; color: var(--text-secondary); opacity: 0; transform: translateX(-10px); transition: all 0.3s ease; }
-.card:hover .card-arrow { opacity: 1; transform: translateX(0); color: var(--primary); }
-
-/* --- ESTILOS DE LA TABLA (Para usuarios.html) --- */
-.usuarios-container { background: white; border-radius: var(--radius-card); padding: 25px; box-shadow: var(--shadow-sm); margin-top: 20px;}
-.header-section { display: flex; justify-content: space-between; margin-bottom: 20px; }
-.btn-add { background-color: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Poppins'; font-weight: 600; transition: 0.3s; }
-.btn-add:hover { background-color: var(--primary-dark); transform: translateY(-2px); }
+/* =========================================
+   ESTILOS COMPARTIDOS (Tablas y Botones)
+   ========================================= */
+.usuarios-container { background: white; border-radius: var(--radius-card); padding: 25px; box-shadow: var(--shadow-sm); }
+.header-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #f0f2f5; }
+.btn-add { background: linear-gradient(135deg, var(--primary) 0%, #1a73e8 100%); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-family: 'Poppins'; font-weight: 600; transition: 0.3s; box-shadow: 0 4px 10px rgba(15, 76, 129, 0.2); }
+.btn-add:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(15, 76, 129, 0.3); }
 
 .table-container { overflow-x: auto; }
 .user-table { width: 100%; border-collapse: collapse; }
-.user-table th { background: #F4F7FE; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; padding: 15px; text-align: left; }
-.user-table td { padding: 15px; border-bottom: 1px solid #E0E5F2; font-size: 0.9rem; }
-
+.user-table th { background: #F4F7FE; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; padding: 15px; text-align: left; }
+.user-table td { padding: 15px; border-bottom: 1px solid #f0f2f5; font-size: 0.9rem; color: var(--text-main); }
 .badge.rol { background: #E3F2FD; color: #1e88e5; padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
-.btn-edit, .btn-delete { border: none; border-radius: 6px; padding: 8px; cursor: pointer; margin-right: 5px; transition: 0.2s;}
+.btn-edit, .btn-delete { border: none; border-radius: 6px; padding: 8px; cursor: pointer; margin-right: 5px; transition: 0.2s; font-size: 1rem; }
 .btn-edit { background: #FFF3E0; color: var(--accent); }
-.btn-delete { background: #FBE9E7; color: #e64a19; }
+.btn-delete { background: #FBE9E7; color: #d32f2f; }
 .btn-edit:hover, .btn-delete:hover { transform: scale(1.1); }
 
+.swal2-container { z-index: 20000 !important; }
+
+/* RESPONSIVE MÓVIL */
 @media (max-width: 768px) {
-    .header { padding: 2rem 1.5rem 4rem; border-radius: 0 0 25px 25px; }
-    .header-content { flex-direction: column; align-items: flex-start; }
-    .user-badge { width: 100%; }
-    .user-table { display: none; } /* En usuarios.html ocultar tabla en móvil */
-}
-
-/* --- CORRECCIÓN PARA QUE SWEETALERT SALGA AL FRENTE (GLOBAL) --- */
-.swal2-container {
-    z-index: 20000 !important;
-}
-
-/* --- COLOR PARA TARJETA DE CATEGORÍAS --- */
-.card-green .card-icon-container { 
-    background: #E8F5E9; 
-    color: #2e7d32; 
+    .app-layout { flex-direction: column; overflow: auto; }
+    .sidebar { width: 100%; height: auto; box-shadow: none; border-bottom: 1px solid #f0f2f5; }
+    .sidebar-nav { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .sidebar-nav a { padding: 10px; font-size: 0.85rem; border-right: none; }
+    .main-content { overflow: visible; }
 }
