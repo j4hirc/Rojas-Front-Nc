@@ -10,7 +10,7 @@ window.seleccionarRol = (rolElegido) => {
     } else if (rolElegido === 'ROLE_JEFE') {
         window.location.href = 'jefe/jefe-dashboard.html'; 
     } else if (rolElegido === 'ROLE_EMPLOYEE') {
-        window.location.href = 'empleado/empleado-dashboard.html'; 
+        window.location.href = 'employee/employee-dashboard.html'; 
     }
 };
 
