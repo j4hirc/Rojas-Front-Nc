@@ -1,12 +1,10 @@
 const loginForm = document.getElementById('loginForm');
 const submitBtn = document.getElementById('submitBtn');
 
-// Función global para redireccionar según el botón que elija
+// Función global para redireccionar
 window.seleccionarRol = (rolElegido) => {
-    // Guardamos el rol que eligió usar en esta sesión
     localStorage.setItem('active_role', rolElegido);
 
-    // Redirecciones con los nombres CORRECTOS de tus archivos
     if (rolElegido === 'ROLE_ADMIN') {
         window.location.href = 'admin/admin-dashboard.html'; 
     } else if (rolElegido === 'ROLE_JEFE') {
@@ -22,7 +20,7 @@ loginForm?.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Verificando...';
 
-    const email = document.getElementById('email').value;
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
     try {
@@ -36,58 +34,64 @@ loginForm?.addEventListener('submit', async (e) => {
 
         if (response.ok) {
             const data = await response.json();
-            console.log("Respuesta del backend:", data); 
             
             localStorage.setItem('jwt_token', data.accessToken);
-            
             const roles = data.roles || []; 
             localStorage.setItem('user_roles', JSON.stringify(roles));
             localStorage.setItem('user_email', data.email || 'sin-email');
             
             // LÓGICA DE ROLES
             if (roles.length === 0) {
-                alert('Tu usuario no tiene ningún rol asignado.');
+                Swal.fire({ icon: 'warning', title: 'Sin accesos', text: 'Tu usuario no tiene ningún rol asignado.' });
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Entrar';
 
             } else if (roles.length === 1) {
-                // Si solo tiene un rol, va directo a su vista
+                // Si solo tiene un rol, entra directo
                 window.seleccionarRol(roles[0]);
 
             } else {
-                // Si tiene MÁS de un rol, le mostramos botones para elegir
-                const loginCard = document.querySelector('.login-card');
-                
-                // Generamos los botones dinámicamente dependiendo de los roles que tenga
-                let botonesHTML = '';
+                // Si tiene más de un rol, armamos botones para un SweetAlert
+                let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
                 if (roles.includes('ROLE_ADMIN')) {
-                    botonesHTML += `<button onclick="seleccionarRol('ROLE_ADMIN')" style="margin-bottom: 10px; background: #0d6efd; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; width: 100%;">Entrar como Administrador</button>`;
+                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #0f4c81; width: 100%;" onclick="Swal.close(); seleccionarRol('ROLE_ADMIN')">Entrar como Administrador</button>`;
                 }
                 if (roles.includes('ROLE_JEFE')) {
-                    botonesHTML += `<button onclick="seleccionarRol('ROLE_JEFE')" style="margin-bottom: 10px; background: #198754; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; width: 100%;">Entrar como Jefe</button>`;
+                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #198754; width: 100%;" onclick="Swal.close(); seleccionarRol('ROLE_JEFE')">Entrar como Jefe</button>`;
                 }
                 if (roles.includes('ROLE_EMPLOYEE')) {
-                    botonesHTML += `<button onclick="seleccionarRol('ROLE_EMPLOYEE')" style="margin-bottom: 10px; background: #6c757d; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; width: 100%;">Entrar como Empleado</button>`;
+                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #ff9800; width: 100%;" onclick="Swal.close(); seleccionarRol('ROLE_EMPLOYEE')">Entrar como Empleado</button>`;
                 }
+                opcionesHTML += '</div>';
 
-                // Reemplazamos el formulario por los botones
-                loginCard.innerHTML = `
-                    <h2 style="text-align: center; color: #333;">Elige cómo ingresar</h2>
-                    <p style="text-align: center; font-size: 14px; color: #666; margin-bottom: 20px;">Tienes múltiples roles en tu cuenta.</p>
-                    <div style="display: flex; flex-direction: column;">
-                        ${botonesHTML}
-                    </div>
-                `;
+                Swal.fire({
+                    title: 'Elige tu perfil',
+                    html: '<p style="color: #666; font-size: 14px;">Tienes múltiples roles, elige cómo quieres ingresar hoy:</p>' + opcionesHTML,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
             }
 
         } else {
-            alert('Credenciales incorrectas');
+            // Error 401 o 403
+            Swal.fire({
+                icon: 'error',
+                title: 'Acceso Denegado',
+                text: 'Correo o contraseña incorrectos. Verifica tus datos o contacta al administrador.',
+                confirmButtonColor: '#0f4c81'
+            });
             submitBtn.disabled = false;
             submitBtn.textContent = 'Entrar';
         }
     } catch (error) {
         console.error('Error de conexión:', error);
-        alert('Error al conectar con el servidor.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error de Servidor',
+            text: 'No se pudo conectar con la API de Rojas Remodeling. Verifica que Spring Boot esté encendido.',
+            confirmButtonColor: '#0f4c81'
+        });
         
         submitBtn.disabled = false;
         submitBtn.textContent = 'Entrar';

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categorías - Rojas Remodeling</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="stylesheet" href="../admin.css"> 
+    <link rel="stylesheet" href="../usuarios/usuarios.css"> </head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fa-solid fa-helmet-safety"></i>
+                <span>Rojas Admin</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="../admin-dashboard.html"><i class="fa-solid fa-house"></i> Volver al Inicio</a></li>
+                <li><a href="#" class="btn-logout" onclick="cerrarSesion()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <header class="header" style="padding-bottom: 4rem;">
+        <div class="header-overlay"></div>
+        <div class="header-content">
+            <div class="header-text">
+                <h1>Gestión de Categorías</h1>
+                <p>Administra los tipos de proyectos y servicios que ofrece la empresa.</p>
+            </div>
+            <div class="user-badge">
+                <div class="user-avatar-placeholder"><i class="fa-solid fa-tags"></i></div>
+                <span id="admin-email-display">Cargando...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        <div class="usuarios-container">
+            <div class="header-section">
+                <h2 style="margin: 0; color: #2B3674;">Lista de Categorías</h2>
+                <button class="btn-add" onclick="abrirModalCrearCat()" style="background: #2e7d32;">+ Nueva Categoría</button>
+            </div>
+
+            <div class="table-container">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre de la Categoría</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="catTableBody"></tbody>
+                </table>
+            </div>
+            <div class="mobile-cards" id="mobileCardsContainer"></div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modalCat">
+        <div class="modal-container" style="max-width: 400px;">
+            <div class="modal-header">
+                <span id="modalTitulo"><i class="fa-solid fa-tag"></i> Categoría</span>
+                <button onclick="cerrarModalCat()" class="btn-close-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="formCat">
+                    <input type="hidden" id="catId"> 
+                    <div class="form-group">
+                        <label>Nombre de Categoría</label>
+                        <input type="text" id="catName" class="input-field" required placeholder="Ej: Remodelación de Cocina">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button onclick="cerrarModalCat()" class="btn-secondary">Cancelar</button>
+                <button onclick="guardarCategoria()" class="btn-primary" style="background: #2e7d32;">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="categorias.js"></script>
+</body>
+</html>

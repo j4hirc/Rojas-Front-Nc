@@ -6,6 +6,9 @@
     <title>Inicio - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -56,7 +59,18 @@
                 <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
             </div>
 
-            <div class="card card-orange" onclick="alert('Pronto: Módulo de Trabajos')">
+            <div class="card card-green" onclick="window.location.href='categorias/categorias.html'">
+                <div class="card-icon-container">
+                    <i class="fa-solid fa-tags"></i>
+                </div>
+                <div class="card-info">
+                    <h3>Categorías</h3>
+                    <p>Tipos de proyectos</p>
+                </div>
+                <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+            </div>
+
+            <div class="card card-orange" onclick="Swal.fire('¡Próximamente!', 'El módulo de Trabajos estará disponible muy pronto.', 'info')">
                 <div class="card-icon-container">
                     <i class="fa-solid fa-hammer"></i>
                 </div>
@@ -67,7 +81,7 @@
                 <div class="card-arrow"><i class="fa-solid fa-chevron-right"></i></div>
             </div>
 
-            <div class="card card-slate" onclick="alert('Pronto: Módulo de Materiales')">
+            <div class="card card-slate" onclick="Swal.fire('¡Próximamente!', 'El módulo de Materiales estará disponible muy pronto.', 'info')">
                 <div class="card-icon-container">
                     <i class="fa-solid fa-boxes-stacked"></i>
                 </div>

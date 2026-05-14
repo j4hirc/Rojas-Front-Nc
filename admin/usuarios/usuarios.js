@@ -1,5 +1,6 @@
 const API_URL = 'http://localhost:8081/api/v1/user';
 let userToken = '';
+let todosLosUsuariosCache = []; 
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -7,17 +8,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     const userEmail = localStorage.getItem('user_email');
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_ADMIN')) {
-        alert('Acceso denegado.');
-        window.location.href = '../index.html'; 
+        Swal.fire({
+            icon: 'error',
+            title: 'Acceso Denegado',
+            text: 'Solo administradores pueden acceder a esta sección.',
+            confirmButtonColor: '#0f4c81'
+        }).then(() => {
+            window.location.href = '../index.html'; 
+        });
         return;
     }
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-    await cargarUsuarios();
+    await cargarUsuariosDesdeAPI();
 });
 
-async function cargarUsuarios() {
+async function cargarUsuariosDesdeAPI() {
     try {
         const response = await fetch(`${API_URL}/all-users`, {
             method: 'GET',
@@ -25,10 +32,40 @@ async function cargarUsuarios() {
         });
 
         if (response.ok) {
-            const usuarios = await response.json();
-            renderizarUsuarios(usuarios);
+            todosLosUsuariosCache = await response.json();
+            cargarUsuarios(); 
         }
-    } catch (error) { console.error('Error de red:', error); }
+    } catch (error) { 
+        console.error('Error de red:', error);
+        Swal.fire('Error de conexión', 'No se pudieron cargar los usuarios de la base de datos.', 'error');
+    }
+}
+
+window.cargarUsuarios = () => {
+    const dniBuscado = document.getElementById('buscadorDni').value.trim();
+    if(dniBuscado !== "") {
+        buscarPorDni();
+        return;
+    }
+
+    const estadoFiltro = document.getElementById('filtroEstado').value;
+    let usuariosAFiltrar = todosLosUsuariosCache;
+    
+    if (estadoFiltro !== 'All') {
+        usuariosAFiltrar = todosLosUsuariosCache.filter(user => user.status === estadoFiltro);
+    }
+    
+    renderizarUsuarios(usuariosAFiltrar);
+};
+
+window.buscarPorDni = () => {
+    const inputDni = document.getElementById('buscadorDni').value.trim();
+    if(inputDni === "") {
+        cargarUsuarios();
+        return;
+    }
+    const usuariosEncontrados = todosLosUsuariosCache.filter(user => user.dni && user.dni.includes(inputDni));
+    renderizarUsuarios(usuariosEncontrados);
 }
 
 function renderizarUsuarios(usuarios) {
@@ -36,22 +73,35 @@ function renderizarUsuarios(usuarios) {
     const mobileContainer = document.getElementById('mobileCardsContainer');
     tableBody.innerHTML = ''; mobileContainer.innerHTML = '';
 
-    usuarios.forEach(user => {
-        // Formateamos los roles quitando el prefijo ROLE_
-        const rolesNombres = user.roles.map(r => r.name.replace('ROLE_', '')).join(', ');
+    if(usuarios.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No se encontraron usuarios.</td></tr>`;
+        return;
+    }
 
-        // Verificamos si está inactivo para pintarlo diferente (opcional)
-        const estadoHTML = user.status === 'Unemployed' ? '<span style="color:red; font-size:12px;">(Inactivo)</span>' : '';
+    usuarios.forEach(user => {
+        const rolesNombres = user.roles.map(r => r.name.replace('ROLE_', '')).join(', ');
+        const isUnemployed = user.status === 'Unemployed';
+        
+        const nombreMostrar = (user.firstName && user.lastName) 
+            ? `${user.firstName} ${user.lastName}` : (user.name || 'Sin Nombre');
+
+        const estadoHTML = isUnemployed 
+            ? '<span style="color:#d32f2f; font-size:12px; font-weight:bold;">(Desempleado)</span>' 
+            : '<span style="color:#2e7d32; font-size:12px; font-weight:bold;">(Activo)</span>';
+
+        const actionBtn = isUnemployed
+            ? `<button class="btn-edit" style="background:#E8F5E9; color:#2e7d32; border:1px solid #2e7d32;" onclick="cambiarEstadoUsuario(${user.userId}, 'Active')" title="Re-emplear"><i class="fa-solid fa-user-check"></i></button>`
+            : `<button class="btn-delete" style="background:#FFEBEE; color:#d32f2f; border:1px solid #d32f2f;" onclick="cambiarEstadoUsuario(${user.userId}, 'Unemployed')" title="Desemplear"><i class="fa-solid fa-user-minus"></i></button>`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${user.firstName} ${user.lastName} ${estadoHTML}</td>
+            <td>${nombreMostrar} <br><small style="color: #666;">DNI: ${user.dni || 'N/A'}</small></td>
             <td>${user.email}</td>
             <td>${user.phone}</td>
-            <td><span class="badge rol">${rolesNombres}</span></td>
+            <td><span class="badge rol">${rolesNombres}</span><br>${estadoHTML}</td>
             <td>
-                <button class="btn-edit" onclick="abrirModalEditar(${user.userId})"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-delete" onclick="eliminarUsuario(${user.userId})"><i class="fa-solid fa-trash"></i></button>
+                <button class="btn-edit" onclick="abrirModalEditar(${user.userId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                ${actionBtn}
             </td>
         `;
         tableBody.appendChild(tr);
@@ -59,30 +109,76 @@ function renderizarUsuarios(usuarios) {
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-            <div class="card-header"><strong>${user.firstName} ${user.lastName} ${estadoHTML}</strong></div>
-            <p style="margin: 5px 0; font-size: 14px;">Email: ${user.email}</p>
-            <p style="margin: 5px 0; font-size: 14px;">Teléfono: ${user.phone}</p>
-            <p style="margin: 5px 0; font-size: 14px;">Rol: <span class="badge rol">${rolesNombres}</span></p>
+            <div class="card-header"><strong>${nombreMostrar}</strong> ${estadoHTML}</div>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>DNI:</strong> ${user.dni || 'N/A'}</p>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>Email:</strong> ${user.email}</p>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>Tel:</strong> ${user.phone}</p>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>Rol:</strong> <span class="badge rol">${rolesNombres}</span></p>
             <div class="card-actions">
                 <button class="btn-edit" onclick="abrirModalEditar(${user.userId})">Editar</button>
-                <button class="btn-delete" onclick="eliminarUsuario(${user.userId})">Eliminar</button>
+                ${actionBtn}
             </div>
         `;
         mobileContainer.appendChild(card);
     });
 }
 
-// --- LOGICA DEL MODAL Y CRUD ---
+window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
+    const esDesempleo = nuevoEstado === 'Unemployed';
+    
+    Swal.fire({
+        title: esDesempleo ? '¿Desemplear usuario?' : '¿Re-emplear usuario?',
+        text: esDesempleo ? "El usuario ya no tendrá acceso activo." : "El usuario recuperará sus accesos.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: esDesempleo ? '#d33' : '#2e7d32',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: esDesempleo ? 'Sí, desemplear' : 'Sí, emplear',
+        cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const resGet = await fetch(`${API_URL}/id-user/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` }});
+                if(resGet.ok) {
+                    const user = await resGet.json();
+                    const payload = {
+                        dni: user.dni, title: user.title, firstName: user.firstName, middleName: user.middleName,
+                        lastName: user.lastName, secondSurname: user.secondSurname, email: user.email,
+                        phone: user.phone, dateOfBirth: user.dateOfBirth, dateOfEntry: user.dateOfEntry,
+                        password: "", // Pasamos vacío para que el backend no lo actualice
+                        status: nuevoEstado, roles: user.roles.map(r => r.name) 
+                    };
+
+                    const resPut = await fetch(`${API_URL}/update-user/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (resPut.ok) {
+                        Swal.fire('¡Éxito!', `Usuario ha sido ${esDesempleo ? 'dado de baja' : 'reactivado'} correctamente.`, 'success');
+                        await cargarUsuariosDesdeAPI(); 
+                    } else {
+                        Swal.fire('Error', 'Hubo un problema al cambiar el estado del usuario.', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error("Error en cambiar estado:", error);
+            }
+        }
+    });
+};
 
 window.abrirModalCrear = () => {
     document.getElementById('formUsuario').reset();
     document.getElementById('userId').value = '';
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-user-plus"></i> Nuevo Usuario';
+    
+    // Al CREAR, la contraseña es obligatoria en el Frontend
     document.getElementById('userPassword').setAttribute('required', 'true');
+    document.getElementById('userPassword').placeholder = "Requerida para nuevos usuarios";
     
-    // Limpiamos los checkboxes
     document.querySelectorAll('input[name="userRoles"]').forEach(cb => cb.checked = false);
-    
     document.getElementById('modalUsuario').style.display = 'flex';
 };
 
@@ -90,17 +186,16 @@ window.abrirModalEditar = async (id) => {
     document.getElementById('formUsuario').reset();
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Usuario';
     document.getElementById('userId').value = id;
-    document.getElementById('userPassword').removeAttribute('required'); // Al editar no es obligatoria la pass
+    
+    // Al EDITAR, la contraseña NO es obligatoria
+    document.getElementById('userPassword').removeAttribute('required'); 
+    document.getElementById('userPassword').placeholder = "Dejar en blanco para no cambiarla";
     
     try {
-        const response = await fetch(`${API_URL}/id-user/${id}`, {
-            headers: { 'Authorization': `Bearer ${userToken}` }
-        });
-
+        const response = await fetch(`${API_URL}/id-user/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if(response.ok) {
             const data = await response.json();
             
-            // Llenamos el formulario con la data que ahora sí envía el Backend
             document.getElementById('userDni').value = data.dni || '';
             document.getElementById('userTitle').value = data.title || '';
             document.getElementById('userFirstName').value = data.firstName || '';
@@ -113,17 +208,12 @@ window.abrirModalEditar = async (id) => {
             document.getElementById('userEntry').value = data.dateOfEntry || '';
             document.getElementById('userStatus').value = data.status || 'Active';
 
-            // Marcamos los checkboxes
             const checkboxes = document.querySelectorAll('input[name="userRoles"]');
-            checkboxes.forEach(cb => {
-                cb.checked = data.roles.some(r => r.name === cb.value);
-            });
+            checkboxes.forEach(cb => { cb.checked = data.roles.some(r => r.name === cb.value); });
 
             document.getElementById('modalUsuario').style.display = 'flex';
         }
-    } catch(error) {
-        console.error("Error al obtener usuario:", error);
-    }
+    } catch(error) { console.error("Error al obtener usuario:", error); }
 };
 
 window.cerrarModal = () => {
@@ -138,23 +228,56 @@ window.guardarUsuario = async () => {
     const selectedRoles = Array.from(roleCheckboxes).map(cb => cb.value);
 
     if (selectedRoles.length === 0) {
-        alert("Debes seleccionar al menos un rol para el usuario.");
-        return;
+        return Swal.fire('Faltan datos', 'Debes seleccionar al menos un rol para el usuario.', 'warning');
+    }
+
+    const dniInput = document.getElementById('userDni').value.trim();
+    if(!/^\d{10}$/.test(dniInput)){
+        return Swal.fire('DNI Inválido', 'El DNI debe contener exactamente 10 números.', 'warning');
+    }
+
+    // Validamos la contraseña en Frontend SÓLO al crear
+    const passwordInput = document.getElementById('userPassword').value;
+    if (!isEditing && passwordInput.trim() === "") {
+        return Swal.fire('Faltan datos', 'La contraseña es obligatoria para usuarios nuevos.', 'warning');
+    }
+
+    const birthDateInput = document.getElementById('userBirth').value;
+    const entryDateInput = document.getElementById('userEntry').value;
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    if(birthDateInput) {
+        const fechaNacimiento = new Date(birthDateInput);
+        let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+        const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) { edad--; }
+        if (edad < 18) {
+            return Swal.fire('Edad Inválida', 'El usuario debe ser mayor de 18 años.', 'warning');
+        }
+    }
+
+    if(entryDateInput) {
+        const parts = entryDateInput.split('-');
+        const fechaIngreso = new Date(parts[0], parts[1] - 1, parts[2]);
+        if (fechaIngreso > hoy) {
+            return Swal.fire('Fecha Inválida', 'La fecha de ingreso no puede ser en el futuro.', 'warning');
+        }
     }
 
     const payload = {
-        dni: document.getElementById('userDni').value,
-        firstName: document.getElementById('userFirstName').value,
-        middleName: document.getElementById('userMiddleName').value,
-        lastName: document.getElementById('userLastName').value,
-        secondSurname: document.getElementById('userSecondSurname').value,
-        email: document.getElementById('userEmail').value,
-        password: document.getElementById('userPassword').value || "123456", // Valor por defecto si no cambian la contraseña
-        phone: document.getElementById('userPhone').value,
-        dateOfBirth: document.getElementById('userBirth').value,
-        dateOfEntry: document.getElementById('userEntry').value,
+        dni: dniInput,
+        firstName: document.getElementById('userFirstName').value.trim(),
+        middleName: document.getElementById('userMiddleName').value.trim(),
+        lastName: document.getElementById('userLastName').value.trim(),
+        secondSurname: document.getElementById('userSecondSurname').value.trim(),
+        email: document.getElementById('userEmail').value.trim(),
+        password: passwordInput, // Si está editando y está vacío, mandará "", tu backend lo ignorará.
+        phone: document.getElementById('userPhone').value.trim(),
+        dateOfBirth: birthDateInput,
+        dateOfEntry: entryDateInput,
         status: document.getElementById('userStatus').value,
-        title: document.getElementById('userTitle').value,
+        title: document.getElementById('userTitle').value.trim(),
         roles: selectedRoles 
     };
 
@@ -164,64 +287,39 @@ window.guardarUsuario = async () => {
     try {
         const response = await fetch(url, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userToken}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
             body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-            alert(isEditing ? 'Usuario actualizado con éxito' : 'Usuario creado con éxito');
+            Swal.fire('¡Éxito!', isEditing ? 'Usuario actualizado.' : 'Usuario registrado.', 'success');
             cerrarModal();
-            await cargarUsuarios();
+            document.getElementById('buscadorDni').value = "";
+            await cargarUsuariosDesdeAPI(); 
         } else {
             const errorData = await response.json();
-            alert("Error del backend: " + (errorData.message || "Verifica los datos"));
+            Swal.fire('Error del servidor', errorData.message || 'Verifica los datos.', 'error');
         }
     } catch (error) {
         console.error('Error al guardar:', error);
-    }
-};
-
-window.eliminarUsuario = async (id) => { 
-    if(confirm("¿Estás seguro de que quieres inhabilitar a este usuario?")) {
-        try {
-            // No tienes Endpoint DELETE, hacemos Soft Delete obteniendo al usuario y actualizando su status
-            const resGet = await fetch(`${API_URL}/id-user/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` }});
-            if(resGet.ok) {
-                const user = await resGet.json();
-                
-                // Preparamos el objeto para actualizarlo a Unemployed (Inactivo)
-                const payload = {
-                    dni: user.dni, title: user.title, firstName: user.firstName, middleName: user.middleName,
-                    lastName: user.lastName, secondSurname: user.secondSurname, email: user.email,
-                    phone: user.phone, dateOfBirth: user.dateOfBirth, dateOfEntry: user.dateOfEntry,
-                    password: "dummyPassword", // Solo para pasar la validación
-                    status: 'Unemployed', // AQUÍ LO DAMOS DE BAJA
-                    roles: user.roles.map(r => r.name) 
-                };
-
-                const resPut = await fetch(`${API_URL}/update-user/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-                    body: JSON.stringify(payload)
-                });
-
-                if (resPut.ok) {
-                    alert("Usuario inhabilitado correctamente.");
-                    await cargarUsuarios();
-                } else {
-                    alert("Hubo un error al inhabilitar al usuario.");
-                }
-            }
-        } catch (error) {
-            console.error("Error al eliminar:", error);
-        }
+        Swal.fire('Fallo de conexión', 'No se pudo contactar con el servidor.', 'error');
     }
 };
 
 window.cerrarSesion = () => {
-    localStorage.clear();
-    window.location.href = '../index.html';
+    Swal.fire({
+        title: "¿Cerrar sesión?",
+        text: "¿Estás seguro que deseas salir del sistema?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#0f4c81",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, salir",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.clear();
+            window.location.href = '../../index.html';
+        }
+    });
 };

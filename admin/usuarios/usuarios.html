@@ -6,6 +6,9 @@
     <title>Usuarios - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <link rel="stylesheet" href="../admin.css"> 
     <link rel="stylesheet" href="usuarios.css">
 </head>
@@ -42,9 +45,24 @@
 
     <main class="dashboard-container">
         <div class="usuarios-container">
-            <div class="header-section">
+            <div class="header-section" style="flex-wrap: wrap; gap: 15px;">
                 <h2 style="margin: 0; color: #2B3674;">Directorio del Personal</h2>
-                <button class="btn-add" onclick="abrirModalCrear()">+ Nuevo Usuario</button>
+                
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    
+                    <div style="position: relative;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #A3AED0;"></i>
+                        <input type="text" id="buscadorDni" class="input-field" placeholder="Buscar por DNI..." style="padding-left: 35px; width: 180px; padding-top: 10px; padding-bottom: 10px;" onkeyup="buscarPorDni()">
+                    </div>
+
+                    <select id="filtroEstado" class="input-field" style="width: auto; padding: 10px;" onchange="cargarUsuarios()">
+                        <option value="Active">Empleados (Activos)</option>
+                        <option value="Unemployed">Desempleados (Inactivos)</option>
+                        <option value="All">Ver Todos</option>
+                    </select>
+
+                    <button class="btn-add" onclick="abrirModalCrear()">+ Nuevo Usuario</button>
+                </div>
             </div>
 
             <div class="table-container">
@@ -80,7 +98,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label>DNI</label>
-                                <input type="text" id="userDni" class="input-field" required>
+                                <input type="text" id="userDni" class="input-field" required placeholder="10 dígitos">
                             </div>
                             <div class="form-group">
                                 <label>Título (Ej. Ingeniero)</label>

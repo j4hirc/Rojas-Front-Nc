@@ -130,3 +130,14 @@ body {
     .user-badge { width: 100%; }
     .user-table { display: none; } /* En usuarios.html ocultar tabla en móvil */
 }
+
+/* --- CORRECCIÓN PARA QUE SWEETALERT SALGA AL FRENTE (GLOBAL) --- */
+.swal2-container {
+    z-index: 20000 !important;
+}
+
+/* --- COLOR PARA TARJETA DE CATEGORÍAS --- */
+.card-green .card-icon-container { 
+    background: #E8F5E9; 
+    color: #2e7d32; 
+}
