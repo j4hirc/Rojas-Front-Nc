@@ -27,7 +27,6 @@
         .fc-button-primary { background-color: #0277bd !important; border-color: #0277bd !important; font-weight: 600 !important; border-radius: 8px !important; text-transform: capitalize;}
         .fc-button-primary:hover { background-color: #01579b !important; border-color: #01579b !important;}
         
-        /* Ajuste para vista lista del empleado */
         .fc-list-event td { padding: 10px !important; }
         .fc-event { cursor: pointer; border-radius: 6px; border: none; transition: transform 0.2s, box-shadow 0.2s; }
         .fc-event:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 5 !important; }
@@ -35,9 +34,17 @@
         .file-upload-container { background: #f8faff; border: 2px dashed #0277bd; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         .file-upload-container:hover { background: #e1f5fe; }
         #evidenceFiles { display: none; }
-        .file-preview { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-        .preview-img { width: 70px; height: 70px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd; }
+        .file-preview { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .preview-img { width: 75px; height: 75px; object-fit: cover; border-radius: 8px; border: 2px solid #0277bd; }
         
+        /* Botón de eliminar foto en previsualización */
+        .btn-delete-photo {
+            position: absolute; top: -8px; right: -8px; background: #d32f2f; color: white; border: none;
+            border-radius: 50%; width: 22px; height: 22px; font-size: 11px; cursor: pointer; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .btn-delete-photo:hover { background: #b71c1c; transform: scale(1.1); }
+
         .signature-box { border: 2px solid #E0E5F2; border-radius: 12px; background: white; width: 100%; height: 150px; cursor: crosshair; }
     </style>
 </head>
@@ -116,7 +123,7 @@
                         <div class="file-upload-container" onclick="document.getElementById('evidenceFiles').click()">
                             <i class="fa-solid fa-camera" style="font-size: 2rem; color: #0277bd; margin-bottom: 10px;"></i>
                             <p style="margin:0; font-size: 0.9rem; color: #2B3674; font-weight: 600;">Haz clic para tomar/subir fotos</p>
-                            <input type="file" id="evidenceFiles" multiple accept="image/*" onchange="mostrarPreview()">
+                            <input type="file" id="evidenceFiles" multiple accept="image/*" onchange="mostrarPreview(event)">
                         </div>
                         <div class="file-preview" id="imagePreviewContainer"></div>
                     </div>
@@ -155,23 +162,47 @@
                 </div>
             </div>
             
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 15px;">
-                <tr><td style="padding: 12px; border: 1px solid #ddd; background: #f8faff; font-weight: bold; width: 30%;">Proyecto:</td><td id="pdfJobName" style="padding: 12px; border: 1px solid #ddd;"></td></tr>
-                <tr><td style="padding: 12px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Dirección:</td><td id="pdfAddress" style="padding: 12px; border: 1px solid #ddd;"></td></tr>
-                <tr><td style="padding: 12px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Empleado a cargo:</td><td id="pdfEmployee" style="padding: 12px; border: 1px solid #ddd;"></td></tr>
-                <tr><td style="padding: 12px; border: 1px solid #ddd; background: #e1f5fe; font-weight: bold;">Estado Reportado:</td><td id="pdfStatus" style="padding: 12px; border: 1px solid #ddd; color: #0277bd; font-weight: bold; text-transform: uppercase;"></td></tr>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px;">
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background: #f8faff; font-weight: bold; width: 25%;">Proyecto:</td>
+                    <td id="pdfJobName" style="padding: 10px; border: 1px solid #ddd; font-weight: bold;"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Dirección:</td>
+                    <td id="pdfAddress" style="padding: 10px; border: 1px solid #ddd;"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Teléfono Cliente:</td>
+                    <td id="pdfClientPhone" style="padding: 10px; border: 1px solid #ddd;"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Código Caja Fuerte:</td>
+                    <td id="pdfSafeBox" style="padding: 10px; border: 1px solid #ddd;"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Empleado a cargo:</td>
+                    <td id="pdfEmployee" style="padding: 10px; border: 1px solid #ddd;"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Trabajo Asignado:</td>
+                    <td id="pdfJobDesc" style="padding: 10px; border: 1px solid #ddd; font-style: italic; color: #555;"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; background: #e1f5fe; font-weight: bold;">Estado Reportado:</td>
+                    <td id="pdfStatus" style="padding: 10px; border: 1px solid #ddd; color: #0277bd; font-weight: bold; text-transform: uppercase;"></td>
+                </tr>
             </table>
 
-            <h3 style="color: #0277bd; font-size: 18px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Descripción y Comentarios del Avance</h3>
+            <h3 style="color: #0277bd; font-size: 18px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Comentarios del Avance</h3>
             <div id="pdfComment" style="background: #f8f9fa; padding: 15px; border-left: 4px solid #0277bd; margin-bottom: 30px; font-size: 14px; line-height: 1.6; text-align: justify;"></div>
 
             <h3 style="color: #0277bd; font-size: 18px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Materiales Utilizados</h3>
             <ul id="pdfMaterials" style="margin-bottom: 30px; font-size: 14px; color: #444; padding-left: 20px;"></ul>
 
             <h3 style="color: #0277bd; font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Evidencias Fotográficas</h3>
-            <div id="pdfImages" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 40px; justify-items: center;"></div>
+            <div id="pdfImages" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 40px; justify-content: center;"></div>
 
-            <div style="text-align: center; margin-top: 60px; width: 100%;">
+            <div style="text-align: center; margin-top: 40px; width: 100%; page-break-inside: avoid;">
                 <div style="display: inline-block; width: 300px;">
                     <img id="pdfSignatureImg" src="" style="max-height: 100px; max-width: 100%; object-fit: contain; margin-bottom: 5px;">
                     <div style="border-top: 2px solid #333; padding-top: 5px;">

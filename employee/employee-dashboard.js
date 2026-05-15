@@ -6,12 +6,13 @@ const UPDATE_URL = 'http://localhost:8081/api/v1/job-updates/create';
 let userToken = '';
 let myEmployeeId = null;
 let currentJobInfo = null; 
+
+let archivosSeleccionados = [];
 let imagenesBase64Data = []; 
 
 let canvas, ctx;
 let drawing = false;
 
-// FUNCIÓN PARA QUE LA FECHA NO SALGA "VIRADA" (De YYYY-MM-DD a DD/MM/YYYY)
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
     if (Array.isArray(fecha)) {
@@ -58,7 +59,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarCalendarioEmpleado(userEmail);
 });
 
-// --- LÓGICA DEL CALENDARIO ---
 async function cargarCalendarioEmpleado(emailActual) {
     try {
         Swal.fire({ title: 'Cargando tus trabajos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
@@ -109,7 +109,6 @@ async function cargarCalendarioEmpleado(emailActual) {
 
                 let viewType = arg.view.type;
 
-                // VISTA AGENDA (LISTA)
                 if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
                     return { html: `
                         <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px; width: 100%; color: #333;">
@@ -127,9 +126,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                             </div>
                         </div>` 
                     };
-                } 
-                // VISTA DE MES (CUADRITOS)
-                else {
+                } else {
                     return { html: `
                         <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden;" title="Dir: ${p.address}\nDesc: ${p.description}">
                             <div style="font-weight: 700; font-size: 0.85em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.4); padding-bottom:2px; margin-bottom:2px;">
@@ -198,7 +195,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/dir/?api=1&destination=$${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #0277bd; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #0277bd; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                                     <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
                                 </a>
                             </div>
@@ -283,31 +280,61 @@ window.limpiarFirma = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 };
 
-window.mostrarPreview = () => {
-    const input = document.getElementById('evidenceFiles');
+window.mostrarPreview = (event) => {
+    const input = event.target;
+    if (input.files) {
+        Array.from(input.files).forEach(file => { archivosSeleccionados.push(file); });
+    }
+    input.value = ''; 
+    renderizarGaleriaFotos();
+};
+
+function renderizarGaleriaFotos() {
     const previewContainer = document.getElementById('imagePreviewContainer');
     previewContainer.innerHTML = '';
     imagenesBase64Data = []; 
 
-    if (input.files) {
-        Array.from(input.files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const b64 = e.target.result;
-                imagenesBase64Data.push(b64); 
-                const img = document.createElement('img');
-                img.src = b64; img.className = 'preview-img';
-                previewContainer.appendChild(img);
-            }
-            reader.readAsDataURL(file);
-        });
-    }
+    archivosSeleccionados.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const b64 = e.target.result;
+            imagenesBase64Data[index] = b64; 
+            
+            const imgDiv = document.createElement('div');
+            imgDiv.style.position = 'relative';
+            imgDiv.style.display = 'inline-block';
+            
+            const img = document.createElement('img');
+            img.src = b64; 
+            img.className = 'preview-img';
+            
+            const btnDelete = document.createElement('button');
+            btnDelete.className = 'btn-delete-photo';
+            btnDelete.innerHTML = '✕';
+            btnDelete.onclick = (e) => {
+                e.preventDefault();
+                eliminarFoto(index);
+            };
+
+            imgDiv.appendChild(img);
+            imgDiv.appendChild(btnDelete);
+            previewContainer.appendChild(imgDiv);
+        }
+        reader.readAsDataURL(file);
+    });
+}
+
+window.eliminarFoto = (index) => {
+    archivosSeleccionados.splice(index, 1); 
+    renderizarGaleriaFotos(); 
 };
 
 window.abrirModalEvidence = (jobId) => {
     document.getElementById('evidenceForm').reset();
     document.getElementById('evJobId').value = jobId;
     document.getElementById('imagePreviewContainer').innerHTML = ''; 
+    
+    archivosSeleccionados = [];
     imagenesBase64Data = [];
     limpiarFirma();
     
@@ -327,12 +354,10 @@ window.abrirModalEvidence = (jobId) => {
 
 window.cerrarModalEvidence = () => { document.getElementById('modalEvidence').style.display = 'none'; };
 
-// --- GENERADOR DE PDF Y ENVÍO ---
 window.guardarReporteYPdf = async () => {
     const jobId = document.getElementById('evJobId').value;
     const status = document.getElementById('evStatus').value;
     const comment = document.getElementById('evComment').value.trim();
-    const filesInput = document.getElementById('evidenceFiles');
 
     const isCanvasBlank = () => {
         const blank = document.createElement('canvas');
@@ -341,7 +366,7 @@ window.guardarReporteYPdf = async () => {
     };
 
     if (!comment) return Swal.fire('Faltan datos', 'Debes escribir un comentario.', 'warning');
-    if (filesInput.files.length === 0) return Swal.fire('Faltan fotos', 'Debes adjuntar al menos una imagen.', 'warning');
+    if (archivosSeleccionados.length === 0) return Swal.fire('Faltan fotos', 'Debes adjuntar al menos una imagen.', 'warning');
     if (isCanvasBlank()) return Swal.fire('Falta la Firma', 'Debes firmar el reporte en el recuadro blanco.', 'warning');
 
     const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
@@ -350,19 +375,20 @@ window.guardarReporteYPdf = async () => {
 
     Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-    // 1. Armar HTML del PDF
     document.getElementById('pdfJobName').textContent = currentJobInfo.clientName;
     document.getElementById('pdfAddress').textContent = currentJobInfo.address;
+    document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
+    document.getElementById('pdfSafeBox').textContent = currentJobInfo.safeDepositBoxCodes || 'No asignada';
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
+    document.getElementById('pdfJobDesc').textContent = currentJobInfo.description || 'Sin descripción';
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
     document.getElementById('pdfDate').textContent = formatearFecha(currentJobInfo.jobDate); 
     document.getElementById('pdfComment').textContent = comment;
-    document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames || '<li>No se seleccionaron materiales.</li>';
+    document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames || '<li>No se seleccionaron materiales extras.</li>';
     
-    // Las imágenes se configuran para centrarse en su caja Grid
     document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
-        <div style="text-align:center;">
-            <img src="${b64}" style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc;">
+        <div style="text-align:center; page-break-inside: avoid; margin-bottom: 10px;">
+            <img src="${b64}" style="width: 220px; height: 160px; object-fit: cover; border-radius: 8px; border: 2px solid #E0E5F2;">
         </div>
     `).join('');
     
@@ -376,9 +402,8 @@ window.guardarReporteYPdf = async () => {
     const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${currentJobInfo.clientName.replace(/\s+/g, '_')}.pdf`;
 
-    // OPTIMIZACIONES DE MARGENES PARA A4
     const opt = {
-        margin:       [15, 0, 15, 0], // [top, right, bottom, left] ajustado para centrar
+        margin:       [10, 0, 10, 0], 
         filename:     pdfFileName,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, logging: false },
@@ -388,6 +413,17 @@ window.guardarReporteYPdf = async () => {
     let pdfBlob;
     try {
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+        
+        // ¡DESCARGA INMEDIATA AL DISPOSITIVO ANTES DE SUBIR!
+        const urlDescarga = window.URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = urlDescarga;
+        a.download = pdfFileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(urlDescarga);
+
     } catch (e) {
         pdfWrapper.style.display = 'none';
         console.error("Error al generar PDF:", e);
@@ -396,10 +432,10 @@ window.guardarReporteYPdf = async () => {
 
     pdfWrapper.style.display = 'none';
 
-    // 3. Preparar los Datos para el Backend
+    // PREPARAR DATOS PARA EL BACKEND
     const dtoObject = {
         comment: comment,
-        jobId: parseInt(jobId),
+        jobId: parseInt(document.getElementById('evJobId').value), // Seguro anti-fallos
         employeeId: myEmployeeId,
         status: status,
         materialIds: selectedMaterialIds
@@ -408,13 +444,12 @@ window.guardarReporteYPdf = async () => {
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(dtoObject)], { type: 'application/json' }));
     
-    for (let i = 0; i < filesInput.files.length; i++) { 
-        formData.append('files', filesInput.files[i]); 
+    for (let i = 0; i < archivosSeleccionados.length; i++) { 
+        formData.append('files', archivosSeleccionados[i]); 
     }
     
     formData.append('files', pdfBlob, pdfFileName);
 
-    // 4. Enviar a Spring Boot
     try {
         const response = await fetch(UPDATE_URL, {
             method: 'POST',
@@ -423,16 +458,7 @@ window.guardarReporteYPdf = async () => {
         });
 
         if (response.ok) {
-            const urlDescarga = window.URL.createObjectURL(pdfBlob);
-            const a = document.createElement('a');
-            a.href = urlDescarga;
-            a.download = pdfFileName;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(urlDescarga);
-
-            Swal.fire('¡Éxito!', 'El reporte se subió correctamente y tu PDF se ha descargado.', 'success');
+            Swal.fire('¡Éxito!', 'El reporte y las fotos se subieron correctamente al servidor.', 'success');
             cerrarModalEvidence();
             await cargarCalendarioEmpleado(document.getElementById('employee-email-display').textContent);
         } else {

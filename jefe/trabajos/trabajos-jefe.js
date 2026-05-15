@@ -1,36 +1,57 @@
 const API_URL = 'http://localhost:8081/api/v1/jobs';
 const USERS_URL = 'http://localhost:8081/api/v1/user/all-users';
 const MATERIALS_URL = 'http://localhost:8081/api/v1/materials/all';
-let userToken = '';
 
-let mapa;
-let marcador;
+let userToken = '';
+let myManagerId = null; 
+let mapa, marcador;
+
+// FUNCIÓN PARA ARREGLAR LA FECHA "VIRADITA" EN LA TABLA
+function formatearFecha(fecha) {
+    if (!fecha) return 'Sin fecha asignada';
+    if (Array.isArray(fecha)) {
+        const dia = String(fecha[2]).padStart(2, '0');
+        const mes = String(fecha[1]).padStart(2, '0');
+        const anio = fecha[0];
+        return `${dia}/${mes}/${anio}`;
+    } else if (typeof fecha === 'string') {
+        const partes = fecha.split('-');
+        if (partes.length === 3) {
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+    }
+    return fecha;
+}
+
+// PARA EL INPUT DE FECHA DEL MODAL
+function fechaParaInput(fecha) {
+    if (!fecha) return '';
+    if (Array.isArray(fecha)) {
+        const dia = String(fecha[2]).padStart(2, '0');
+        const mes = String(fecha[1]).padStart(2, '0');
+        const anio = fecha[0];
+        return `${anio}-${mes}-${dia}`;
+    }
+    return fecha;
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
     const rolesString = localStorage.getItem('user_roles');
     const userEmail = localStorage.getItem('user_email');
 
-    if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_ADMIN')) {
+    if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_JEFE')) {
         Swal.fire({
-            icon: 'error',
-            title: 'Acceso Denegado',
-            text: 'No tienes permisos para acceder a esta sección.',
-            confirmButtonColor: '#0f4c81'
+            icon: 'error', title: 'Acceso Denegado', text: 'Solo los Jefes pueden acceder a esta sección.', confirmButtonColor: '#198754'
         }).then(() => { window.location.href = '../../index.html'; });
         return;
     }
 
-    document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
+    document.getElementById('jefe-email-display').textContent = userEmail || 'Jefe';
 
-    Swal.fire({ 
-        title: 'Preparando tu área de trabajo...', 
-        text: 'Cargando personal, materiales y proyectos',
-        allowOutsideClick: false, 
-        didOpen: () => { Swal.showLoading(); }
-    });
+    Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-    await cargarUsuariosYMateriales(); 
+    await cargarUsuariosYMateriales(userEmail); 
     await cargarTrabajos();            
 
     Swal.close();
@@ -70,35 +91,39 @@ window.obtenerMiUbicacion = () => {
                 if (mapa && marcador) {
                     mapa.setView([lat, lng], 16); 
                     marcador.setLatLng([lat, lng]);
-                } else { inicializarMapa(lat, lng); }
+                } else {
+                    inicializarMapa(lat, lng);
+                }
                 document.getElementById('jobLat').value = lat.toFixed(6);
                 document.getElementById('jobLng').value = lng.toFixed(6);
                 Swal.close();
             },
-            (error) => {
-                Swal.close();
-                Swal.fire('Error', 'No se pudo obtener tu ubicación.', 'error');
-            },
+            (error) => { Swal.close(); Swal.fire('Error', 'No se pudo obtener tu ubicación.', 'error'); },
             { enableHighAccuracy: true }
         );
-    } else { Swal.fire('No soportado', 'Tu navegador no soporta geolocalización.', 'warning'); }
+    } else {
+        Swal.fire('No soportado', 'Tu navegador no soporta geolocalización.', 'warning');
+    }
 };
 
-async function cargarUsuariosYMateriales() {
+// Modificado para que NO cargue Jefes, solo Empleados
+async function cargarUsuariosYMateriales(emailActual) {
     try {
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (resUsers.ok) {
             const users = await resUsers.json();
+            
+            // Buscar el ID del jefe logueado
+            const jefeActual = users.find(u => u.email === emailActual);
+            if (jefeActual) {
+                myManagerId = jefeActual.userId;
+            }
+
             const selectEmp = document.getElementById('jobEmployee');
-            const selectMan = document.getElementById('jobManager');
             selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
-            selectMan.innerHTML = '<option value="">-- Seleccione Manager --</option>';
             
             const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
-            const jefes = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_JEFE'));
-
             empleados.forEach(u => selectEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
-            jefes.forEach(u => selectMan.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
         }
 
         const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
@@ -127,8 +152,10 @@ async function cargarTrabajos() {
     try {
         const response = await fetch(`${API_URL}/all`, { method: 'GET', headers: { 'Authorization': `Bearer ${userToken}` } });
         if (response.ok) {
-            const trabajos = await response.json();
-            renderizarTrabajos(trabajos);
+            const todosLosTrabajos = await response.json();
+            // Filtramos solo los trabajos que le pertenecen al Jefe actual
+            const misTrabajos = todosLosTrabajos.filter(job => job.managerId === myManagerId);
+            renderizarTrabajos(misTrabajos);
         }
     } catch (error) { console.error("Error al cargar trabajos", error); }
 }
@@ -138,11 +165,11 @@ function renderizarTrabajos(trabajos) {
     const mobileContainer = document.getElementById('mobileCardsContainer');
     
     tbody.innerHTML = ''; 
-    if(mobileContainer) mobileContainer.innerHTML = ''; 
+    if(mobileContainer) mobileContainer.innerHTML = '';
     
     if(trabajos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
-        if(mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No hay trabajos registrados.</div>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No tienes trabajos asignados a tu cargo.</td></tr>`;
+        if(mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No tienes trabajos asignados a tu cargo.</div>`;
         return;
     }
 
@@ -154,16 +181,31 @@ function renderizarTrabajos(trabajos) {
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
         const empName = job.nameEmployee || 'Sin asignar';
-        const manName = job.nameManager || 'Sin asignar';
-        const fechaTxt = job.jobDate ? job.jobDate : 'Sin fecha asignada';
+        const fechaTxt = formatearFecha(job.jobDate);
         const safeDesc = job.description ? job.description : 'Sin descripción';
+        const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${job.latitude},${job.longitude}`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><strong>${job.clientName}</strong><br><small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small></td>
-            <td>${job.address}<br><small style="color:#0f4c81; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small></td>
-            <td><div style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555; background: #f8faff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #0f4c81;" title="${safeDesc.replace(/"/g, '&quot;')}">${safeDesc}</div></td>
-            <td><span style="color:#0f4c81; font-weight: 500;">E: ${empName}</span><br><span style="color:#546e7a; font-size: 13px;">M: ${manName}</span></td>
+            <td>
+                <strong>${job.clientName}</strong><br>
+                <small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small>
+            </td>
+            <td>
+                ${job.address}<br>
+                <small style="color:#198754; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small><br>
+                <a href="${mapsLink}" target="_blank" style="display: inline-block; margin-top: 5px; color: #198754; font-size: 11px; text-decoration: none; font-weight: bold; background: #E8F5E9; padding: 3px 8px; border-radius: 4px;">
+                    <i class="fa-solid fa-map-location-dot"></i> Ver Ruta
+                </a>
+            </td>
+            <td>
+                <div style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555; background: #f8faff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #198754;" title="${safeDesc.replace(/"/g, '"')}">
+                    ${safeDesc}
+                </div>
+            </td>
+            <td>
+                <span style="color:#198754; font-weight: 600;"><i class="fa-solid fa-user-tie"></i> ${empName}</span>
+            </td>
             <td>${statusBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
@@ -176,26 +218,38 @@ function renderizarTrabajos(trabajos) {
         if(mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
-            card.style.flexDirection = 'column'; card.style.alignItems = 'flex-start'; card.style.padding = '20px';
+            card.style.flexDirection = 'column';
+            card.style.alignItems = 'flex-start';
+            card.style.padding = '20px';
+            
             card.innerHTML = `
                 <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px;">
-                    <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>${statusBadge}
+                    <h3 style="margin:0; font-size:1.1rem; color:#198754;">${job.clientName}</h3>
+                    ${statusBadge}
                 </div>
                 <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
                 <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
-                <p style="margin: 3px 0; font-size: 13px; color:#0f4c81; font-weight: 600;"><i class="fa-regular fa-calendar"></i> Fecha: ${fechaTxt}</p>
-                <div style="margin: 15px 0; padding: 12px; background: #f8faff; border-left: 4px solid #0f4c81; border-radius: 6px; width: 100%;">
+                <p style="margin: 3px 0; font-size: 13px; color:#198754; font-weight: 600;"><i class="fa-regular fa-calendar"></i> Fecha: ${fechaTxt}</p>
+                
+                <div style="margin: 15px 0; padding: 12px; background: #f8faff; border-left: 4px solid #198754; border-radius: 6px; width: 100%;">
                     <strong style="color: #2B3674; font-size: 12px;"><i class="fa-solid fa-align-left"></i> Descripción del Trabajo:</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${safeDesc}"</p>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">
+                        "${safeDesc}"
+                    </p>
                 </div>
+
                 <div style="background: #F9FAFC; padding: 10px; border-radius: 8px; margin-top: 10px; width: 100%;">
-                    <p style="margin: 0; font-size: 13px; color:#0f4c81;"><strong>E:</strong> ${empName}</p>
-                    <p style="margin: 0; font-size: 13px; color:#546e7a;"><strong>M:</strong> ${manName}</p>
+                    <p style="margin: 0; font-size: 13px; color:#198754;"><strong>Empleado Asignado:</strong> ${empName}</p>
                 </div>
+                
                 <p style="margin: 10px 0 0 0; font-size: 15px; color:#2e7d32; font-weight: bold;">Pago: $${job.pay.toFixed(2)}</p>
-                <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 10px;">
-                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer;">Editar</button>
-                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer;">Eliminar</button>
+                
+                <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 8px;">
+                    <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border-radius: 8px; background: #E8F5E9; color: #198754; border: none; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; font-size: 13px;">
+                        <i class="fa-solid fa-map-location-dot"></i> Ruta
+                    </a>
+                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;"><i class="fa-solid fa-pen"></i> Editar</button>
+                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer; font-size: 13px;"><i class="fa-solid fa-trash"></i> Eliminar</button>
                 </div>
             `;
             mobileContainer.appendChild(card);
@@ -209,7 +263,7 @@ window.abrirModalCrearJob = () => {
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
-    inicializarMapa(-2.900128, -79.005896); // Cuenca
+    inicializarMapa(-2.900128, -79.005896); 
 };
 
 window.abrirModalEditarJob = async (id) => {
@@ -220,26 +274,30 @@ window.abrirModalEditarJob = async (id) => {
     
     try {
         Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
         const response = await fetch(`${API_URL}/find-id/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` } });
 
         if(response.ok) {
             const data = await response.json();
+            
             document.getElementById('jobClientName').value = data.clientName;
             document.getElementById('jobClientPhone').value = data.clientPhone;
             document.getElementById('jobDesc').value = data.description;
-            document.getElementById('jobDate').value = data.jobDate || '';
+            document.getElementById('jobDate').value = fechaParaInput(data.jobDate);
             document.getElementById('jobAddress').value = data.address;
             document.getElementById('jobLat').value = data.latitude;
             document.getElementById('jobLng').value = data.longitude;
             document.getElementById('jobSafeBox').value = data.safeDepositBoxCodes || '';
             document.getElementById('jobPay').value = data.pay;
             document.getElementById('jobStatus').value = data.status || 'PENDING';
+            
             document.getElementById('jobEmployee').value = data.employeeId;
-            document.getElementById('jobManager').value = data.managerId;
 
             if(data.materials && data.materials.length > 0) {
                 const checkboxes = document.querySelectorAll('input[name="jobMaterials"]');
-                checkboxes.forEach(cb => { cb.checked = data.materials.some(m => m.materialId == cb.value); });
+                checkboxes.forEach(cb => {
+                    cb.checked = data.materials.some(m => m.materialId == cb.value);
+                });
             }
 
             Swal.close();
@@ -247,17 +305,19 @@ window.abrirModalEditarJob = async (id) => {
             inicializarMapa(data.latitude, data.longitude);
         }
     } catch(error) { 
-        Swal.close(); console.error(error); 
+        Swal.close();
+        console.error("Error al obtener trabajo:", error); 
     }
 };
 
-window.cerrarModalJob = () => { document.getElementById('modalJob').style.display = 'none'; };
+window.cerrarModalJob = () => {
+    document.getElementById('modalJob').style.display = 'none';
+};
 
 window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
     
-    // Obtenemos los materiales seleccionados, pero YA NO bloqueamos si está vacío.
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
 
@@ -273,11 +333,12 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: parseInt(document.getElementById('jobManager').value),
-        materialIds: selectedMaterials // Se enviará [] si no se seleccionó nada
+        managerId: myManagerId, // <--- MAGIA: ASIGNAMOS EL ID DEL JEFE AUTOMÁTICAMENTE
+        materialIds: selectedMaterials 
     };
     
-    if(!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
+    // Eliminamos managerId de la validación porque ya lo estamos asignando arriba
+    if(!payload.clientName || !payload.employeeId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire('Error', 'Por favor llena todos los campos obligatorios, incluyendo la fecha.', 'error');
     }
 
@@ -298,8 +359,16 @@ window.guardarTrabajo = async () => {
             cerrarModalJob();
             await cargarTrabajos(); 
         } else {
-            const errorData = await response.json();
-            Swal.fire('Error del servidor', errorData.message || 'No se pudo guardar el trabajo.', 'error');
+            let errorMsg = 'No se pudo guardar el trabajo.';
+            try {
+                const errorData = await response.json();
+                if (errorData && typeof errorData.message === 'object') {
+                    errorMsg = Object.values(errorData.message).join('<br>');
+                } else if (errorData && errorData.message) {
+                    errorMsg = errorData.message;
+                }
+            } catch(e) {}
+            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
         }
     } catch (error) {
         console.error('Error al guardar:', error);
@@ -308,26 +377,53 @@ window.guardarTrabajo = async () => {
 };
 
 window.eliminarTrabajo = async (id) => {
-    Swal.fire({ title: '¿Eliminar Trabajo?', text: "Se borrará del sistema permanentemente.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d', confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar'
+    Swal.fire({
+        title: '¿Eliminar Trabajo?',
+        text: "Se borrará del sistema permanentemente.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
     }).then(async (result) => {
         if (result.isConfirmed) {
             Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
             try {
-                const res = await fetch(`${API_URL}/delete-job/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${userToken}` }});
+                const res = await fetch(`${API_URL}/delete-job/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+                
                 if(res.ok) {
                     Swal.fire('¡Eliminado!', 'El trabajo fue eliminado.', 'success');
                     await cargarTrabajos();
                 } else {
                     Swal.fire('Error', 'No se pudo eliminar el trabajo.', 'error');
                 }
-            } catch(e) { console.error(e); Swal.fire('Error', 'Fallo de red', 'error'); }
+            } catch(e) { 
+                console.error(e); 
+                Swal.fire('Error', 'Fallo de red', 'error');
+            }
         }
     });
 };
 
 window.cerrarSesion = () => {
-    Swal.fire({ title: "¿Cerrar sesión?", text: "¿Estás seguro que deseas salir del sistema?", icon: "question", showCancelButton: true, confirmButtonColor: "#0f4c81", cancelButtonColor: "#d33", confirmButtonText: "Sí, salir", cancelButtonText: "Cancelar"
+    Swal.fire({
+        title: "¿Cerrar sesión?",
+        text: "¿Estás seguro que deseas salir del portal?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#198754",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Sí, salir",
+        cancelButtonText: "Cancelar"
     }).then((result) => {
-        if (result.isConfirmed) { localStorage.clear(); window.location.href = '../../index.html'; }
+        if (result.isConfirmed) {
+            localStorage.clear();
+            window.location.href = '../../index.html';
+        }
     });
 };

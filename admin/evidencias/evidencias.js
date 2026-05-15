@@ -100,7 +100,7 @@ window.filtrarTrabajos = () => {
         else statusBadge = `<span style="color: #d32f2f; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-ban"></i> Cancelado</span>`;
 
         const btnEvidencias = numUpdates > 0 
-            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="width:100%; padding:8px; background:#0f4c81; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Poppins'; font-weight:600;"><i class="fa-solid fa-camera"></i> Ver ${numFotos} Fotos</button>`
+            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="width:100%; padding:8px; background:#0f4c81; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Poppins'; font-weight:600;"><i class="fa-solid fa-folder-open"></i> Ver ${numFotos} Archivos</button>`
             : `<button disabled style="width:100%; padding:8px; background:#e9ecef; color:#A3AED0; border:none; border-radius:8px; font-family:'Poppins'; font-weight:600;">Sin evidencias aún</button>`;
 
         const safeDesc = job.description ? job.description : 'Sin descripción';
@@ -137,7 +137,7 @@ window.abrirModalEvidencias = (jobId) => {
     const job = allJobsCache.find(j => j.jobId === jobId);
     if(!job) return;
 
-    document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-images"></i> Evidencias - ${job.clientName}`;
+    document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
     
     // INYECTAR LA DESCRIPCIÓN EN EL MODAL
     document.getElementById('jobDescriptionText').innerHTML = `<strong>Descripción de obra:</strong> <br> ${job.description || 'Sin descripción'}`;
@@ -154,10 +154,23 @@ window.abrirModalEvidencias = (jobId) => {
         let galeriaHTML = '';
         if(update.evidences && update.evidences.length > 0) {
             update.evidences.forEach(evi => {
-                galeriaHTML += `<img src="${evi.imageUri}" class="gallery-img" alt="Evidencia" onclick="verFotoGrande('${evi.imageUri}')">`;
+                const urlLower = evi.imageUri.toLowerCase();
+                
+                // MAGIA: VERIFICAMOS SI LA URL ES UN PDF
+                if (urlLower.includes('.pdf')) {
+                    galeriaHTML += `
+                        <a href="${evi.imageUri}" target="_blank" class="pdf-btn" title="Descargar Reporte PDF">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            Reporte
+                        </a>
+                    `;
+                } else {
+                    // SI ES IMAGEN LA MOSTRAMOS NORMAL
+                    galeriaHTML += `<img src="${evi.imageUri}" class="gallery-img" alt="Evidencia" onclick="verFotoGrande('${evi.imageUri}')">`;
+                }
             });
         } else {
-            galeriaHTML = `<span style="font-size:12px; color:#A3AED0;">No se subieron fotos en esta actualización.</span>`;
+            galeriaHTML = `<span style="font-size:12px; color:#A3AED0;">No se subieron archivos en esta actualización.</span>`;
         }
 
         timeline.innerHTML += `

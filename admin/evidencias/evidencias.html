@@ -17,13 +17,23 @@
         }
         .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
         .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
-        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .gallery-img { 
             width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; 
             border: 2px solid #E0E5F2; transition: transform 0.2s;
         }
         .gallery-img:hover { transform: scale(1.05); border-color: #0f4c81; }
         .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
+
+        /* NUEVO: ESTILO PARA EL BOTÓN DEL PDF (Tema Admin - Azul) */
+        .pdf-btn {
+            display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 80px; height: 80px; background: #E3F2FD; border: 2px dashed #0f4c81; border-radius: 8px;
+            color: #0f4c81; text-decoration: none; font-size: 11px; font-weight: bold; transition: 0.3s;
+        }
+        .pdf-btn i { font-size: 24px; margin-bottom: 5px; color: #d32f2f; }
+        .pdf-btn:hover { background: #0f4c81; color: white; border-style: solid; }
+        .pdf-btn:hover i { color: white; }
     </style>
 </head>
 <body>
@@ -118,4 +128,4 @@
 
     <script type="module" src="evidencias.js"></script>
 </body>
-</html>s
+</html>
