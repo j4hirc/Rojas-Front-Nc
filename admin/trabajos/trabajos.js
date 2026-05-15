@@ -1,11 +1,9 @@
 const API_URL = 'http://localhost:8081/api/v1/jobs';
 const USERS_URL = 'http://localhost:8081/api/v1/user/all-users';
 const MATERIALS_URL = 'http://localhost:8081/api/v1/materials/all';
-let userToken = '';
 
-// Variables globales para el Mapa
-let mapa;
-let marcador;
+let userToken = '';
+let mapa, marcador;
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -14,47 +12,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_ADMIN')) {
         Swal.fire({
-            icon: 'error',
-            title: 'Acceso Denegado',
-            text: 'No tienes permisos para acceder a esta sección.',
-            confirmButtonColor: '#0f4c81'
+            icon: 'error', title: 'Acceso Denegado', text: 'No tienes permisos para acceder a esta sección.', confirmButtonColor: '#0f4c81'
         }).then(() => { window.location.href = '../../index.html'; });
         return;
     }
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-    // --- PANTALLA DE CARGA INICIAL ---
-    Swal.fire({ 
-        title: 'Preparando tu área de trabajo...', 
-        text: 'Cargando personal, materiales y proyectos',
-        allowOutsideClick: false, 
-        didOpen: () => { Swal.showLoading(); }
-    });
+    Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
     await cargarUsuariosYMateriales(); 
     await cargarTrabajos();            
 
-    // --- CERRAMOS PANTALLA DE CARGA ---
     Swal.close();
 });
 
-// --- INICIALIZAR EL MAPA INTERACTIVO ---
 function inicializarMapa(lat, lng) {
     if (!mapa) {
         mapa = L.map('jobMap').setView([lat, lng], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap Rojas Remodeling'
-        }).addTo(mapa);
-
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
         marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
-
         marcador.on('dragend', function (e) {
             const posicion = marcador.getLatLng();
             document.getElementById('jobLat').value = posicion.lat.toFixed(6);
             document.getElementById('jobLng').value = posicion.lng.toFixed(6);
         });
-
         mapa.on('click', function(e) {
             marcador.setLatLng(e.latlng);
             document.getElementById('jobLat').value = e.latlng.lat.toFixed(6);
@@ -64,55 +46,29 @@ function inicializarMapa(lat, lng) {
         mapa.setView([lat, lng], 14);
         marcador.setLatLng([lat, lng]);
     }
-
     document.getElementById('jobLat').value = lat.toFixed(6);
     document.getElementById('jobLng').value = lng.toFixed(6);
-
     setTimeout(() => { mapa.invalidateSize(); }, 300);
 }
 
-// --- FUNCIÓN PARA OBTENER LA UBICACIÓN GPS DEL USUARIO ---
 window.obtenerMiUbicacion = () => {
     if (navigator.geolocation) {
-        Swal.fire({
-            title: 'Buscando tu ubicación...',
-            text: 'Por favor, acepta los permisos de ubicación en tu navegador.',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
-
+        Swal.fire({ title: 'Buscando tu ubicación...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
-                
                 if (mapa && marcador) {
                     mapa.setView([lat, lng], 16); 
                     marcador.setLatLng([lat, lng]);
                 } else {
                     inicializarMapa(lat, lng);
                 }
-
                 document.getElementById('jobLat').value = lat.toFixed(6);
                 document.getElementById('jobLng').value = lng.toFixed(6);
-
                 Swal.close();
-                Swal.mixin({
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 2000,
-                    timerProgressBar: true
-                }).fire({ icon: 'success', title: 'Ubicación actualizada' });
             },
-            (error) => {
-                Swal.close();
-                let msj = 'No se pudo obtener tu ubicación.';
-                if (error.code === 1) msj = 'Denegaste el permiso de ubicación.';
-                if (error.code === 2) msj = 'La red de ubicación no responde.';
-                if (error.code === 3) msj = 'El tiempo de espera se agotó.';
-                Swal.fire('Error', msj, 'error');
-            },
+            (error) => { Swal.close(); Swal.fire('Error', 'No se pudo obtener tu ubicación.', 'error'); },
             { enableHighAccuracy: true }
         );
     } else {
@@ -120,7 +76,6 @@ window.obtenerMiUbicacion = () => {
     }
 };
 
-// 1. CARGAR SELECTS DE USUARIOS Y CHECKBOXES DE MATERIALES
 async function cargarUsuariosYMateriales() {
     try {
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
@@ -160,29 +115,26 @@ async function cargarUsuariosYMateriales() {
     } catch (e) { console.error("Error cargando dependencias", e); }
 }
 
-// 2. CARGAMOS LA TABLA DE TRABAJOS
 async function cargarTrabajos() {
     try {
-        const response = await fetch(`${API_URL}/all`, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${userToken}` }
-        });
-
+        const response = await fetch(`${API_URL}/all`, { method: 'GET', headers: { 'Authorization': `Bearer ${userToken}` } });
         if (response.ok) {
             const trabajos = await response.json();
             renderizarTrabajos(trabajos);
         }
-    } catch (error) { 
-        console.error("Error al cargar trabajos", error);
-    }
+    } catch (error) { console.error("Error al cargar trabajos", error); }
 }
 
 function renderizarTrabajos(trabajos) {
     const tbody = document.getElementById('jobTableBody');
+    const mobileContainer = document.getElementById('mobileCardsContainer');
+    
     tbody.innerHTML = ''; 
+    if(mobileContainer) mobileContainer.innerHTML = '';
     
     if(trabajos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
+        if(mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No hay trabajos registrados.</div>`;
         return;
     }
 
@@ -195,6 +147,8 @@ function renderizarTrabajos(trabajos) {
 
         const empName = job.nameEmployee || 'Sin asignar';
         const manName = job.nameManager || 'Sin asignar';
+        const fechaTxt = job.jobDate ? job.jobDate : 'Sin fecha asignada';
+        const safeDesc = job.description ? job.description : 'Sin descripción';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -204,7 +158,12 @@ function renderizarTrabajos(trabajos) {
             </td>
             <td>
                 ${job.address}<br>
-                <small style="color:#A3AED0;">Lat: ${job.latitude}, Lng: ${job.longitude}</small>
+                <small style="color:#0f4c81; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small>
+            </td>
+            <td>
+                <div style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555; background: #f8faff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #0f4c81;" title="${safeDesc.replace(/"/g, '&quot;')}">
+                    ${safeDesc}
+                </div>
             </td>
             <td>
                 <span style="color:#0f4c81; font-weight: 500;">E: ${empName}</span><br>
@@ -218,10 +177,44 @@ function renderizarTrabajos(trabajos) {
             </td>
         `;
         tbody.appendChild(tr);
+
+        if(mobileContainer) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.flexDirection = 'column';
+            card.style.alignItems = 'flex-start';
+            card.style.padding = '20px';
+            
+            card.innerHTML = `
+                <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px;">
+                    <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>
+                    ${statusBadge}
+                </div>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
+                <p style="margin: 3px 0; font-size: 13px; color:#0f4c81; font-weight: 600;"><i class="fa-regular fa-calendar"></i> Fecha: ${fechaTxt}</p>
+                
+                <div style="margin: 15px 0; padding: 12px; background: #f8faff; border-left: 4px solid #0f4c81; border-radius: 6px; width: 100%;">
+                    <strong style="color: #2B3674; font-size: 12px;"><i class="fa-solid fa-align-left"></i> Descripción del Trabajo:</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${safeDesc}"</p>
+                </div>
+
+                <div style="background: #F9FAFC; padding: 10px; border-radius: 8px; margin-top: 10px; width: 100%;">
+                    <p style="margin: 0; font-size: 13px; color:#0f4c81;"><strong>E:</strong> ${empName}</p>
+                    <p style="margin: 0; font-size: 13px; color:#546e7a;"><strong>M:</strong> ${manName}</p>
+                </div>
+                
+                <p style="margin: 10px 0 0 0; font-size: 15px; color:#2e7d32; font-weight: bold;">Pago: $${job.pay.toFixed(2)}</p>
+                
+                <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 10px;">
+                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-pen"></i> Editar</button>
+                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-trash"></i> Eliminar</button>
+                </div>
+            `;
+            mobileContainer.appendChild(card);
+        }
     });
 }
-
-// --- LÓGICA DEL MODAL Y CRUD ---
 
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
@@ -229,9 +222,7 @@ window.abrirModalCrearJob = () => {
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
-    
-    // Coordenadas base (Centro de Cuenca, Ecuador)
-    inicializarMapa(-2.900128, -79.005896);
+    inicializarMapa(-2.900128, -79.005896); 
 };
 
 window.abrirModalEditarJob = async (id) => {
@@ -251,6 +242,7 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobClientName').value = data.clientName;
             document.getElementById('jobClientPhone').value = data.clientPhone;
             document.getElementById('jobDesc').value = data.description;
+            document.getElementById('jobDate').value = data.jobDate || '';
             document.getElementById('jobAddress').value = data.address;
             document.getElementById('jobLat').value = data.latitude;
             document.getElementById('jobLng').value = data.longitude;
@@ -261,6 +253,7 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
+            // Marcar checkboxes de materiales si ya los tenía guardados
             if(data.materials && data.materials.length > 0) {
                 const checkboxes = document.querySelectorAll('input[name="jobMaterials"]');
                 checkboxes.forEach(cb => {
@@ -286,17 +279,15 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
     
+    // Captura los materiales, pero NO lanza error si está vacío
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
-
-    if (selectedMaterials.length === 0) {
-        return Swal.fire('Atención', 'Debes incluir al menos un material para el trabajo.', 'warning');
-    }
 
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
         description: document.getElementById('jobDesc').value.trim(),
+        jobDate: document.getElementById('jobDate').value,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
         longitude: parseFloat(document.getElementById('jobLng').value),
@@ -308,11 +299,10 @@ window.guardarTrabajo = async () => {
         materialIds: selectedMaterials
     };
     
-    if(!payload.clientName || !payload.employeeId || !payload.managerId || isNaN(payload.latitude) || isNaN(payload.pay)) {
+    if(!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire('Error', 'Por favor llena todos los campos obligatorios.', 'error');
     }
 
-    // --- PANTALLA DE CARGA PARA GUARDAR ---
     Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
     
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
@@ -331,7 +321,15 @@ window.guardarTrabajo = async () => {
             await cargarTrabajos(); 
         } else {
             const errorData = await response.json();
-            Swal.fire('Error del servidor', errorData.message || 'No se pudo guardar el trabajo.', 'error');
+            let errorMsg = 'No se pudo guardar el trabajo.';
+            if (errorData.message) {
+                if (typeof errorData.message === 'object') {
+                    errorMsg = Object.values(errorData.message).join('<br>');
+                } else {
+                    errorMsg = errorData.message;
+                }
+            }
+            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
         }
     } catch (error) {
         console.error('Error al guardar:', error);
@@ -351,7 +349,6 @@ window.eliminarTrabajo = async (id) => {
         cancelButtonText: 'Cancelar'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            // --- PANTALLA DE CARGA PARA ELIMINAR ---
             Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
             try {
