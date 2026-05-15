@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendario - Rojas Remodeling</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <link rel="stylesheet" href="../../admin/admin.css"> 
+    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
+
+    <style>
+        #calendar {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid #E0E5F2;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .fc-toolbar-title { font-size: 1.3rem !important; color: #0f4c81; font-weight: 700; text-transform: capitalize;}
+        .fc-button-primary { background-color: #198754 !important; border-color: #198754 !important; text-transform: capitalize; font-weight: 600 !important; border-radius: 8px !important;}
+        .fc-button-primary:hover { background-color: #146c43 !important; border-color: #146c43 !important; box-shadow: 0 4px 10px rgba(25, 135, 84, 0.3) !important;}
+        .fc-button-active { background-color: #0f4c81 !important; border-color: #0f4c81 !important; }
+
+        /* Efectos dinámicos vista MES */
+        .fc-event { cursor: pointer; border-radius: 6px; border: none; transition: transform 0.2s, box-shadow 0.2s; }
+        .fc-event:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 5 !important; }
+        .fc-daygrid-event { margin: 2px 5px !important; }
+
+        /* NUEVO: ESTILOS HERMOSOS PARA LA VISTA AGENDA (LISTA) */
+        .fc-list { border: none !important; border-radius: 12px; overflow: hidden; }
+        .fc-list-day-cushion { background-color: #E8F5E9 !important; color: #198754 !important; font-weight: 700 !important; padding: 12px 20px !important; font-size: 1.1rem; }
+        .fc-list-event td { padding: 15px 20px !important; border: none !important; border-bottom: 1px solid #E0E5F2 !important; transition: 0.3s; }
+        .fc-list-event:hover td { background-color: #f8faff !important; }
+        .fc-list-event-dot { display: none; } /* Ocultar el puntito default aburrido */
+        .fc-list-event-time { display: none; } /* Ocultar la hora vacía */
+        .fc-list-event-title { padding: 0 !important; }
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-logo" style="color: #198754;">
+                <i class="fa-solid fa-hard-hat"></i>
+                <span>Portal Jefe</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="../jefe-dashboard.html">
+                    <i class="fa-solid fa-house"></i> Inicio
+                </a>
+                <a href="../usuarios/usuarios.html">
+                    <i class="fa-solid fa-users-gear"></i> Mi Personal
+                </a>
+                <a href="../trabajos/trabajos.html">
+                    <i class="fa-solid fa-hammer"></i> Mis Trabajos
+                </a>
+                <a href="calendario.html" class="active">
+                    <i class="fa-solid fa-calendar-days"></i> Calendario
+                </a>
+                <a href="../evidencias/evidencias.html">
+                    <i class="fa-solid fa-camera"></i> Evidencias
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">Cronograma de Proyectos</div>
+                <div class="user-profile" style="color: #198754; background: #E8F5E9;">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span id="jefe-email-display">Cargando...</span>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="usuarios-container" style="margin-top: 0; padding: 20px;">
+                    <div id='calendar'></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="calendario.js"></script>
+</body>
+</html>

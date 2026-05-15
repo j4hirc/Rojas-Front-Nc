@@ -22,10 +22,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     await inicializarDatosDelJefe(userEmail);
 });
 
-// BUSCA QUIÉN ES EL JEFE ACTUAL Y CARGA TODO
 async function inicializarDatosDelJefe(emailActual) {
     try {
-        // --- NUEVO: PANTALLA DE CARGA INICIAL ---
         Swal.fire({ 
             title: 'Preparando tu área de trabajo...', 
             text: 'Cargando personal, materiales y proyectos',
@@ -36,7 +34,6 @@ async function inicializarDatosDelJefe(emailActual) {
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         const users = await resUsers.json();
         
-        // Buscamos al Jefe en la lista por su correo
         const jefeActual = users.find(u => u.email === emailActual);
         if (jefeActual) {
             myManagerId = jefeActual.userId;
@@ -45,13 +42,11 @@ async function inicializarDatosDelJefe(emailActual) {
             return;
         }
 
-        // Llenamos el select solo con empleados
         const selectEmp = document.getElementById('jobEmployee');
         selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
         users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'))
              .forEach(u => selectEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
 
-        // Llenamos materiales
         const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         const materials = await resMat.json();
         const containerMat = document.getElementById('materialsContainer');
@@ -60,15 +55,12 @@ async function inicializarDatosDelJefe(emailActual) {
             containerMat.innerHTML += `
                 <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2b3674; font-size: 14px;">
                     <input type="checkbox" name="jobMaterials" value="${mat.materialId}"> 
-                    ${mat.name} <small style="color:#A3AED0;">(Stock: ${mat.stock || 0})</small>
+                    ${mat.name} 
                 </label>
             `;
         });
 
-        // Finalmente, traemos los trabajos de este Jefe
         await cargarMisTrabajos();
-
-        // --- NUEVO: OCULTAMOS LA PANTALLA DE CARGA ---
         Swal.close();
 
     } catch (error) { 
@@ -77,16 +69,12 @@ async function inicializarDatosDelJefe(emailActual) {
     }
 }
 
-// CARGA SOLO LOS TRABAJOS DEL JEFE ACTUAL
 async function cargarMisTrabajos() {
     try {
         const response = await fetch(`${API_URL}/all`, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (response.ok) {
             const todosLosTrabajos = await response.json();
-            
-            // EL FILTRO MÁGICO: Solo los trabajos donde el Manager soy Yo
             const misTrabajos = todosLosTrabajos.filter(job => job.managerId === myManagerId);
-            
             renderizarTrabajos(misTrabajos);
         }
     } catch (error) { Swal.fire('Error', 'No se pudieron cargar tus trabajos.', 'error'); }
@@ -94,9 +82,15 @@ async function cargarMisTrabajos() {
 
 function renderizarTrabajos(trabajos) {
     const tbody = document.getElementById('jobTableBody');
+    const mobileContainer = document.getElementById('mobileCardsContainer');
+    
     tbody.innerHTML = ''; 
+    if(mobileContainer) mobileContainer.innerHTML = '';
+
     if(trabajos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No tienes trabajos asignados.</td></tr>`; return;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No tienes trabajos asignados.</td></tr>`; 
+        if(mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No tienes trabajos asignados.</div>`;
+        return;
     }
 
     trabajos.forEach(job => {
@@ -105,10 +99,22 @@ function renderizarTrabajos(trabajos) {
                     job.status === 'COMPLETED' ? `<span style="background:#E8F5E9; color:#2e7d32; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Completado</span>` : 
                     `<span style="background:#FFEBEE; color:#d32f2f; padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Cancelado</span>`;
 
+        const fechaTxt = job.jobDate ? job.jobDate : 'Sin fecha asignada';
+        const safeDesc = job.description ? job.description : 'Sin descripción';
+
+        // FILA PARA PC
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${job.clientName}</strong><br><small><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small></td>
-            <td>${job.address}</td>
+            <td>
+                ${job.address}<br>
+                <small style="color:#0f4c81; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small>
+            </td>
+            <td>
+                <div style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #666;" title="${safeDesc.replace(/"/g, '&quot;')}">
+                    ${safeDesc}
+                </div>
+            </td>
             <td style="color:#0f4c81; font-weight:500;">${job.nameEmployee || 'Sin asignar'}</td>
             <td>${badge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
@@ -118,6 +124,43 @@ function renderizarTrabajos(trabajos) {
             </td>
         `;
         tbody.appendChild(tr);
+
+        // TARJETA PARA CELULARES
+        if(mobileContainer) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.flexDirection = 'column';
+            card.style.alignItems = 'flex-start';
+            card.style.padding = '20px';
+            
+            card.innerHTML = `
+                <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px;">
+                    <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>
+                    ${badge}
+                </div>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
+                <p style="margin: 3px 0; font-size: 13px; color:#198754; font-weight: 600;"><i class="fa-regular fa-calendar"></i> Fecha: ${fechaTxt}</p>
+                
+                <div style="margin: 10px 0; padding-left: 10px; border-left: 3px solid #198754; width: 100%;">
+                    <p style="margin: 0; font-size: 13px; color: #444; font-style: italic; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                        "${safeDesc}"
+                    </p>
+                </div>
+
+                <div style="background: #F9FAFC; padding: 10px; border-radius: 8px; margin-top: 10px; width: 100%;">
+                    <p style="margin: 0; font-size: 13px; color:#0f4c81;"><strong>Empleado:</strong> ${job.nameEmployee || 'Sin asignar'}</p>
+                </div>
+                
+                <p style="margin: 10px 0 0 0; font-size: 15px; color:#2e7d32; font-weight: bold;">Pago: $${job.pay.toFixed(2)}</p>
+                
+                <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 10px;">
+                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-pen"></i> Editar</button>
+                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-trash"></i> Eliminar</button>
+                </div>
+            `;
+            mobileContainer.appendChild(card);
+        }
     });
 }
 
@@ -181,6 +224,7 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobClientName').value = data.clientName;
             document.getElementById('jobClientPhone').value = data.clientPhone;
             document.getElementById('jobDesc').value = data.description;
+            document.getElementById('jobDate').value = data.jobDate || '';
             document.getElementById('jobAddress').value = data.address;
             document.getElementById('jobSafeBox').value = data.safeDepositBoxCodes || '';
             document.getElementById('jobPay').value = data.pay;
@@ -213,6 +257,7 @@ window.guardarTrabajo = async () => {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
         description: document.getElementById('jobDesc').value.trim(),
+        jobDate: document.getElementById('jobDate').value,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
         longitude: parseFloat(document.getElementById('jobLng').value),
@@ -220,15 +265,14 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        
         managerId: myManagerId, 
-        
         materialIds: selectedMaterials
     };
     
-    if(!payload.clientName || !payload.employeeId) return Swal.fire('Error', 'Llena todos los campos obligatorios.', 'error');
+    if(!payload.clientName || !payload.employeeId || !payload.jobDate) {
+        return Swal.fire('Error', 'Llena todos los campos obligatorios, incluyendo la fecha.', 'error');
+    }
     
-    // Mostramos un loader mientras se guarda/actualiza
     Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
