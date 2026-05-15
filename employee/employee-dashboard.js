@@ -11,6 +11,35 @@ let imagenesBase64Data = [];
 let canvas, ctx;
 let drawing = false;
 
+// FUNCIÓN PARA QUE LA FECHA NO SALGA "VIRADA" (De YYYY-MM-DD a DD/MM/YYYY)
+function formatearFecha(fecha) {
+    if (!fecha) return 'Sin fecha asignada';
+    if (Array.isArray(fecha)) {
+        const dia = String(fecha[2]).padStart(2, '0');
+        const mes = String(fecha[1]).padStart(2, '0');
+        const anio = fecha[0];
+        return `${dia}/${mes}/${anio}`;
+    } 
+    else if (typeof fecha === 'string') {
+        const partes = fecha.split('-');
+        if (partes.length === 3) {
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+    }
+    return fecha;
+}
+
+function fechaParaCalendario(fecha) {
+    if (!fecha) return new Date().toISOString().split('T')[0];
+    if (Array.isArray(fecha)) {
+        const dia = String(fecha[2]).padStart(2, '0');
+        const mes = String(fecha[1]).padStart(2, '0');
+        const anio = fecha[0];
+        return `${anio}-${mes}-${dia}`;
+    }
+    return fecha;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
     const rolesString = localStorage.getItem('user_roles');
@@ -29,6 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarCalendarioEmpleado(userEmail);
 });
 
+// --- LÓGICA DEL CALENDARIO ---
 async function cargarCalendarioEmpleado(emailActual) {
     try {
         Swal.fire({ title: 'Cargando tus trabajos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
@@ -36,6 +66,7 @@ async function cargarCalendarioEmpleado(emailActual) {
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         const users = await resUsers.json();
         const yo = users.find(u => u.email === emailActual);
+        
         if (yo) myEmployeeId = yo.userId;
 
         const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
@@ -46,14 +77,18 @@ async function cargarCalendarioEmpleado(emailActual) {
             let bgColor = '#ff9800'; 
             if(job.status === 'IN_PROGRESS') bgColor = '#1e88e5'; 
             if(job.status === 'COMPLETED') bgColor = '#2e7d32'; 
+            if(job.status === 'CANCELLED') bgColor = '#d32f2f';
 
             return {
                 id: job.jobId,
                 title: job.clientName,
-                start: job.jobDate ? job.jobDate : new Date().toISOString().split('T')[0], 
+                start: fechaParaCalendario(job.jobDate), 
                 backgroundColor: bgColor,
                 borderColor: bgColor,
-                extendedProps: job 
+                extendedProps: {
+                    ...job,
+                    fechaHermosa: formatearFecha(job.jobDate)
+                } 
             };
         });
 
@@ -64,7 +99,6 @@ async function cargarCalendarioEmpleado(emailActual) {
             headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
             events: eventosFormateados,
             
-            // LA MAGIA: MOSTRAR TODA LA INFO EN EL CALENDARIO
             eventContent: function(arg) {
                 let p = arg.event.extendedProps;
                 let icon = '';
@@ -75,27 +109,26 @@ async function cargarCalendarioEmpleado(emailActual) {
 
                 let viewType = arg.view.type;
 
-                // Si estamos en VISTA AGENDA O LISTA (Móviles / PC Completa)
+                // VISTA AGENDA (LISTA)
                 if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
                     return { html: `
                         <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px; width: 100%; color: #333;">
                             <div style="font-weight: 700; font-size: 1.2em; color: ${arg.event.backgroundColor}; border-bottom: 1px solid #E0E5F2; padding-bottom: 5px; margin-bottom: 5px;">
                                 ${icon} ${arg.event.title}
                             </div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.9em;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.95em;">
                                 <span><strong style="color:#0277bd;"><i class="fa-solid fa-location-dot"></i> Dir:</strong> ${p.address}</span>
                                 <span><strong style="color:#0277bd;"><i class="fa-solid fa-phone"></i> Tel:</strong> ${p.clientPhone}</span>
-                                <span><strong style="color:#0277bd;"><i class="fa-solid fa-key"></i> Caja:</strong> ${p.safeDepositBoxCodes || 'N/A'}</span>
-                                <span><strong style="color:#2e7d32;"><i class="fa-solid fa-sack-dollar"></i> Pago:</strong> $${p.pay.toFixed(2)}</span>
-                                <span><strong style="color:#0277bd;"><i class="fa-solid fa-hard-hat"></i> Jefe:</strong> ${p.nameManager}</span>
+                                <span><strong style="color:#0277bd;"><i class="fa-regular fa-calendar"></i> Fecha:</strong> ${p.fechaHermosa}</span>
+                                <span><strong style="color:#0277bd;"><i class="fa-solid fa-hard-hat"></i> Jefe:</strong> ${p.nameManager || 'N/A'}</span>
                             </div>
-                            <div style="font-size: 0.9em; color: #444; font-style: italic; background: #f8faff; padding: 8px; border-left: 3px solid ${arg.event.backgroundColor}; border-radius: 6px; margin-top: 5px;">
+                            <div style="font-size: 0.9em; color: #444; font-style: italic; background: #f8faff; padding: 10px; border-left: 3px solid ${arg.event.backgroundColor}; border-radius: 6px; margin-top: 5px;">
                                 "${p.description}"
                             </div>
                         </div>` 
                     };
                 } 
-                // VISTA DE MES (CUADRITOS) - Un poco más compacta
+                // VISTA DE MES (CUADRITOS)
                 else {
                     return { html: `
                         <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden;" title="Dir: ${p.address}\nDesc: ${p.description}">
@@ -106,7 +139,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                                 <i class="fa-solid fa-location-dot"></i> ${p.address}
                             </div>
                             <div style="font-size: 0.75em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
-                                <i class="fa-solid fa-hard-hat"></i> ${p.nameManager}
+                                <i class="fa-regular fa-calendar"></i> ${p.fechaHermosa}
                             </div>
                         </div>` 
                     };
@@ -117,11 +150,20 @@ async function cargarCalendarioEmpleado(emailActual) {
                 const p = info.event.extendedProps;
                 currentJobInfo = p; 
                 
-                let estadoTxt = '';
+                let estadoTxt = ''; 
                 let badgeColor = '';
+                let estaBloqueado = false; 
+
                 if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#ff9800'; }
                 if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#1e88e5'; }
-                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#2e7d32'; }
+                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#2e7d32'; estaBloqueado = true; }
+                if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#d32f2f'; estaBloqueado = true; }
+
+                let htmlBloqueo = estaBloqueado 
+                    ? `<div style="margin-top: 15px; padding: 12px; background: #e8f5e9; color: #2e7d32; border-radius: 8px; font-weight: bold; text-align: center; border: 1px solid #c8e6c9;">
+                        <i class="fa-solid fa-circle-check"></i> Proyecto Finalizado.
+                       </div>` 
+                    : ``;
 
                 Swal.fire({
                     title: `<h3 style="color:#0f4c81; margin:0; font-weight:700; text-align:center;">${info.event.title}</h3>`,
@@ -129,9 +171,13 @@ async function cargarCalendarioEmpleado(emailActual) {
                         <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
                             <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #ccc;">
                                 <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold;">
-                                    Estado actual: ${estadoTxt}
+                                    Estado: ${estadoTxt}
                                 </span>
                             </div>
+                            
+                            <p style="margin: 8px 0; font-size: 14px; color: #444;">
+                                <strong><i class="fa-regular fa-calendar" style="color:#0277bd; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
+                            </p>
                             <p style="margin: 8px 0; font-size: 14px; color: #444;">
                                 <strong><i class="fa-solid fa-phone" style="color:#0277bd; width:20px;"></i> Teléfono:</strong> ${p.clientPhone}
                             </p>
@@ -144,14 +190,24 @@ async function cargarCalendarioEmpleado(emailActual) {
                             <p style="margin: 8px 0; font-size: 14px; color: #444;">
                                 <strong><i class="fa-solid fa-location-dot" style="color:#0277bd; width:20px;"></i> Dirección:</strong> ${p.address}
                             </p>
+
                             <div style="margin-top: 15px; padding: 12px; background: #f8faff; border-radius: 8px; border-left: 3px solid #0277bd;">
                                 <strong style="font-size: 13px; color: #2B3674;">Descripción de Obra:</strong>
                                 <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${p.description}"</p>
                             </div>
-                            <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; margin-top: 15px; z-index: 10;"></div>
+                            
+                            <div style="position: relative; margin-top: 15px;">
+                                <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=$${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #0277bd; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                                    <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
+                                </a>
+                            </div>
+                            
+                            ${htmlBloqueo}
                         </div>
                     `,
                     showCancelButton: true,
+                    showConfirmButton: !estaBloqueado, 
                     confirmButtonColor: '#0277bd',
                     cancelButtonColor: '#6c757d',
                     confirmButtonText: '<i class="fa-solid fa-camera"></i> Hacer Reporte',
@@ -164,7 +220,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                         setTimeout(() => swalMap.invalidateSize(), 100);
                     }
                 }).then((result) => {
-                    if (result.isConfirmed) {
+                    if (result.isConfirmed && !estaBloqueado) {
                         abrirModalEvidence(info.event.id);
                     }
                 });
@@ -206,10 +262,12 @@ function inicializarCanvasFirma() {
         if (!drawing) return;
         e.preventDefault(); 
         ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.strokeStyle = "#0f4c81"; 
+
         let x = e.clientX || e.touches[0].clientX;
         let y = e.clientY || e.touches[0].clientY;
         const rect = canvas.getBoundingClientRect();
         x = x - rect.left; y = y - rect.top;
+
         ctx.lineTo(x, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, y);
     };
 
@@ -221,7 +279,9 @@ function inicializarCanvasFirma() {
     canvas.addEventListener('touchmove', dibujar, {passive: false});
 }
 
-window.limpiarFirma = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); };
+window.limpiarFirma = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+};
 
 window.mostrarPreview = () => {
     const input = document.getElementById('evidenceFiles');
@@ -251,7 +311,6 @@ window.abrirModalEvidence = (jobId) => {
     imagenesBase64Data = [];
     limpiarFirma();
     
-    // PRE-MARCAR MATERIALES
     document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
         cb.checked = false; 
         if (currentJobInfo.materials) {
@@ -268,6 +327,7 @@ window.abrirModalEvidence = (jobId) => {
 
 window.cerrarModalEvidence = () => { document.getElementById('modalEvidence').style.display = 'none'; };
 
+// --- GENERADOR DE PDF Y ENVÍO ---
 window.guardarReporteYPdf = async () => {
     const jobId = document.getElementById('evJobId').value;
     const status = document.getElementById('evStatus').value;
@@ -286,42 +346,57 @@ window.guardarReporteYPdf = async () => {
 
     const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
     const selectedMaterialIds = Array.from(selectedMatNodes).map(cb => parseInt(cb.value));
-    const selectedMaterialNames = Array.from(selectedMatNodes).map(cb => `<li>${cb.getAttribute('data-name')}</li>`).join('');
+    const selectedMaterialNames = Array.from(selectedMatNodes).map(cb => `<li style="margin-bottom: 5px;">${cb.getAttribute('data-name')}</li>`).join('');
 
-    Swal.fire({ title: 'Generando Reporte PDF...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-    // ARMAR PDF INVISIBLE
+    // 1. Armar HTML del PDF
     document.getElementById('pdfJobName').textContent = currentJobInfo.clientName;
     document.getElementById('pdfAddress').textContent = currentJobInfo.address;
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
-    document.getElementById('pdfDate').textContent = new Date().toLocaleString('es-ES');
+    document.getElementById('pdfDate').textContent = formatearFecha(currentJobInfo.jobDate); 
     document.getElementById('pdfComment').textContent = comment;
-    document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames || '<li>No se seleccionaron materiales extras</li>';
-    document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `<img src="${b64}" style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px;">`).join('');
+    document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames || '<li>No se seleccionaron materiales.</li>';
+    
+    // Las imágenes se configuran para centrarse en su caja Grid
+    document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
+        <div style="text-align:center;">
+            <img src="${b64}" style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #ccc;">
+        </div>
+    `).join('');
+    
     document.getElementById('pdfSignatureImg').src = canvas.toDataURL("image/png");
 
-    // GENERAR PDF CON PROMESA PARA EVITAR ERRORES
-    const element = document.getElementById('pdfTemplate');
+    const pdfWrapper = document.getElementById('pdfWrapper');
+    pdfWrapper.style.display = 'block'; 
     
+    await new Promise(r => setTimeout(r, 100)); 
+
+    const element = document.getElementById('pdfTemplate');
+    const pdfFileName = `Reporte_${currentJobInfo.clientName.replace(/\s+/g, '_')}.pdf`;
+
+    // OPTIMIZACIONES DE MARGENES PARA A4
     const opt = {
-        margin:       15,
-        filename:     `Reporte_Obra_${currentJobInfo.clientName}.pdf`,
+        margin:       [15, 0, 15, 0], // [top, right, bottom, left] ajustado para centrar
+        filename:     pdfFileName,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     let pdfBlob;
     try {
-        // Obtenemos el BLOB (Archivo binario del PDF) directamente
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
     } catch (e) {
+        pdfWrapper.style.display = 'none';
         console.error("Error al generar PDF:", e);
         return Swal.fire('Error', 'Hubo un problema al crear el archivo PDF en tu navegador.', 'error');
     }
 
-    // PREPARAR DATOS PARA SPRING BOOT
+    pdfWrapper.style.display = 'none';
+
+    // 3. Preparar los Datos para el Backend
     const dtoObject = {
         comment: comment,
         jobId: parseInt(jobId),
@@ -333,14 +408,13 @@ window.guardarReporteYPdf = async () => {
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(dtoObject)], { type: 'application/json' }));
     
-    // Agregamos las fotos normales
     for (let i = 0; i < filesInput.files.length; i++) { 
         formData.append('files', filesInput.files[i]); 
     }
     
-    // AGREGAMOS EL PDF GENERADO COMO UN ARCHIVO MÁS PARA QUE SUBA A SUPABASE
-    formData.append('files', pdfBlob, `Reporte_Firmado_${currentJobInfo.clientName.replace(/\s+/g, '_')}.pdf`);
+    formData.append('files', pdfBlob, pdfFileName);
 
+    // 4. Enviar a Spring Boot
     try {
         const response = await fetch(UPDATE_URL, {
             method: 'POST',
@@ -349,14 +423,32 @@ window.guardarReporteYPdf = async () => {
         });
 
         if (response.ok) {
-            Swal.fire('¡Reporte Enviado!', 'El PDF y las evidencias se subieron correctamente y tu Jefe fue notificado por correo.', 'success');
+            const urlDescarga = window.URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = urlDescarga;
+            a.download = pdfFileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(urlDescarga);
+
+            Swal.fire('¡Éxito!', 'El reporte se subió correctamente y tu PDF se ha descargado.', 'success');
             cerrarModalEvidence();
             await cargarCalendarioEmpleado(document.getElementById('employee-email-display').textContent);
         } else {
-            Swal.fire('Error', 'Hubo un fallo al subir las evidencias al servidor.', 'error');
+            let errorMsg = 'Hubo un fallo al subir las evidencias.';
+            try {
+                const errorData = await response.json();
+                if (errorData && typeof errorData.message === 'object') {
+                    errorMsg = Object.values(errorData.message).join('<br>');
+                } else if (errorData && errorData.message) {
+                    errorMsg = errorData.message;
+                }
+            } catch(e) {}
+            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
         }
     } catch (error) {
-        console.error(error);
+        console.error(error);   
         Swal.fire('Error de Red', 'No se pudo conectar con el servidor.', 'error');
     }
 };

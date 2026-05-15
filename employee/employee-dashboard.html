@@ -27,7 +27,7 @@
         .fc-button-primary { background-color: #0277bd !important; border-color: #0277bd !important; font-weight: 600 !important; border-radius: 8px !important; text-transform: capitalize;}
         .fc-button-primary:hover { background-color: #01579b !important; border-color: #01579b !important;}
         
-        /* Hacemos que la tarjeta en la vista de lista se vea espectacular */
+        /* Ajuste para vista lista del empleado */
         .fc-list-event td { padding: 10px !important; }
         .fc-event { cursor: pointer; border-radius: 6px; border: none; transition: transform 0.2s, box-shadow 0.2s; }
         .fc-event:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 5 !important; }
@@ -141,32 +141,44 @@
         </div>
     </div>
 
-    <div id="pdfTemplate" style="display: block; position: absolute; left: -9999px; top: -9999px; padding: 40px; font-family: 'Helvetica', sans-serif; color: #333; background: white; width: 800px;">
-        <div style="border-bottom: 2px solid #0277bd; padding-bottom: 15px; margin-bottom: 20px;">
-            <h1 style="color: #0277bd; margin: 0;">REPORTE DE OBRA</h1>
-            <p style="margin: 5px 0; color: #666;">Generado desde la plataforma Rojas Remodeling</p>
-        </div>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-            <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; width: 30%;">Proyecto:</td><td id="pdfJobName" style="padding: 8px; border: 1px solid #ddd;"></td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Dirección:</td><td id="pdfAddress" style="padding: 8px; border: 1px solid #ddd;"></td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Empleado:</td><td id="pdfEmployee" style="padding: 8px; border: 1px solid #ddd;"></td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Estado Reportado:</td><td id="pdfStatus" style="padding: 8px; border: 1px solid #ddd; color: #198754; font-weight: bold;"></td></tr>
-            <tr><td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Fecha del Reporte:</td><td id="pdfDate" style="padding: 8px; border: 1px solid #ddd;"></td></tr>
-        </table>
+    <div id="pdfWrapper" style="display: none; position: absolute; top: 0; left: 0; width: 100%; z-index: -999; background: #f0f2f5;">
+        <div id="pdfTemplate" style="width: 794px; margin: 0 auto; padding: 40px 50px; font-family: 'Helvetica', sans-serif; color: #333; background: #ffffff; box-sizing: border-box;">
+            
+            <div style="border-bottom: 3px solid #0277bd; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
+                <div>
+                    <h1 style="color: #0277bd; margin: 0; font-size: 32px; font-weight: bold; text-transform: uppercase;">REPORTE DE OBRA</h1>
+                    <p style="margin: 5px 0 0 0; color: #666; font-size: 14px; letter-spacing: 1px;">Plataforma Rojas Remodeling</p>
+                </div>
+                <div style="text-align: right; color: #444;">
+                    <p style="margin: 0; font-weight: bold; font-size: 14px;">Fecha de Emisión:</p>
+                    <p style="margin: 0; font-size: 16px; color: #0277bd;" id="pdfDate"></p>
+                </div>
+            </div>
+            
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 15px;">
+                <tr><td style="padding: 12px; border: 1px solid #ddd; background: #f8faff; font-weight: bold; width: 30%;">Proyecto:</td><td id="pdfJobName" style="padding: 12px; border: 1px solid #ddd;"></td></tr>
+                <tr><td style="padding: 12px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Dirección:</td><td id="pdfAddress" style="padding: 12px; border: 1px solid #ddd;"></td></tr>
+                <tr><td style="padding: 12px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Empleado a cargo:</td><td id="pdfEmployee" style="padding: 12px; border: 1px solid #ddd;"></td></tr>
+                <tr><td style="padding: 12px; border: 1px solid #ddd; background: #e1f5fe; font-weight: bold;">Estado Reportado:</td><td id="pdfStatus" style="padding: 12px; border: 1px solid #ddd; color: #0277bd; font-weight: bold; text-transform: uppercase;"></td></tr>
+            </table>
 
-        <h3>Comentarios del Avance</h3>
-        <div id="pdfComment" style="background: #f8f9fa; padding: 15px; border-left: 4px solid #0277bd; margin-bottom: 20px;"></div>
+            <h3 style="color: #0277bd; font-size: 18px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Descripción y Comentarios del Avance</h3>
+            <div id="pdfComment" style="background: #f8f9fa; padding: 15px; border-left: 4px solid #0277bd; margin-bottom: 30px; font-size: 14px; line-height: 1.6; text-align: justify;"></div>
 
-        <h3>Materiales Usados</h3>
-        <ul id="pdfMaterials" style="margin-bottom: 20px;"></ul>
+            <h3 style="color: #0277bd; font-size: 18px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Materiales Utilizados</h3>
+            <ul id="pdfMaterials" style="margin-bottom: 30px; font-size: 14px; color: #444; padding-left: 20px;"></ul>
 
-        <h3>Evidencias Fotográficas</h3>
-        <div id="pdfImages" style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 30px;"></div>
+            <h3 style="color: #0277bd; font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Evidencias Fotográficas</h3>
+            <div id="pdfImages" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 40px; justify-items: center;"></div>
 
-        <div style="text-align: center; margin-top: 50px;">
-            <img id="pdfSignatureImg" src="" style="max-height: 100px; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 5px;">
-            <p style="margin: 0; font-weight: bold;">Firma del Responsable</p>
+            <div style="text-align: center; margin-top: 60px; width: 100%;">
+                <div style="display: inline-block; width: 300px;">
+                    <img id="pdfSignatureImg" src="" style="max-height: 100px; max-width: 100%; object-fit: contain; margin-bottom: 5px;">
+                    <div style="border-top: 2px solid #333; padding-top: 5px;">
+                        <p style="margin: 0; font-weight: bold; font-size: 14px; text-transform: uppercase;">Firma del Responsable</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
