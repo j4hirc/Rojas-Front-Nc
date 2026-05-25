@@ -1,5 +1,6 @@
 const loginForm = document.getElementById('loginForm');
 const submitBtn = document.getElementById('submitBtn');
+const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
 // Función global para redireccionar
 window.seleccionarRol = (rolElegido) => {
@@ -74,11 +75,10 @@ loginForm?.addEventListener('submit', async (e) => {
             }
 
         } else {
-            // Error 401 o 403
             Swal.fire({
                 icon: 'error',
                 title: 'Acceso Denegado',
-                text: 'Correo o contraseña incorrectos. Verifica tus datos o contacta al administrador.',
+                text: 'Correo o contraseña incorrectos. Verifica tus datos.',
                 confirmButtonColor: '#0f4c81'
             });
             submitBtn.disabled = false;
@@ -97,3 +97,54 @@ loginForm?.addEventListener('submit', async (e) => {
         submitBtn.textContent = 'Entrar';
     }
 });
+
+// --- NUEVO: LÓGICA DE RECUPERAR CONTRASEÑA ---
+if (forgotPasswordBtn) {
+    forgotPasswordBtn.addEventListener('click', async () => {
+        const { value: email } = await Swal.fire({
+            title: 'Recuperar Contraseña',
+            input: 'email',
+            inputLabel: 'Ingresa tu correo electrónico registrado',
+            inputPlaceholder: 'ejemplo@correo.com',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa-solid fa-paper-plane"></i> Enviar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#12CFF4',
+            inputValidator: (value) => {
+                if (!value) {
+                    return '¡Necesitas ingresar un correo electrónico!'
+                }
+            }
+        });
+
+        if (email) {
+            Swal.fire({ title: 'Generando y enviando contraseña...', text: 'Por favor, espera.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            try {
+                // Hacemos la petición a la nueva ruta en Spring Boot
+                const response = await fetch('http://localhost:8081/api/v1/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email }) // Mandamos el email
+                });
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Correo enviado!',
+                        text: 'Revisa tu bandeja de entrada. Te hemos enviado una nueva contraseña provisional.',
+                        confirmButtonColor: '#0f4c81'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se encontró ninguna cuenta con ese correo electrónico.',
+                        confirmButtonColor: '#d32f2f'
+                    });
+                }
+            } catch (error) {
+                Swal.fire('Error de red', 'No se pudo conectar con el servidor.', 'error');
+            }
+        }
+    });
+}   

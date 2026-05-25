@@ -9,16 +9,12 @@
 </head>
 <body>
 
-    <!-- Fondo de triángulos animados -->
     <canvas id="bg-canvas"></canvas>
 
     <div class="login-wrapper">
         <div class="login-card">
 
-            <!-- PANEL IZQUIERDO: formulario -->
             <div class="form-panel">
-
-                <!-- ✅ LOGO: cambia "logo.png" por el nombre de tu imagen -->
                 <div class="logo">
                     <img src="logo.jpeg" alt="Logo Rojas Remodeling" class="logo-img">
                     <span>Rojas Remodeling</span>
@@ -35,20 +31,16 @@
                     <div class="field">
                         <label for="password">Contraseña</label>
                         <input type="password" id="password" required placeholder="••••••••••">
-                        <div class="forgot">¿Olvidaste tu contraseña?</div>
+                        <div class="forgot" id="forgotPasswordBtn" style="cursor: pointer;">¿Olvidaste tu contraseña?</div>
                     </div>
                     <button type="submit" id="submitBtn">Entrar</button>
                 </form>
             </div>
 
-            <!-- PANEL DERECHO: decorativo -->
             <div class="visual-panel">
-
-                <!-- ✅ IMAGEN REDONDA DEL PANEL DERECHO: cambia "logo-circle.png" por tu imagen -->
                 <div class="brand-circle">
                     <img src="logo.jpeg" alt="Logo" class="brand-circle-img"
                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <!-- Ícono de respaldo si no hay imagen -->
                     <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" class="brand-circle-svg">
                         <path d="M8 34 L22 12 L36 34 Z" stroke="#12CFF4" stroke-width="2" fill="none" stroke-linejoin="round"/>
                         <path d="M14 34 L22 20 L30 34" stroke="rgba(18,207,244,0.6)" stroke-width="1.5" fill="none" stroke-linejoin="round"/>
@@ -59,7 +51,6 @@
                 <div class="brand-name">Rojas Remodeling</div>
                 <div class="brand-tagline">Transformamos tu espacio</div>
 
-                <!-- Skyline -->
                 <svg class="skyline" viewBox="0 0 280 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMax slice">
                     <rect x="10"  y="80"  width="30" height="120" rx="1" fill="rgba(18,207,244,0.18)"/>
                     <rect x="15"  y="90"  width="8"  height="8"  fill="rgba(18,207,244,0.4)"/>
@@ -119,7 +110,6 @@
     <script>
         const canvas  = document.getElementById('bg-canvas');
         const ctx     = canvas.getContext('2d');
-        // Paleta clara: cyan suave, gold suave, grises claros
         const PALETTE = ['#12CFF4','#F4A300','#c8eef7','#fde8b0','#dde8ed','#e8f4fb'];
         let triangles = [];
 
@@ -165,7 +155,6 @@
         let t = 0;
         function draw() {
             t++;
-            // Fondo blanco-azulado muy claro
             ctx.fillStyle = '#f0f8fc';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
