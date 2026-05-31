@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Rojas Remodeling</title>
+    <title>Dashboard Admin - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="admin.css">
+    
+    <link rel="stylesheet" href="admin.css"> 
+    <link rel="stylesheet" href="usuarios/usuarios.css"> 
 </head>
 <body>
 
@@ -41,67 +44,117 @@
             </nav>
 
             <div class="sidebar-footer">
-                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
+                <button id="btnSalir" class="btn-logout-sidebar">
                     <i class="fa-solid fa-right-from-bracket"></i> Salir
                 </button>
             </div>
         </aside>
 
         <main class="main-content">
-            
             <header class="top-navbar">
-                <div class="page-title">Panel de Control General</div>
-                <div class="user-profile">
+                <div class="page-title">Resumen del Sistema</div>
+                
+                <div id="btnPerfilAdmin" class="user-profile" style="cursor: pointer; transition: 0.3s;" title="Haz clic para editar tu perfil" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='transparent'">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="admin-email-display">Cargando...</span>
+                    <i class="fa-solid fa-pen" style="font-size: 12px; margin-left: 5px; color: #666;"></i>
                 </div>
             </header>
 
             <div class="content-body">
                 <div class="grid-cards">
                     <div class="card card-blue" onclick="window.location.href='usuarios/usuarios.html'">
-                        <div class="card-icon-container"><i class="fa-solid fa-users-gear"></i></div>
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
                         <div class="card-info">
-                            <h3>Usuarios</h3>
-                            <p>Total registrados: <strong id="stat-total-users">...</strong></p>
+                            <h3>Gestión de Usuarios</h3>
+                            <p>Administra empleados, jefes y roles.</p>
                         </div>
                     </div>
 
-                    <div class="card card-green" onclick="window.location.href='categorias/categorias.html'">
-                        <div class="card-icon-container"><i class="fa-solid fa-tags"></i></div>
+                    <div class="card card-orange" onclick="window.location.href='categorias/categorias.html'">
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-tags"></i>
+                        </div>
                         <div class="card-info">
                             <h3>Categorías</h3>
-                            <p>Tipos de proyectos</p>
+                            <p>Clasificación de materiales y servicios.</p>
                         </div>
                     </div>
 
-                    <div class="card card-orange" onclick="window.location.href='trabajos/trabajos.html'">
-                        <div class="card-icon-container"><i class="fa-solid fa-hammer"></i></div>
+                    <div class="card card-green" onclick="window.location.href='materiales/materiales.html'">
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
                         <div class="card-info">
-                            <h3>Trabajos Activos</h3>
-                            <p>En progreso</p>
+                            <h3>Inventario de Materiales</h3>
+                            <p>Control de stock y herramientas.</p>
                         </div>
                     </div>
 
-                    <div class="card card-slate" onclick="window.location.href='materiales/materiales.html'">
-                        <div class="card-icon-container"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <div class="card card-purple" onclick="window.location.href='trabajos/trabajos.html'">
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-hammer"></i>
+                        </div>
                         <div class="card-info">
-                            <h3>Materiales</h3>
-                            <p>Gestión de inventario</p>
+                            <h3>Trabajos y Proyectos</h3>
+                            <p>Asignación de obras y seguimiento.</p>
                         </div>
                     </div>
-
-                    <div class="card card-purple" onclick="window.location.href='evidencias/evidencias.html'">
-                        <div class="card-icon-container"><i class="fa-solid fa-images"></i></div>
-                        <div class="card-info">
-                            <h3>Evidencias</h3>
-                            <p>Auditoría y fotos</p>
-                        </div>
-                    </div>  
                 </div>
             </div>
-
         </main>
+    </div>
+
+    <div class="modal-overlay" id="modalPerfil">
+        <div class="modal-container" style="max-width: 500px;">
+            <div class="modal-header">
+                <span id="modalTitulo"><i class="fa-solid fa-user-pen"></i> Editar Mi Perfil</span>
+                <button id="btnCerrarModalTop" class="btn-close-modal">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="perfilForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombres</label>
+                            <input type="text" id="perfilFirstName" class="input-field" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellidos</label>
+                            <input type="text" id="perfilLastName" class="input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 15px;">
+                        <div class="form-group">
+                            <label>DNI / Cédula</label>
+                            <input type="text" id="perfilDni" class="input-field" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" id="perfilPhone" class="input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="perfilEmail" class="input-field" required>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Nueva Contraseña <small style="color: #666;">(Opcional)</small></label>
+                        <input type="password" id="perfilPassword" class="input-field" placeholder="Déjalo en blanco para mantener la actual">
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
+                <button id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar Cambios</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="admin-dashboard.js"></script>

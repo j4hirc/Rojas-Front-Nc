@@ -7,7 +7,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../admin/admin.css"> 
+    <link rel="stylesheet" href="../admin/admin.css">
+    <link rel="stylesheet" href="../admin/usuarios/usuarios.css"> 
+
 </head>
 <body>
 
@@ -38,7 +40,7 @@
             </nav>
 
             <div class="sidebar-footer">
-                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
+                <button class="btn-logout-sidebar" id="btnSalir">
                     <i class="fa-solid fa-right-from-bracket"></i> Salir
                 </button>
             </div>
@@ -47,9 +49,11 @@
         <main class="main-content">
             <header class="top-navbar">
                 <div class="page-title">Resumen de Operaciones</div>
-                <div class="user-profile" style="color: #198754; background: #E8F5E9;">
+                
+                <div id="btnPerfilJefe" class="user-profile" style="color: #198754; background: #E8F5E9; cursor: pointer; transition: 0.3s;" title="Haz clic para editar tu perfil" onmouseover="this.style.background='#c8e6c9'" onmouseout="this.style.background='#E8F5E9'">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="jefe-email-display">Cargando...</span>
+                    <i class="fa-solid fa-pen" style="font-size: 12px; margin-left: 5px; color: #198754;"></i>
                 </div>
             </header>
 
@@ -90,6 +94,56 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <div class="modal-overlay" id="modalPerfil">
+        <div class="modal-container" style="max-width: 500px;">
+            <div class="modal-header">
+                <span id="modalTitulo" style="color: #198754;"><i class="fa-solid fa-user-pen"></i> Editar Mi Perfil</span>
+                <button id="btnCerrarModalTop" class="btn-close-modal">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="perfilForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Nombres</label>
+                            <input type="text" id="perfilFirstName" class="input-field" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Apellidos</label>
+                            <input type="text" id="perfilLastName" class="input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row" style="margin-top: 15px;">
+                        <div class="form-group">
+                            <label>DNI / Cédula</label>
+                            <input type="text" id="perfilDni" class="input-field" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="text" id="perfilPhone" class="input-field" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="perfilEmail" class="input-field" required>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Nueva Contraseña <small style="color: #666;">(Opcional)</small></label>
+                        <input type="password" id="perfilPassword" class="input-field" placeholder="Déjalo en blanco para mantener la actual">
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
+                <button id="btnGuardarPerfil" class="btn-primary" style="background: #198754;">Guardar Cambios</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="jefe-dashboard.js"></script>

@@ -2,10 +2,12 @@ const JOBS_URL = 'http://localhost:8081/api/v1/jobs/all';
 const USERS_URL = 'http://localhost:8081/api/v1/user/all-users';
 const MATERIALS_URL = 'http://localhost:8081/api/v1/materials/all';
 const UPDATE_URL = 'http://localhost:8081/api/v1/job-updates/create';
+const USER_API_URL = 'http://localhost:8081/api/v1/user'; // Para editar perfil
 
 let userToken = '';
 let myEmployeeId = null;
 let currentJobInfo = null; 
+let miUsuarioActual = null; // Guardará todos los datos del empleado
 
 let archivosSeleccionados = [];
 let imagenesBase64Data = []; 
@@ -52,13 +54,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    document.getElementById('employee-email-display').textContent = userEmail || 'Empleado';
-
     inicializarCanvasFirma();
     await cargarMateriales();
     await cargarCalendarioEmpleado(userEmail);
 });
 
+// --- LÓGICA DEL CALENDARIO ---
 async function cargarCalendarioEmpleado(emailActual) {
     try {
         Swal.fire({ title: 'Cargando tus trabajos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
@@ -67,7 +68,13 @@ async function cargarCalendarioEmpleado(emailActual) {
         const users = await resUsers.json();
         const yo = users.find(u => u.email === emailActual);
         
-        if (yo) myEmployeeId = yo.userId;
+        if (yo) {
+            myEmployeeId = yo.userId;
+            miUsuarioActual = yo; // Guardamos sus datos
+            document.getElementById('employee-email-display').textContent = `${yo.firstName} ${yo.lastName}`;
+        } else {
+            document.getElementById('employee-email-display').textContent = emailActual;
+        }
 
         const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         const todosLosTrabajos = await resJobs.json();
@@ -354,6 +361,84 @@ window.abrirModalEvidence = (jobId) => {
 
 window.cerrarModalEvidence = () => { document.getElementById('modalEvidence').style.display = 'none'; };
 
+// --- NUEVO: FUNCIONES DEL PERFIL DEL EMPLEADO ---
+window.abrirModalPerfil = () => {
+    if (!miUsuarioActual) {
+        return Swal.fire('Error', 'No se pudieron cargar tus datos. Refresca la página.', 'error');
+    }
+    document.getElementById('perfilFirstName').value = miUsuarioActual.firstName;
+    document.getElementById('perfilLastName').value = miUsuarioActual.lastName;
+    document.getElementById('perfilDni').value = miUsuarioActual.dni;
+    document.getElementById('perfilPhone').value = miUsuarioActual.phone;
+    document.getElementById('perfilEmail').value = miUsuarioActual.email;
+    document.getElementById('perfilPassword').value = ''; 
+    document.getElementById('modalPerfil').style.display = 'flex';
+};
+
+window.cerrarModalPerfil = () => {
+    document.getElementById('modalPerfil').style.display = 'none';
+};
+
+window.guardarPerfil = async () => {
+    // 1. Enviamos todos los datos (incluyendo los que el DTO de Spring exige, aunque no se vean en el modal)
+    const payload = {
+        firstName: document.getElementById('perfilFirstName').value.trim(),
+        middleName: miUsuarioActual.middleName || "",
+        lastName: document.getElementById('perfilLastName').value.trim(),
+        secondSurname: miUsuarioActual.secondSurname || "",
+        dni: document.getElementById('perfilDni').value.trim(),
+        phone: document.getElementById('perfilPhone').value.trim(),
+        email: document.getElementById('perfilEmail').value.trim(),
+        password: document.getElementById('perfilPassword').value, // Si va vacío, Java no lo actualiza
+        dateOfBirth: miUsuarioActual.dateOfBirth, // Requisito del DTO en Java
+        title: miUsuarioActual.title              // Requisito del DTO en Java
+    };
+
+    if(!payload.firstName || !payload.lastName || !payload.dni || !payload.phone || !payload.email) {
+        return Swal.fire('Atención', 'Por favor llena todos los campos obligatorios.', 'warning');
+    }
+
+    Swal.fire({ title: 'Actualizando tu perfil...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+
+    try {
+        const token = localStorage.getItem('jwt_token');
+        
+        // 2. CORREGIMOS LA URL: Ahora es edit-user en lugar de edit-profile
+        const response = await fetch(`http://localhost:8081/api/v1/user/edit-user/${miUsuarioActual.userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            Swal.fire({
+                icon: 'success', 
+                title: '¡Perfil Actualizado!', 
+                text: 'Tus datos se actualizaron correctamente. Por seguridad, vuelve a iniciar sesión.',
+                confirmButtonColor: '#0277bd', // Usa #198754 para el Jefe o #0f4c81 para el Admin
+                allowOutsideClick: false
+            });
+        } else {
+            let errorMsg = 'No se pudo actualizar el perfil.';
+            try {
+                const errorData = await response.json();
+                // Mostramos el error exacto que envía Spring Boot
+                if (errorData && typeof errorData === 'object') {
+                    errorMsg = Object.values(errorData).join('<br>');
+                } else if (errorData && errorData.message) {
+                    errorMsg = errorData.message;
+                }
+            } catch (e) {}
+            Swal.fire({ icon: 'error', title: 'Error', html: errorMsg });
+        }
+    } catch (error) { 
+        Swal.fire('Error de red', 'No se pudo contactar al servidor.', 'error'); 
+    }
+};
+
 window.guardarReporteYPdf = async () => {
     const jobId = document.getElementById('evJobId').value;
     const status = document.getElementById('evStatus').value;
@@ -414,7 +499,6 @@ window.guardarReporteYPdf = async () => {
     try {
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
         
-        // ¡DESCARGA INMEDIATA AL DISPOSITIVO ANTES DE SUBIR!
         const urlDescarga = window.URL.createObjectURL(pdfBlob);
         const a = document.createElement('a');
         a.href = urlDescarga;
@@ -432,10 +516,9 @@ window.guardarReporteYPdf = async () => {
 
     pdfWrapper.style.display = 'none';
 
-    // PREPARAR DATOS PARA EL BACKEND
     const dtoObject = {
         comment: comment,
-        jobId: parseInt(document.getElementById('evJobId').value), // Seguro anti-fallos
+        jobId: parseInt(currentJobInfo.jobId),
         employeeId: myEmployeeId,
         status: status,
         materialIds: selectedMaterialIds

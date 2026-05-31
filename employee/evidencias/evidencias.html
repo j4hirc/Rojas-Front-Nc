@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Evidencias - Rojas Remodeling</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="stylesheet" href="../../admin/admin.css"> 
+    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
+
+    <style>
+        .sidebar-logo { color: #0277bd !important; }
+        .sidebar-nav a:hover { color: #0277bd; background: #e1f5fe; }
+        .sidebar-nav a.active { color: #0277bd; border-right-color: #0277bd; background: #e1f5fe; }
+        
+        .timeline-update {
+            background: #F9FAFC; border-left: 4px solid #0277bd; padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
+        }
+        .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
+        .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
+        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .gallery-img { 
+            width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; 
+            border: 2px solid #E0E5F2; transition: transform 0.2s;
+        }
+        .gallery-img:hover { transform: scale(1.05); border-color: #0277bd; }
+        .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
+        
+        .pdf-btn {
+            display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 80px; height: 80px; background: #e1f5fe; border: 2px dashed #0277bd; border-radius: 8px;
+            color: #0277bd; text-decoration: none; font-size: 11px; font-weight: bold; transition: 0.3s;
+        }
+        .pdf-btn i { font-size: 24px; margin-bottom: 5px; color: #d32f2f; }
+        .pdf-btn:hover { background: #0277bd; color: white; border-style: solid; }
+        .pdf-btn:hover i { color: white; }
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <i class="fa-solid fa-screwdriver-wrench"></i>
+                <span>Mi Portal</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="../employee-dashboard.html">
+                    <i class="fa-solid fa-calendar-days"></i> Mi Calendario
+                </a>
+                <a href="evidencias.html" class="active">
+                    <i class="fa-solid fa-camera"></i> Mis Evidencias
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <div class="page-title">Historial de Mis Trabajos</div>
+                <div class="user-profile" style="color: #0277bd; background: #e1f5fe;">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span id="employee-email-display">Cargando...</span>
+                </div>
+            </header>
+
+            <div class="content-body">
+                <div class="usuarios-container" style="margin-top: 0;">
+                    
+                    <div class="header-section">
+                        <h2 style="margin: 0; color: #2B3674;">Reportes y Evidencias Subidas</h2>
+                    </div>
+
+                    <div id="jobsGrid" class="grid-cards">
+                        </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="modalEvidencias">
+        <div class="modal-container" style="max-width: 600px;">
+            <div class="modal-header">
+                <span id="modalTitulo" style="color:#0277bd;"><i class="fa-solid fa-images"></i> Historial del Proyecto</span>
+                <button onclick="cerrarModalEvidencias()" class="btn-close-modal">✕</button>
+            </div>
+            
+            <div class="modal-body">
+                <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #e1f5fe; border: 1px solid #81d4fa; border-radius: 8px; color: #01579b; font-size: 0.9rem;">
+                    </div>
+
+                <div id="evidencesTimeline">
+                    </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button onclick="cerrarModalEvidencias()" class="btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="evidencias.js"></script>
+</body>
+</html>
