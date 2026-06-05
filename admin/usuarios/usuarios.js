@@ -50,10 +50,11 @@ window.cargarUsuarios = () => {
     
     // 1. Filtro por Estado (Agregamos .trim() por seguridad contra espacios en la BD)
     if (estadoFiltro !== 'All') {
-        usuariosFiltrados = usuariosFiltrados.filter(user => {
-            return user.status && user.status.trim() === estadoFiltro;
-        });
-    }
+    usuariosFiltrados = usuariosFiltrados.filter(user => {
+        // Convertimos ambos a minúsculas para que coincidan sí o sí
+        return user.status && user.status.trim().toLowerCase() === estadoFiltro.toLowerCase();
+    });
+}
     
     // 2. Filtro por DNI
     if (dniBuscado !== "") {
