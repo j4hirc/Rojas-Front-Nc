@@ -43,19 +43,32 @@ async function cargarUsuariosDesdeAPI() {
 
 window.cargarUsuarios = () => {
     const dniBuscado = document.getElementById('buscadorDni').value.trim();
-    if(dniBuscado !== "") {
-        buscarPorDni();
-        return;
-    }
-
     const estadoFiltro = document.getElementById('filtroEstado').value;
-    let usuariosAFiltrar = todosLosUsuariosCache;
     
+    // Forzamos a que empiece siempre con la lista completa de la caché
+    let usuariosFiltrados = todosLosUsuariosCache;
+    
+    // 1. Filtro por Estado (Agregamos .trim() por seguridad contra espacios en la BD)
     if (estadoFiltro !== 'All') {
-        usuariosAFiltrar = todosLosUsuariosCache.filter(user => user.status === estadoFiltro);
+        usuariosFiltrados = usuariosFiltrados.filter(user => {
+            return user.status && user.status.trim() === estadoFiltro;
+        });
     }
     
-    renderizarUsuarios(usuariosAFiltrar);
+    // 2. Filtro por DNI
+    if (dniBuscado !== "") {
+        usuariosFiltrados = usuariosFiltrados.filter(user => {
+            return user.dni && user.dni.trim().includes(dniBuscado);
+        });
+    }
+    
+    // 3. Renderizar el resultado de los filtros aplicados
+    renderizarUsuarios(usuariosFiltrados);
+};
+
+// Asegurar que el buscador use la misma lógica unificada
+window.buscarPorDni = () => {
+    cargarUsuarios();
 };
 
 window.buscarPorDni = () => {
