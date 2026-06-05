@@ -41,30 +41,51 @@ async function cargarUsuariosDesdeAPI() {
     }
 }
 
-window.cargarUsuarios = () => {
-    const dniBuscado = document.getElementById('buscadorDni').value.trim();
+window.cargarUsuarios = async () => {
     const estadoFiltro = document.getElementById('filtroEstado').value;
-    
-    // Forzamos a que empiece siempre con la lista completa de la caché
-    let usuariosFiltrados = todosLosUsuariosCache;
-    
-    // 1. Filtro por Estado (Agregamos .trim() por seguridad contra espacios en la BD)
-    if (estadoFiltro !== 'All') {
-    usuariosFiltrados = usuariosFiltrados.filter(user => {
-        // Convertimos ambos a minúsculas para que coincidan sí o sí
-        return user.status && user.status.trim().toLowerCase() === estadoFiltro.toLowerCase();
-    });
-}
-    
-    // 2. Filtro por DNI
-    if (dniBuscado !== "") {
-        usuariosFiltrados = usuariosFiltrados.filter(user => {
-            return user.dni && user.dni.trim().includes(dniBuscado);
+    const dniBuscado = document.getElementById('buscadorDni').value.trim();
+
+    try {
+        let urlDestino = `${API_URL}/all-users`;
+
+        // SI EL USUARIO SELECCIONA DESEMPLEADOS, USAMOS TU NUEVO ENDPOINT
+        if (estadoFiltro === 'Unemployed') {
+            urlDestino = `${API_URL}/all-unemployed`;
+        }
+
+        // Hacemos la petición directo al servidor
+        const response = await fetch(urlDestino, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${userToken}` }
         });
+
+        if (response.ok) {
+            let usuarios = await response.json();
+
+            // Si el filtro era 'Active', hacemos el filtro rápido aquí 
+            // (o puedes crear un endpoint /all-active en tu Java si quieres)
+            if (estadoFiltro === 'Active') {
+                usuarios = usuarios.filter(user => user.status === 'Active' || user.userStatus === 'Active');
+            }
+
+            // Si además hay un DNI escrito en el buscador, lo filtramos encima
+            if (dniBuscado !== "") {
+                usuarios = usuarios.filter(user => user.dni && user.dni.includes(dniBuscado));
+            }
+
+            // Mandamos a pintar la tabla con los datos reales del servidor
+            renderizarUsuarios(usuarios);
+        } else {
+            console.error("Error en la respuesta del servidor:", response.status);
+        }
+    } catch (error) {
+        console.error('Error de red al filtrar:', error);
     }
-    
-    // 3. Renderizar el resultado de los filtros aplicados
-    renderizarUsuarios(usuariosFiltrados);
+};
+
+// Mantenemos el buscador conectado a la misma lógica
+window.buscarPorDni = () => {
+    cargarUsuarios();
 };
 
 // Asegurar que el buscador use la misma lógica unificada
