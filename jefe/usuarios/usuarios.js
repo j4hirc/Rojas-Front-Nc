@@ -282,7 +282,7 @@ window.guardarUsuario = async () => {
     const url = isEditing ? `${API_URL}/update-user/${id}` : `${API_URL}/create-user`;
     const method = isEditing ? 'PUT' : 'POST';
 
-    try {
+   try {
         const response = await fetch(url, {
             method: method,
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
@@ -296,7 +296,23 @@ window.guardarUsuario = async () => {
             await cargarUsuariosDesdeAPI(); 
         } else {
             const errorData = await response.json();
-            Swal.fire('Error del servidor', errorData.message || 'Verifica los datos.', 'error');
+            let errorMessage = 'Verifica los datos enviados.';
+
+            // Verificamos si el mensaje es un objeto de errores de validación de Spring Boot
+            if (errorData.message && typeof errorData.message === 'object') {
+                // Extraemos todos los valores del objeto y los unimos con un salto de línea
+                errorMessage = Object.values(errorData.message).join('<br>');
+            } else if (errorData.message) {
+                // Si es un error general en formato string
+                errorMessage = errorData.message;
+            }
+
+            // Usamos la propiedad 'html' en lugar del texto simple para soportar los saltos de línea
+            Swal.fire({
+                title: 'Error de validación',
+                html: errorMessage,
+                icon: 'error'
+            });
         }
     } catch (error) {
         console.error('Error al guardar:', error);

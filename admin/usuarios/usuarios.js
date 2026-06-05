@@ -145,7 +145,7 @@ window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
                         dni: user.dni, title: user.title, firstName: user.firstName, middleName: user.middleName,
                         lastName: user.lastName, secondSurname: user.secondSurname, email: user.email,
                         phone: user.phone, dateOfBirth: user.dateOfBirth, dateOfEntry: user.dateOfEntry,
-                        password: "", // Pasamos vacío para que el backend no lo actualice
+                        password: "", 
                         status: nuevoEstado, roles: user.roles.map(r => r.name) 
                     };
 
@@ -174,7 +174,6 @@ window.abrirModalCrear = () => {
     document.getElementById('userId').value = '';
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-user-plus"></i> Nuevo Usuario';
     
-    // Al CREAR, la contraseña es obligatoria en el Frontend
     document.getElementById('userPassword').setAttribute('required', 'true');
     document.getElementById('userPassword').placeholder = "Requerida para nuevos usuarios";
     
@@ -187,7 +186,6 @@ window.abrirModalEditar = async (id) => {
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Usuario';
     document.getElementById('userId').value = id;
     
-    // Al EDITAR, la contraseña NO es obligatoria
     document.getElementById('userPassword').removeAttribute('required'); 
     document.getElementById('userPassword').placeholder = "Dejar en blanco para no cambiarla";
     
@@ -227,57 +225,63 @@ window.guardarUsuario = async () => {
     const roleCheckboxes = document.querySelectorAll('input[name="userRoles"]:checked');
     const selectedRoles = Array.from(roleCheckboxes).map(cb => cb.value);
 
+    // NUEVO: Validaciones de campos obligatorios para no mandar basura al backend
+    const firstName = document.getElementById('userFirstName').value.trim();
+    const lastName = document.getElementById('userLastName').value.trim();
+    const email = document.getElementById('userEmail').value.trim();
+    const phone = document.getElementById('userPhone').value.trim();
+    const title = document.getElementById('userTitle').value.trim();
+    const birthDateInput = document.getElementById('userBirth').value;
+    const entryDateInput = document.getElementById('userEntry').value;
+    const dniInput = document.getElementById('userDni').value.trim();
+
+    if(!firstName || !lastName || !email || !phone || !title || !birthDateInput || !entryDateInput || !dniInput) {
+        return Swal.fire('Faltan datos', 'Por favor, llena todos los campos obligatorios.', 'warning');
+    }
+
     if (selectedRoles.length === 0) {
         return Swal.fire('Faltan datos', 'Debes seleccionar al menos un rol para el usuario.', 'warning');
     }
 
-    const dniInput = document.getElementById('userDni').value.trim();
     if(!/^\d{10}$/.test(dniInput)){
         return Swal.fire('DNI Inválido', 'El DNI debe contener exactamente 10 números.', 'warning');
     }
 
-    // Validamos la contraseña en Frontend SÓLO al crear
     const passwordInput = document.getElementById('userPassword').value;
     if (!isEditing && passwordInput.trim() === "") {
         return Swal.fire('Faltan datos', 'La contraseña es obligatoria para usuarios nuevos.', 'warning');
     }
 
-    const birthDateInput = document.getElementById('userBirth').value;
-    const entryDateInput = document.getElementById('userEntry').value;
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
-    if(birthDateInput) {
-        const fechaNacimiento = new Date(birthDateInput);
-        let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-        const mes = hoy.getMonth() - fechaNacimiento.getMonth();
-        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) { edad--; }
-        if (edad < 18) {
-            return Swal.fire('Edad Inválida', 'El usuario debe ser mayor de 18 años.', 'warning');
-        }
+    const fechaNacimiento = new Date(birthDateInput);
+    let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+    const mes = hoy.getMonth() - fechaNacimiento.getMonth();
+    if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) { edad--; }
+    if (edad < 18) {
+        return Swal.fire('Edad Inválida', 'El usuario debe ser mayor de 18 años.', 'warning');
     }
 
-    if(entryDateInput) {
-        const parts = entryDateInput.split('-');
-        const fechaIngreso = new Date(parts[0], parts[1] - 1, parts[2]);
-        if (fechaIngreso > hoy) {
-            return Swal.fire('Fecha Inválida', 'La fecha de ingreso no puede ser en el futuro.', 'warning');
-        }
+    const parts = entryDateInput.split('-');
+    const fechaIngreso = new Date(parts[0], parts[1] - 1, parts[2]);
+    if (fechaIngreso > hoy) {
+        return Swal.fire('Fecha Inválida', 'La fecha de ingreso no puede ser en el futuro.', 'warning');
     }
 
     const payload = {
         dni: dniInput,
-        firstName: document.getElementById('userFirstName').value.trim(),
+        firstName: firstName,
         middleName: document.getElementById('userMiddleName').value.trim(),
-        lastName: document.getElementById('userLastName').value.trim(),
+        lastName: lastName,
         secondSurname: document.getElementById('userSecondSurname').value.trim(),
-        email: document.getElementById('userEmail').value.trim(),
-        password: passwordInput, // Si está editando y está vacío, mandará "", tu backend lo ignorará.
-        phone: document.getElementById('userPhone').value.trim(),
+        email: email,
+        password: passwordInput,
+        phone: phone,
         dateOfBirth: birthDateInput,
         dateOfEntry: entryDateInput,
         status: document.getElementById('userStatus').value,
-        title: document.getElementById('userTitle').value.trim(),
+        title: title,
         roles: selectedRoles 
     };
 
@@ -297,8 +301,19 @@ window.guardarUsuario = async () => {
             document.getElementById('buscadorDni').value = "";
             await cargarUsuariosDesdeAPI(); 
         } else {
-            const errorData = await response.json();
-            Swal.fire('Error del servidor', errorData.message || 'Verifica los datos.', 'error');
+            // MAGIA: Formateamos la respuesta del backend para que SweetAlert no explote
+            let errorMsg = 'Verifica los datos y que no existan correos/DNIs duplicados.';
+            try {
+                const errorData = await response.json();
+                if (errorData && typeof errorData.message === 'object') {
+                    // Si manda varios errores a la vez (ej: "DNI vacío", "Título vacío")
+                    errorMsg = Object.values(errorData.message).join('<br>');
+                } else if (errorData && errorData.message) {
+                    errorMsg = errorData.message;
+                }
+            } catch(e) {}
+            
+            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
         }
     } catch (error) {
         console.error('Error al guardar:', error);
