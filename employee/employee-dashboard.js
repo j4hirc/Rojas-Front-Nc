@@ -137,7 +137,7 @@ async function cargarCalendarioEmpleado(emailActual) {
 
                 // PUNTOS 6, 7 y 3: Reordenado de datos con Contacto de la propiedad y PAGO ($)
                 Swal.fire({
-                    title: `<h3 style="color:#0f4c81; margin:0; font-weight:700; text-align:center;">Detalles del Trabajo</h3>`,
+                    title: `<h3 style="color:#0f4c81; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
                     html: `
                         <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
                             <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #ccc;">
@@ -159,20 +159,21 @@ async function cargarCalendarioEmpleado(emailActual) {
                                 <strong><i class="fa-solid fa-location-dot" style="color:#0277bd; width:20px;"></i> Dirección:</strong> ${p.address}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-solid fa-key" style="color:#0277bd; width:20px;"></i> Código Caja:</strong> ${p.safeDepositBoxCodes || 'No asignada'}
+                                <strong><i class="fa-solid fa-key" style="color:#0277bd; width:20px;"></i> Código Caja Fuerte:</strong> ${p.safeDepositBoxCodes || 'No requiere'}
                             </p>
-                            <p style="margin: 8px 0; font-size: 15px; color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 5px; border-radius: 4px; display: inline-block;">
-                                <strong><i class="fa-solid fa-dollar-sign" style="width:20px;"></i> Pago por Trabajo:</strong> $${p.pay ? p.pay.toFixed(2) : '0.00'}
+                            
+                            <p style="margin: 12px 0 8px 0; font-size: 15px; color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 8px; border-radius: 4px; text-align: center;">
+                                <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${p.pay ? p.pay.toFixed(2) : '0.00'}
                             </p>
 
                             <div style="margin-top: 15px; padding: 12px; background: #f8faff; border-radius: 8px; border-left: 3px solid #0277bd;">
                                 <strong style="font-size: 13px; color: #2B3674;">Notas de Trabajo:</strong>
-                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${p.description || 'Sin notas'}"</p>
+                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${p.description || 'Sin notas especiales'}"</p>
                             </div>
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #0277bd; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=$${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #0277bd; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
                                     <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
                                 </a>
                             </div>
