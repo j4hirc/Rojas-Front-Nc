@@ -171,3 +171,64 @@ function cerrarSesion() {
         }
     });
 }
+
+window.verBodegaHoy = async () => {
+    Swal.fire({ title: 'Calculando materiales...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    try {
+        const token = localStorage.getItem('jwt_token');
+        const JOBS_URL = 'http://localhost:8081/api/v1/jobs/all';
+        
+        const response = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${token}` } });
+        const jobs = await response.json();
+        
+        // Calculamos la fecha de hoy y mañana
+        const hoy = new Date();
+        const strHoy = hoy.toISOString().split('T')[0]; // Ej: 2026-06-08
+        const manana = new Date(hoy);
+        manana.setDate(manana.getDate() + 1);
+        const strManana = manana.toISOString().split('T')[0];
+
+        let materialesRequeridos = {};
+
+        jobs.forEach(job => {
+            // Formateamos la fecha del trabajo que viene de Spring Boot
+            let jobDateStr = "";
+            if(Array.isArray(job.jobDate)) {
+                 jobDateStr = `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2,'0')}-${String(job.jobDate[2]).padStart(2,'0')}`;
+            } else {
+                 jobDateStr = job.jobDate;
+            }
+
+            // Si el trabajo es de Hoy o Mañana y NO está completado ni cancelado
+            if ((jobDateStr === strHoy || jobDateStr === strManana) && (job.status === 'PENDING' || job.status === 'IN_PROGRESS')) {
+                if (job.materials && job.materials.length > 0) {
+                    job.materials.forEach(mat => {
+                        if(materialesRequeridos[mat.name]) {
+                            materialesRequeridos[mat.name]++;
+                        } else {
+                            materialesRequeridos[mat.name] = 1;
+                        }
+                    });
+                }
+            }
+        });
+
+        let htmlContent = '<ul style="text-align: left; font-size: 14px; color: #444; background: #f8faff; padding: 15px 30px; border-radius: 8px;">';
+        if(Object.keys(materialesRequeridos).length === 0) {
+            htmlContent += '<li>No hay materiales agendados para obras de hoy o mañana.</li>';
+        } else {
+            for(let mat in materialesRequeridos) {
+                htmlContent += `<li style="margin-bottom: 5px;"><strong>${mat}</strong> (Requerido en ${materialesRequeridos[mat]} obras)</li>`;
+            }
+        }
+        htmlContent += '</ul>';
+
+        Swal.fire({
+            title: '<i class="fa-solid fa-boxes-stacked" style="color:#d32f2f;"></i> Bodega de Hoy',
+            html: `<p style="font-size: 14px;">Materiales que las cuadrillas necesitan recoger:</p>${htmlContent}`,
+            confirmButtonColor: '#d32f2f'
+        });
+    } catch (e) {
+        Swal.fire('Error', 'No se pudo cargar la bodega.', 'error');
+    }
+};

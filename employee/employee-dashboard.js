@@ -2,12 +2,12 @@ const JOBS_URL = 'http://localhost:8081/api/v1/jobs/all';
 const USERS_URL = 'http://localhost:8081/api/v1/user/all-users';
 const MATERIALS_URL = 'http://localhost:8081/api/v1/materials/all';
 const UPDATE_URL = 'http://localhost:8081/api/v1/job-updates/create';
-const USER_API_URL = 'http://localhost:8081/api/v1/user'; // Para editar perfil
+const USER_API_URL = 'http://localhost:8081/api/v1/user'; 
 
 let userToken = '';
 let myEmployeeId = null;
 let currentJobInfo = null; 
-let miUsuarioActual = null; // Guardará todos los datos del empleado
+let miUsuarioActual = null; 
 
 let archivosSeleccionados = [];
 let imagenesBase64Data = []; 
@@ -57,20 +57,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     inicializarCanvasFirma();
     await cargarMateriales();
     await cargarCalendarioEmpleado(userEmail);
+
+    // NUEVO PUNTOS 1: Controlar aparición de la casilla de garantía
+    document.getElementById('evStatus').addEventListener('change', (e) => {
+        const certBox = document.getElementById('certBox');
+        if (e.target.value === 'COMPLETED') {
+            certBox.style.display = 'block';
+        } else {
+            certBox.style.display = 'none';
+            document.getElementById('evCertification').checked = false;
+        }
+    });
 });
 
-// --- LÓGICA DEL CALENDARIO ---
 async function cargarCalendarioEmpleado(emailActual) {
     try {
         Swal.fire({ title: 'Cargando tus trabajos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         const users = await resUsers.json();
-        const yo = users.find(u => u.email === emailActual);
+        const yo = users.find(u => u.email.toLowerCase() === emailActual.toLowerCase());
         
         if (yo) {
             myEmployeeId = yo.userId;
-            miUsuarioActual = yo; // Guardamos sus datos
+            miUsuarioActual = yo;
             document.getElementById('employee-email-display').textContent = `${yo.firstName} ${yo.lastName}`;
         } else {
             document.getElementById('employee-email-display').textContent = emailActual;
@@ -106,50 +116,6 @@ async function cargarCalendarioEmpleado(emailActual) {
             headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
             events: eventosFormateados,
             
-            eventContent: function(arg) {
-                let p = arg.event.extendedProps;
-                let icon = '';
-                if(p.status === 'PENDING') icon = '<i class="fa-solid fa-clock"></i>';
-                if(p.status === 'IN_PROGRESS') icon = '<i class="fa-solid fa-gear fa-spin"></i>';
-                if(p.status === 'COMPLETED') icon = '<i class="fa-solid fa-check-double"></i>';
-                if(p.status === 'CANCELLED') icon = '<i class="fa-solid fa-ban"></i>';
-
-                let viewType = arg.view.type;
-
-                if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
-                    return { html: `
-                        <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px; width: 100%; color: #333;">
-                            <div style="font-weight: 700; font-size: 1.2em; color: ${arg.event.backgroundColor}; border-bottom: 1px solid #E0E5F2; padding-bottom: 5px; margin-bottom: 5px;">
-                                ${icon} ${arg.event.title}
-                            </div>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 0.95em;">
-                                <span><strong style="color:#0277bd;"><i class="fa-solid fa-location-dot"></i> Dir:</strong> ${p.address}</span>
-                                <span><strong style="color:#0277bd;"><i class="fa-solid fa-phone"></i> Tel:</strong> ${p.clientPhone}</span>
-                                <span><strong style="color:#0277bd;"><i class="fa-regular fa-calendar"></i> Fecha:</strong> ${p.fechaHermosa}</span>
-                                <span><strong style="color:#0277bd;"><i class="fa-solid fa-hard-hat"></i> Jefe:</strong> ${p.nameManager || 'N/A'}</span>
-                            </div>
-                            <div style="font-size: 0.9em; color: #444; font-style: italic; background: #f8faff; padding: 10px; border-left: 3px solid ${arg.event.backgroundColor}; border-radius: 6px; margin-top: 5px;">
-                                "${p.description}"
-                            </div>
-                        </div>` 
-                    };
-                } else {
-                    return { html: `
-                        <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden;" title="Dir: ${p.address}\nDesc: ${p.description}">
-                            <div style="font-weight: 700; font-size: 0.85em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.4); padding-bottom:2px; margin-bottom:2px;">
-                                ${icon} ${arg.event.title}
-                            </div>
-                            <div style="font-size: 0.75em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
-                                <i class="fa-solid fa-location-dot"></i> ${p.address}
-                            </div>
-                            <div style="font-size: 0.75em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
-                                <i class="fa-regular fa-calendar"></i> ${p.fechaHermosa}
-                            </div>
-                        </div>` 
-                    };
-                }
-            },
-
             eventClick: function(info) {
                 const p = info.event.extendedProps;
                 currentJobInfo = p; 
@@ -169,8 +135,9 @@ async function cargarCalendarioEmpleado(emailActual) {
                        </div>` 
                     : ``;
 
+                // PUNTOS 6, 7 y 3: Reordenado de datos con Contacto de la propiedad y PAGO ($)
                 Swal.fire({
-                    title: `<h3 style="color:#0f4c81; margin:0; font-weight:700; text-align:center;">${info.event.title}</h3>`,
+                    title: `<h3 style="color:#0f4c81; margin:0; font-weight:700; text-align:center;">Detalles del Trabajo</h3>`,
                     html: `
                         <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
                             <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #ccc;">
@@ -183,21 +150,24 @@ async function cargarCalendarioEmpleado(emailActual) {
                                 <strong><i class="fa-regular fa-calendar" style="color:#0277bd; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-solid fa-phone" style="color:#0277bd; width:20px;"></i> Teléfono:</strong> ${p.clientPhone}
+                                <strong><i class="fa-solid fa-house" style="color:#0277bd; width:20px;"></i> Propiedad / Contacto:</strong> ${p.clientName}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-solid fa-key" style="color:#0277bd; width:20px;"></i> Código Caja:</strong> ${p.safeDepositBoxCodes || 'No asignada'}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-solid fa-hard-hat" style="color:#0277bd; width:20px;"></i> Jefe:</strong> ${p.nameManager || 'Sin Asignar'}
+                                <strong><i class="fa-solid fa-phone" style="color:#0277bd; width:20px;"></i> Teléfono Contacto:</strong> ${p.clientPhone}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px; color: #444;">
                                 <strong><i class="fa-solid fa-location-dot" style="color:#0277bd; width:20px;"></i> Dirección:</strong> ${p.address}
                             </p>
+                            <p style="margin: 8px 0; font-size: 14px; color: #444;">
+                                <strong><i class="fa-solid fa-key" style="color:#0277bd; width:20px;"></i> Código Caja:</strong> ${p.safeDepositBoxCodes || 'No asignada'}
+                            </p>
+                            <p style="margin: 8px 0; font-size: 15px; color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 5px; border-radius: 4px; display: inline-block;">
+                                <strong><i class="fa-solid fa-dollar-sign" style="width:20px;"></i> Pago por Trabajo:</strong> $${p.pay ? p.pay.toFixed(2) : '0.00'}
+                            </p>
 
                             <div style="margin-top: 15px; padding: 12px; background: #f8faff; border-radius: 8px; border-left: 3px solid #0277bd;">
-                                <strong style="font-size: 13px; color: #2B3674;">Descripción de Obra:</strong>
-                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${p.description}"</p>
+                                <strong style="font-size: 13px; color: #2B3674;">Notas de Trabajo:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${p.description || 'Sin notas'}"</p>
                             </div>
                             
                             <div style="position: relative; margin-top: 15px;">
@@ -340,20 +310,13 @@ window.abrirModalEvidence = (jobId) => {
     document.getElementById('evidenceForm').reset();
     document.getElementById('evJobId').value = jobId;
     document.getElementById('imagePreviewContainer').innerHTML = ''; 
+    document.getElementById('certBox').style.display = 'none'; // Esconder garantía al abrir
     
     archivosSeleccionados = [];
     imagenesBase64Data = [];
     limpiarFirma();
     
-    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
-        cb.checked = false; 
-        if (currentJobInfo.materials) {
-            const arrIdMateriales = currentJobInfo.materials.map(m => m.materialId);
-            if (arrIdMateriales.includes(parseInt(cb.value))) {
-                cb.checked = true; 
-            }
-        }
-    });
+    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => { cb.checked = false; });
     
     document.getElementById('modalEvidence').style.display = 'flex';
     setTimeout(() => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }, 100);
@@ -361,26 +324,21 @@ window.abrirModalEvidence = (jobId) => {
 
 window.cerrarModalEvidence = () => { document.getElementById('modalEvidence').style.display = 'none'; };
 
-// --- NUEVO: FUNCIONES DEL PERFIL DEL EMPLEADO ---
+// --- PERFIL ---
 window.abrirModalPerfil = () => {
-    if (!miUsuarioActual) {
-        return Swal.fire('Error', 'No se pudieron cargar tus datos. Refresca la página.', 'error');
-    }
-    document.getElementById('perfilFirstName').value = miUsuarioActual.firstName;
-    document.getElementById('perfilLastName').value = miUsuarioActual.lastName;
-    document.getElementById('perfilDni').value = miUsuarioActual.dni;
-    document.getElementById('perfilPhone').value = miUsuarioActual.phone;
-    document.getElementById('perfilEmail').value = miUsuarioActual.email;
+    if (!miUsuarioActual) { return Swal.fire('Error', 'Cargando datos...', 'error'); }
+    document.getElementById('perfilFirstName').value = miUsuarioActual.firstName || '';
+    document.getElementById('perfilLastName').value = miUsuarioActual.lastName || '';
+    document.getElementById('perfilDni').value = miUsuarioActual.dni || '';
+    document.getElementById('perfilPhone').value = miUsuarioActual.phone || '';
+    document.getElementById('perfilEmail').value = miUsuarioActual.email || '';
     document.getElementById('perfilPassword').value = ''; 
     document.getElementById('modalPerfil').style.display = 'flex';
 };
 
-window.cerrarModalPerfil = () => {
-    document.getElementById('modalPerfil').style.display = 'none';
-};
+window.cerrarModalPerfil = () => { document.getElementById('modalPerfil').style.display = 'none'; };
 
 window.guardarPerfil = async () => {
-    // 1. Enviamos todos los datos (incluyendo los que el DTO de Spring exige, aunque no se vean en el modal)
     const payload = {
         firstName: document.getElementById('perfilFirstName').value.trim(),
         middleName: miUsuarioActual.middleName || "",
@@ -389,60 +347,46 @@ window.guardarPerfil = async () => {
         dni: document.getElementById('perfilDni').value.trim(),
         phone: document.getElementById('perfilPhone').value.trim(),
         email: document.getElementById('perfilEmail').value.trim(),
-        password: document.getElementById('perfilPassword').value, // Si va vacío, Java no lo actualiza
-        dateOfBirth: miUsuarioActual.dateOfBirth, // Requisito del DTO en Java
-        title: miUsuarioActual.title              // Requisito del DTO en Java
+        password: document.getElementById('perfilPassword').value, 
+        dateOfBirth: miUsuarioActual.dateOfBirth, 
+        title: miUsuarioActual.title || "Empleado" 
     };
 
     if(!payload.firstName || !payload.lastName || !payload.dni || !payload.phone || !payload.email) {
         return Swal.fire('Atención', 'Por favor llena todos los campos obligatorios.', 'warning');
     }
 
-    Swal.fire({ title: 'Actualizando tu perfil...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Actualizando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
     try {
-        const token = localStorage.getItem('jwt_token');
-        
-        // 2. CORREGIMOS LA URL: Ahora es edit-user en lugar de edit-profile
-        const response = await fetch(`http://localhost:8081/api/v1/user/edit-user/${miUsuarioActual.userId}`, {
+        const response = await fetch(`${USER_API_URL}/edit-user/${miUsuarioActual.userId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
             body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-            Swal.fire({
-                icon: 'success', 
-                title: '¡Perfil Actualizado!', 
-                text: 'Tus datos se actualizaron correctamente. Por seguridad, vuelve a iniciar sesión.',
-                confirmButtonColor: '#0277bd', // Usa #198754 para el Jefe o #0f4c81 para el Admin
-                allowOutsideClick: false
-            });
+            const updatedUser = await response.json(); 
+            miUsuarioActual = updatedUser; 
+            document.getElementById('employee-email-display').textContent = `${updatedUser.firstName} ${updatedUser.lastName}`;
+            cerrarModalPerfil();
+            Swal.fire({ icon: 'success', title: '¡Actualizado!', showConfirmButton: false, timer: 1500 });
         } else {
-            let errorMsg = 'No se pudo actualizar el perfil.';
-            try {
-                const errorData = await response.json();
-                // Mostramos el error exacto que envía Spring Boot
-                if (errorData && typeof errorData === 'object') {
-                    errorMsg = Object.values(errorData).join('<br>');
-                } else if (errorData && errorData.message) {
-                    errorMsg = errorData.message;
-                }
-            } catch (e) {}
-            Swal.fire({ icon: 'error', title: 'Error', html: errorMsg });
+            Swal.fire('Error', 'No se pudo actualizar.', 'error');
         }
-    } catch (error) { 
-        Swal.fire('Error de red', 'No se pudo contactar al servidor.', 'error'); 
-    }
+    } catch (error) { Swal.fire('Error de red', 'Fallo de conexión.', 'error'); }
 };
 
+// --- GUARDAR REPORTE ---
 window.guardarReporteYPdf = async () => {
     const jobId = document.getElementById('evJobId').value;
     const status = document.getElementById('evStatus').value;
-    const comment = document.getElementById('evComment').value.trim();
+    let comment = document.getElementById('evComment').value.trim();
+
+    // PUNTO 1: Validación de Garantía si está Completado
+    if (status === 'COMPLETED' && !document.getElementById('evCertification').checked) {
+        return Swal.fire('Certificación Obligatoria', 'Para terminar el proyecto debes marcar la casilla verde de Certificación de Garantía.', 'warning');
+    }
 
     const isCanvasBlank = () => {
         const blank = document.createElement('canvas');
@@ -454,26 +398,41 @@ window.guardarReporteYPdf = async () => {
     if (archivosSeleccionados.length === 0) return Swal.fire('Faltan fotos', 'Debes adjuntar al menos una imagen.', 'warning');
     if (isCanvasBlank()) return Swal.fire('Falta la Firma', 'Debes firmar el reporte en el recuadro blanco.', 'warning');
 
+    // PUNTO 5: Añadir alerta de modificación al comentario final para el backend
+    const hasModifications = document.getElementById('evModifications').checked;
+    if (hasModifications) {
+        comment = "⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones o cambios a la orden original.\n\n" + comment;
+    }
+
     const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
     const selectedMaterialIds = Array.from(selectedMatNodes).map(cb => parseInt(cb.value));
-    const selectedMaterialNames = Array.from(selectedMatNodes).map(cb => `<li style="margin-bottom: 5px;">${cb.getAttribute('data-name')}</li>`).join('');
+    const selectedMaterialNames = Array.from(selectedMatNodes).map(cb => `<li style="margin-bottom: 3px;">${cb.getAttribute('data-name')}</li>`).join('');
 
     Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
+    // LLENADO DEL PDF
     document.getElementById('pdfJobName').textContent = currentJobInfo.clientName;
     document.getElementById('pdfAddress').textContent = currentJobInfo.address;
     document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
-    document.getElementById('pdfSafeBox').textContent = currentJobInfo.safeDepositBoxCodes || 'No asignada';
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
-    document.getElementById('pdfJobDesc').textContent = currentJobInfo.description || 'Sin descripción';
+    document.getElementById('pdfJobPay').textContent = `$${currentJobInfo.pay ? currentJobInfo.pay.toFixed(2) : '0.00'}`;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
     document.getElementById('pdfDate').textContent = formatearFecha(currentJobInfo.jobDate); 
     document.getElementById('pdfComment').textContent = comment;
-    document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames || '<li>No se seleccionaron materiales extras.</li>';
+
+    if (selectedMaterialNames) {
+        document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames;
+    } else {
+        document.getElementById('pdfMaterials').innerHTML = '<li>No se reportaron materiales adicionales.</li>';
+    }
     
+    // Mostrar u ocultar garantía en el PDF impreso
+    document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
+    
+    // Imágenes más pequeñas para aguantar 15-20 fotos
     document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
-        <div style="text-align:center; page-break-inside: avoid; margin-bottom: 10px;">
-            <img src="${b64}" style="width: 220px; height: 160px; object-fit: cover; border-radius: 8px; border: 2px solid #E0E5F2;">
+        <div style="page-break-inside: avoid; margin-bottom: 5px;">
+            <img src="${b64}" style="width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc;">
         </div>
     `).join('');
     
@@ -507,7 +466,6 @@ window.guardarReporteYPdf = async () => {
         a.click();
         a.remove();
         window.URL.revokeObjectURL(urlDescarga);
-
     } catch (e) {
         pdfWrapper.style.display = 'none';
         console.error("Error al generar PDF:", e);
@@ -516,6 +474,7 @@ window.guardarReporteYPdf = async () => {
 
     pdfWrapper.style.display = 'none';
 
+    // DATOS AL BACKEND (Punto 5 y 1 van inyectados en comment y status)
     const dtoObject = {
         comment: comment,
         jobId: parseInt(currentJobInfo.jobId),
@@ -541,23 +500,18 @@ window.guardarReporteYPdf = async () => {
         });
 
         if (response.ok) {
-            Swal.fire('¡Éxito!', 'El reporte y las fotos se subieron correctamente al servidor.', 'success');
+            Swal.fire('¡Éxito!', 'El reporte se subió correctamente y el Administrador será notificado.', 'success');
             cerrarModalEvidence();
             await cargarCalendarioEmpleado(document.getElementById('employee-email-display').textContent);
         } else {
             let errorMsg = 'Hubo un fallo al subir las evidencias.';
             try {
                 const errorData = await response.json();
-                if (errorData && typeof errorData.message === 'object') {
-                    errorMsg = Object.values(errorData.message).join('<br>');
-                } else if (errorData && errorData.message) {
-                    errorMsg = errorData.message;
-                }
+                errorMsg = errorData.message || errorMsg;
             } catch(e) {}
             Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
         }
     } catch (error) {
-        console.error(error);   
         Swal.fire('Error de Red', 'No se pudo conectar con el servidor.', 'error');
     }
 };
