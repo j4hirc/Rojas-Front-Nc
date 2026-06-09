@@ -18,24 +18,20 @@
     <link rel="stylesheet" href="../admin/usuarios/usuarios.css"> 
 
     <style>
-        .sidebar-logo { color: #0277bd !important; }
-        .sidebar-nav a.active { color: #0277bd; border-right-color: #0277bd; background: #e1f5fe; }
-        .sidebar-nav a:hover { color: #0277bd; background: #e1f5fe; }
-        
         #calendar { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid #E0E5F2; font-family: 'Poppins', sans-serif; }
-        .fc-toolbar-title { font-size: 1.3rem !important; color: #0277bd; font-weight: 700; text-transform: capitalize;}
-        .fc-button-primary { background-color: #0277bd !important; border-color: #0277bd !important; font-weight: 600 !important; border-radius: 8px !important; text-transform: capitalize;}
-        .fc-button-primary:hover { background-color: #01579b !important; border-color: #01579b !important;}
+        .fc-toolbar-title { font-size: 1.3rem !important; color: var(--black); font-weight: 700; text-transform: uppercase;}
+        .fc-button-primary { background-color: var(--cyan) !important; border-color: var(--cyan) !important; color: var(--black) !important; font-weight: 700 !important; border-radius: 8px !important; text-transform: uppercase;}
+        .fc-button-primary:hover { background-color: #0aa8c8 !important; border-color: #0aa8c8 !important;}
         
         .fc-list-event td { padding: 10px !important; }
         .fc-event { cursor: pointer; border-radius: 6px; border: none; transition: transform 0.2s, box-shadow 0.2s; }
-        .fc-event:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 5 !important; }
+        .fc-event:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(18,207,244,0.2); z-index: 5 !important; }
 
-        .file-upload-container { background: #f8faff; border: 2px dashed #0277bd; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .file-upload-container:hover { background: #e1f5fe; }
+        .file-upload-container { background: #f8faff; border: 2px dashed var(--cyan); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .file-upload-container:hover { background: rgba(18,207,244,0.05); }
         #evidenceFiles { display: none; }
         .file-preview { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
-        .preview-img { width: 75px; height: 75px; object-fit: cover; border-radius: 8px; border: 2px solid #0277bd; }
+        .preview-img { width: 75px; height: 75px; object-fit: cover; border-radius: 8px; border: 2px solid var(--cyan); }
         
         .btn-delete-photo {
             position: absolute; top: -8px; right: -8px; background: #d32f2f; color: white; border: none;
@@ -44,7 +40,7 @@
         }
         .btn-delete-photo:hover { background: #b71c1c; transform: scale(1.1); }
 
-        .signature-box { border: 2px solid #E0E5F2; border-radius: 12px; background: white; width: 100%; height: 150px; cursor: crosshair; }
+        .signature-box { border: 2px solid var(--cyan); border-radius: 12px; background: white; width: 100%; height: 150px; cursor: crosshair; }
     </style>
 </head>
 <body>
@@ -56,28 +52,21 @@
                 <span>Mi Portal</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="employee-dashboard.html" class="active">
-                    <i class="fa-solid fa-calendar-days"></i> Mi Calendario
-                </a>
-                <a href="evidencias/evidencias.html">
-                    <i class="fa-solid fa-camera"></i> Mis Evidencias
-                </a>
+                <a href="employee-dashboard.html" class="active"><i class="fa-solid fa-calendar-days"></i> Mi Calendario</a>
+                <a href="evidencias/evidencias.html"><i class="fa-solid fa-camera"></i> Mis Evidencias</a>
             </nav>
             <div class="sidebar-footer">
-                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
-                    <i class="fa-solid fa-right-from-bracket"></i> Salir
-                </button>
+                <button class="btn-logout-sidebar" onclick="cerrarSesion()"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
             </div>
         </aside>
 
         <main class="main-content">
             <header class="top-navbar">
                 <div class="page-title">Mis Trabajos Asignados</div>
-                
-                <div class="user-profile" style="color: #0277bd; background: #e1f5fe; cursor: pointer; transition: 0.3s;" onclick="abrirModalPerfil()" title="Haz clic para editar tu perfil" onmouseover="this.style.background='#b3e5fc'" onmouseout="this.style.background='#e1f5fe'">
+                <div class="user-profile" style="cursor: pointer; transition: 0.3s;" onclick="abrirModalPerfil()" title="Haz clic para editar tu perfil">
                     <i class="fa-solid fa-user-gear"></i>
                     <span id="employee-email-display">Cargando...</span>
-                    <i class="fa-solid fa-pen" style="font-size: 12px; margin-left: 5px; color: #0277bd;"></i>
+                    <i class="fa-solid fa-pen" style="font-size: 12px; margin-left: 5px;"></i>
                 </div>
             </header>
 
@@ -92,7 +81,7 @@
     <div class="modal-overlay" id="modalEvidence">
         <div class="modal-container" style="max-width: 550px;">
             <div class="modal-header">
-                <span id="modalTitulo" style="color: #0277bd;"><i class="fa-solid fa-clipboard-check"></i> Reporte de Trabajo</span>
+                <span id="modalTitulo"><i class="fa-solid fa-clipboard-check" style="color: #12CFF4;"></i> Reporte de Trabajo</span>
                 <button onclick="cerrarModalEvidence()" class="btn-close-modal">✕</button>
             </div>
             
@@ -134,17 +123,17 @@
                     <div class="form-group" style="margin-top: 15px;">
                         <label>Fotos del Trabajo</label>
                         <div class="file-upload-container" onclick="document.getElementById('evidenceFiles').click()">
-                            <i class="fa-solid fa-camera" style="font-size: 2rem; color: #0277bd; margin-bottom: 10px;"></i>
-                            <p style="margin:0; font-size: 0.9rem; color: #2B3674; font-weight: 600;">Abrir Cámara / Galería</p>
+                            <i class="fa-solid fa-camera" style="font-size: 2rem; color: #12CFF4; margin-bottom: 10px;"></i>
+                            <p style="margin:0; font-size: 0.9rem; color: #0B0B0D; font-weight: 600;">Abrir Cámara / Galería</p>
                             <input type="file" id="evidenceFiles" multiple accept="image/*" onchange="mostrarPreview(event)">
                         </div>
                         <div class="file-preview" id="imagePreviewContainer"></div>
                     </div>
 
                     <div class="form-group" id="certBox" style="margin-top: 15px; display: none;">
-                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; background: #E8F5E9; padding: 12px; border-radius: 8px; border: 1px solid #C8E6C9;">
+                        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; background: rgba(18, 207, 244, 0.1); padding: 12px; border-radius: 8px; border: 1px solid #12CFF4;">
                             <input type="checkbox" id="evCertification" style="margin-top: 3px; transform: scale(1.2);">
-                            <span style="font-size: 0.85rem; color: #2E7D32; line-height: 1.4; text-align: justify;">
+                            <span style="font-size: 0.85rem; color: #0B0B0D; line-height: 1.4; text-align: justify;">
                                 <strong>Certificación:</strong> Certifico que el proyecto está terminado y los errores encontrados después de terminar el proyecto serán cobrados al subcontratista como garantías del trabajo.
                             </span>
                         </label>
@@ -165,7 +154,7 @@
             
             <div class="modal-footer">
                 <button onclick="cerrarModalEvidence()" class="btn-secondary">Cancelar</button>
-                <button onclick="guardarReporteYPdf()" class="btn-primary" style="background: #0277bd;">Generar Reporte y Subir</button>
+                <button onclick="guardarReporteYPdf()" class="btn-primary">Generar Reporte y Subir</button>
             </div>
         </div>
     </div>
@@ -173,7 +162,7 @@
     <div class="modal-overlay" id="modalPerfil">
         <div class="modal-container" style="max-width: 500px;">
             <div class="modal-header">
-                <span id="modalTitulo" style="color: #0277bd;"><i class="fa-solid fa-user-pen"></i> Editar Mi Perfil</span>
+                <span id="modalTitulo"><i class="fa-solid fa-user-pen" style="color: #12CFF4;"></i> Editar Mi Perfil</span>
                 <button onclick="cerrarModalPerfil()" class="btn-close-modal">✕</button>
             </div>
             <div class="modal-body">
@@ -192,7 +181,7 @@
             </div>
             <div class="modal-footer">
                 <button onclick="cerrarModalPerfil()" class="btn-secondary">Cancelar</button>
-                <button onclick="guardarPerfil()" class="btn-primary" style="background: #0277bd;">Guardar Cambios</button>
+                <button onclick="guardarPerfil()" class="btn-primary">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -200,43 +189,43 @@
     <div id="pdfWrapper" style="display: none; position: absolute; top: 0; left: 0; width: 100%; z-index: -999; background: #f0f2f5;">
         <div id="pdfTemplate" style="width: 794px; margin: 0 auto; padding: 40px 50px; font-family: 'Helvetica', sans-serif; color: #333; background: #ffffff; box-sizing: border-box;">
             
-            <div style="border-bottom: 3px solid #0277bd; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
                 <div>
-                    <h1 style="color: #0277bd; margin: 0; font-size: 32px; font-weight: bold; text-transform: uppercase;">REPORTE DE OBRA</h1>
-                    <p style="margin: 5px 0 0 0; color: #666; font-size: 14px; letter-spacing: 1px;">Plataforma Rojas Remodeling</p>
+                    <h1 style="color: #0B0B0D; margin: 0; font-size: 32px; font-weight: bold; text-transform: uppercase;">REPORTE DE OBRA</h1>
+                    <p style="margin: 5px 0 0 0; color: #12CFF4; font-size: 14px; font-weight: bold; letter-spacing: 1px;">Plataforma Rojas Remodeling</p>
                 </div>
-                <div style="text-align: right; color: #444;">
+                <div style="text-align: right; color: #2E3238;">
                     <p style="margin: 0; font-weight: bold; font-size: 14px;">Fecha de Emisión:</p>
-                    <p style="margin: 0; font-size: 16px; color: #0277bd;" id="pdfDate"></p>
+                    <p style="margin: 0; font-size: 16px; color: #12CFF4; font-weight: bold;" id="pdfDate"></p>
                 </div>
             </div>
             
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px;">
-                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8faff; font-weight: bold; width: 25%;">Proyecto:</td><td id="pdfJobName" style="padding: 8px; border: 1px solid #ddd; font-weight: bold;"></td></tr>
-                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Dirección:</td><td id="pdfAddress" style="padding: 8px; border: 1px solid #ddd;"></td></tr>
-                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Teléfono Contacto:</td><td id="pdfClientPhone" style="padding: 8px; border: 1px solid #ddd;"></td></tr>
-                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Subcontratista:</td><td id="pdfEmployee" style="padding: 8px; border: 1px solid #ddd;"></td></tr>
-                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #f8faff; font-weight: bold;">Valor a Pagar:</td><td id="pdfJobPay" style="padding: 8px; border: 1px solid #ddd; color: #2e7d32; font-weight: bold;"></td></tr>
-                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #e1f5fe; font-weight: bold;">Estado Reportado:</td><td id="pdfStatus" style="padding: 8px; border: 1px solid #ddd; color: #0277bd; font-weight: bold; text-transform: uppercase;"></td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold; width: 25%;">Proyecto / Contacto:</td><td id="pdfJobName" style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #0B0B0D;"></td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Dirección:</td><td id="pdfAddress" style="padding: 8px; border: 1px solid #ddd; color: #0B0B0D;"></td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Teléfono Contacto:</td><td id="pdfClientPhone" style="padding: 8px; border: 1px solid #ddd; color: #0B0B0D;"></td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Subcontratista:</td><td id="pdfEmployee" style="padding: 8px; border: 1px solid #ddd; color: #0B0B0D;"></td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Valor a Pagar:</td><td id="pdfJobPay" style="padding: 8px; border: 1px solid #ddd; color: #F4A300; font-size: 16px; font-weight: bold;"></td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd; background: rgba(18, 207, 244, 0.1); font-weight: bold; color: #0B0B0D;">Estado Reportado:</td><td id="pdfStatus" style="padding: 8px; border: 1px solid #ddd; color: #0B0B0D; font-weight: bold; text-transform: uppercase;"></td></tr>
             </table>
 
-            <h3 style="color: #0277bd; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Comentarios del Avance</h3>
-            <div id="pdfComment" style="background: #f8f9fa; padding: 12px; border-left: 4px solid #0277bd; margin-bottom: 20px; font-size: 13px; line-height: 1.5; white-space: pre-wrap;"></div>
+            <h3 style="color: #0B0B0D; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Comentarios del Avance</h3>
+            <div id="pdfComment" style="background: #f8f9fa; padding: 12px; border-left: 4px solid #12CFF4; margin-bottom: 20px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; color: #2E3238;"></div>
 
-            <div id="pdfGuaranteeBox" style="display: none; background: #E8F5E9; padding: 12px; border: 1px solid #C8E6C9; border-radius: 8px; margin-bottom: 20px;">
-                <p style="margin: 0; font-size: 12px; color: #2E7D32; font-weight: bold; text-align: justify;">
+            <div id="pdfGuaranteeBox" style="display: none; background: rgba(18, 207, 244, 0.05); padding: 12px; border: 1px solid #12CFF4; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 12px; color: #0B0B0D; font-weight: bold; text-align: justify;">
                     ✓ CERTIFICACIÓN DE GARANTÍA: El subcontratista certifica que el proyecto está terminado y los errores encontrados después de terminar el proyecto serán cobrados al subcontratista como garantías del trabajo.
                 </p>
             </div>
 
-            <h3 style="color: #0277bd; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Evidencias Fotográficas</h3>
+            <h3 style="color: #0B0B0D; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Evidencias Fotográficas</h3>
             <div id="pdfImages" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; justify-content: flex-start;"></div>
 
             <div style="text-align: center; margin-top: 30px; width: 100%; page-break-inside: avoid;">
                 <div style="display: inline-block; width: 250px;">
                     <img id="pdfSignatureImg" src="" style="max-height: 80px; max-width: 100%; object-fit: contain; margin-bottom: 5px;">
-                    <div style="border-top: 2px solid #333; padding-top: 5px;">
-                        <p style="margin: 0; font-weight: bold; font-size: 13px; text-transform: uppercase;">Firma del Subcontratista</p>
+                    <div style="border-top: 2px solid #0B0B0D; padding-top: 5px;">
+                        <p style="margin: 0; font-weight: bold; font-size: 13px; color: #0B0B0D; text-transform: uppercase;">Firma del Subcontratista</p>
                     </div>
                 </div>
             </div>

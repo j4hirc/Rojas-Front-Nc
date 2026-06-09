@@ -2,7 +2,6 @@ const loginForm = document.getElementById('loginForm');
 const submitBtn = document.getElementById('submitBtn');
 const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
 
-// Función global para redireccionar
 window.seleccionarRol = (rolElegido) => {
     localStorage.setItem('active_role', rolElegido);
 
@@ -27,9 +26,7 @@ loginForm?.addEventListener('submit', async (e) => {
     try {
         const response = await fetch('http://localhost:8081/api/v1/auth/login', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
 
@@ -41,36 +38,35 @@ loginForm?.addEventListener('submit', async (e) => {
             localStorage.setItem('user_roles', JSON.stringify(roles));
             localStorage.setItem('user_email', data.email || 'sin-email');
             
-            // LÓGICA DE ROLES
             if (roles.length === 0) {
-                Swal.fire({ icon: 'warning', title: 'Sin accesos', text: 'Tu usuario no tiene ningún rol asignado.' });
+                Swal.fire({ icon: 'warning', title: 'Sin accesos', text: 'Tu usuario no tiene ningún rol asignado.', confirmButtonColor: '#12CFF4' });
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Entrar';
 
             } else if (roles.length === 1) {
-                // Si solo tiene un rol, entra directo
                 window.seleccionarRol(roles[0]);
 
             } else {
-                // Si tiene más de un rol, armamos botones para un SweetAlert
+                // Selector de roles con la nueva paleta
                 let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
                 if (roles.includes('ROLE_ADMIN')) {
-                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #0f4c81; width: 100%;" onclick="Swal.close(); seleccionarRol('ROLE_ADMIN')">Entrar como Administrador</button>`;
+                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #0B0B0D; color: #12CFF4; border: 1px solid #12CFF4; width: 100%; font-weight: 700; text-transform: uppercase;" onclick="Swal.close(); seleccionarRol('ROLE_ADMIN')">Entrar como Administrador</button>`;
                 }
                 if (roles.includes('ROLE_JEFE')) {
-                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #198754; width: 100%;" onclick="Swal.close(); seleccionarRol('ROLE_JEFE')">Entrar como Jefe</button>`;
+                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #12CFF4; color: #0B0B0D; width: 100%; font-weight: 700; text-transform: uppercase;" onclick="Swal.close(); seleccionarRol('ROLE_JEFE')">Entrar como Jefe</button>`;
                 }
                 if (roles.includes('ROLE_EMPLOYEE')) {
-                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #ff9800; width: 100%;" onclick="Swal.close(); seleccionarRol('ROLE_EMPLOYEE')">Entrar como Empleado</button>`;
+                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #F4A300; color: #0B0B0D; width: 100%; font-weight: 700; text-transform: uppercase;" onclick="Swal.close(); seleccionarRol('ROLE_EMPLOYEE')">Entrar como Empleado</button>`;
                 }
                 opcionesHTML += '</div>';
 
                 Swal.fire({
                     title: 'Elige tu perfil',
-                    html: '<p style="color: #666; font-size: 14px;">Tienes múltiples roles, elige cómo quieres ingresar hoy:</p>' + opcionesHTML,
+                    html: '<p style="color: #2E3238; font-size: 14px;">Tienes múltiples roles, elige cómo quieres ingresar hoy:</p>' + opcionesHTML,
                     showConfirmButton: false,
                     allowOutsideClick: false,
-                    allowEscapeKey: false
+                    allowEscapeKey: false,
+                    background: '#FFFFFF'
                 });
             }
 
@@ -79,26 +75,24 @@ loginForm?.addEventListener('submit', async (e) => {
                 icon: 'error',
                 title: 'Acceso Denegado',
                 text: 'Correo o contraseña incorrectos. Verifica tus datos.',
-                confirmButtonColor: '#0f4c81'
+                confirmButtonColor: '#12CFF4'
             });
             submitBtn.disabled = false;
             submitBtn.textContent = 'Entrar';
         }
     } catch (error) {
-        console.error('Error de conexión:', error);
         Swal.fire({
             icon: 'error',
             title: 'Error de Servidor',
-            text: 'No se pudo conectar con la API de Rojas Remodeling. Verifica que Spring Boot esté encendido.',
-            confirmButtonColor: '#0f4c81'
+            text: 'No se pudo conectar con la API de Rojas Remodeling.',
+            confirmButtonColor: '#12CFF4'
         });
-        
         submitBtn.disabled = false;
         submitBtn.textContent = 'Entrar';
     }
 });
 
-// --- NUEVO: LÓGICA DE RECUPERAR CONTRASEÑA ---
+// Recuperar contraseña
 if (forgotPasswordBtn) {
     forgotPasswordBtn.addEventListener('click', async () => {
         const { value: email } = await Swal.fire({
@@ -110,41 +104,31 @@ if (forgotPasswordBtn) {
             confirmButtonText: '<i class="fa-solid fa-paper-plane"></i> Enviar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#12CFF4',
+            cancelButtonColor: '#2E3238',
             inputValidator: (value) => {
-                if (!value) {
-                    return '¡Necesitas ingresar un correo electrónico!'
-                }
+                if (!value) return '¡Necesitas ingresar un correo electrónico!'
             }
         });
 
         if (email) {
-            Swal.fire({ title: 'Generando y enviando contraseña...', text: 'Por favor, espera.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            Swal.fire({ title: 'Generando y enviando contraseña...', text: 'Por favor, espera unos segundos.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
             try {
-                // Hacemos la petición a la nueva ruta en Spring Boot
                 const response = await fetch('http://localhost:8081/api/v1/auth/forgot-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email }) // Mandamos el email
+                    body: JSON.stringify({ email: email })
                 });
 
                 if (response.ok) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Correo enviado!',
-                        text: 'Revisa tu bandeja de entrada. Te hemos enviado una nueva contraseña provisional.',
-                        confirmButtonColor: '#0f4c81'
-                    });
+                    Swal.fire({ icon: 'success', title: '¡Correo enviado!', text: 'Revisa tu bandeja de entrada o la carpeta de SPAM.', confirmButtonColor: '#12CFF4' });
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No se encontró ninguna cuenta con ese correo electrónico.',
-                        confirmButtonColor: '#d32f2f'
-                    });
+                    let errorMsg = 'Ocurrió un error al procesar tu solicitud.';
+                    try { const errorData = await response.json(); if (errorData.message) errorMsg = errorData.message; } catch (e) {}
+                    Swal.fire({ icon: 'error', title: 'Aviso del Sistema', text: errorMsg, confirmButtonColor: '#12CFF4' });
                 }
             } catch (error) {
                 Swal.fire('Error de red', 'No se pudo conectar con el servidor.', 'error');
             }
         }
     });
-}   
+}

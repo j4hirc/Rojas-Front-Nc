@@ -7,36 +7,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../admin/admin.css">
-    <link rel="stylesheet" href="../admin/usuarios/usuarios.css"> 
-
+    <link rel="stylesheet" href="../admin/admin.css"> 
 </head>
 <body>
 
     <div class="app-layout">
         
         <aside class="sidebar">
-            <div class="sidebar-logo" style="color: #198754;">
+            <div class="sidebar-logo">
                 <i class="fa-solid fa-hard-hat"></i>
                 <span>Portal Jefe</span>
             </div>
             
             <nav class="sidebar-nav">
-                <a href="jefe-dashboard.html" class="active">
-                    <i class="fa-solid fa-house"></i> Inicio
-                </a>
-                <a href="usuarios/usuarios.html">
-                    <i class="fa-solid fa-users-gear"></i> Mi Personal
-                </a>
-                <a href="trabajos/trabajos.html">
-                    <i class="fa-solid fa-hammer"></i> Mis Trabajos
-                </a>
-                <a href="calendario/calendario.html">
-                    <i class="fa-solid fa-calendar-days"></i> Calendario
-                </a>
-                <a href="evidencias/evidencias.html">
-                    <i class="fa-solid fa-camera"></i> Evidencias
-                </a>
+                <a href="jefe-dashboard.html" class="active"><i class="fa-solid fa-house"></i> Inicio</a>
+                <a href="usuarios/usuarios.html"><i class="fa-solid fa-users-gear"></i> Mi Personal</a>
+                <a href="trabajos/trabajos.html"><i class="fa-solid fa-hammer"></i> Mis Trabajos</a>
+                <a href="calendario/calendario.html"><i class="fa-solid fa-calendar-days"></i> Calendario</a>
+                <a href="evidencias/evidencias.html"><i class="fa-solid fa-camera"></i> Evidencias</a>
             </nav>
 
             <div class="sidebar-footer">
@@ -50,10 +38,10 @@
             <header class="top-navbar">
                 <div class="page-title">Resumen de Operaciones</div>
                 
-                <div id="btnPerfilJefe" class="user-profile" style="color: #198754; background: #E8F5E9; cursor: pointer; transition: 0.3s;" title="Haz clic para editar tu perfil" onmouseover="this.style.background='#c8e6c9'" onmouseout="this.style.background='#E8F5E9'">
+                <div id="btnPerfilJefe" class="user-profile" style="cursor: pointer; transition: 0.3s;" title="Haz clic para editar tu perfil">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="jefe-email-display">Cargando...</span>
-                    <i class="fa-solid fa-pen" style="font-size: 12px; margin-left: 5px; color: #198754;"></i>
+                    <i class="fa-solid fa-pen" style="font-size: 12px; margin-left: 5px;"></i>
                 </div>
             </header>
 
@@ -61,42 +49,27 @@
                 <div class="grid-cards">
                     <div class="card card-blue" onclick="window.location.href='usuarios/usuarios.html'">
                         <div class="card-icon-container"><i class="fa-solid fa-users-gear"></i></div>
-                        <div class="card-info">
-                            <h3>Gestión de Personal</h3>
-                            <p>Administrar empleados</p>
-                        </div>
+                        <div class="card-info"><h3>Gestión de Personal</h3><p>Administrar empleados</p></div>
                     </div>
 
                     <div class="card card-orange" onclick="window.location.href='trabajos/trabajos.html'">
                         <div class="card-icon-container"><i class="fa-solid fa-hammer"></i></div>
-                        <div class="card-info">
-                            <h3>Mis Trabajos</h3>
-                            <p>Proyectos a mi cargo</p>
-                        </div>
+                        <div class="card-info"><h3>Mis Trabajos</h3><p>Proyectos a mi cargo</p></div>
                     </div>
 
                     <div class="card card-green" onclick="window.location.href='calendario/calendario.html'">
-                        <div class="card-icon-container" style="background: #E8F5E9; color: #198754;"><i class="fa-solid fa-calendar-days"></i></div>
-                        <div class="card-info">
-                            <h3>Calendario</h3>
-                            <p>Cronograma de obras</p>
-                        </div>
+                        <div class="card-icon-container"><i class="fa-solid fa-calendar-days"></i></div>
+                        <div class="card-info"><h3>Calendario</h3><p>Cronograma de obras</p></div>
                     </div>
 
                     <div class="card card-purple" onclick="window.location.href='evidencias/evidencias.html'">
                         <div class="card-icon-container"><i class="fa-solid fa-images"></i></div>
-                        <div class="card-info">
-                            <h3>Mis Evidencias</h3>
-                            <p>Supervisión de proyectos</p>
-                        </div>
+                        <div class="card-info"><h3>Mis Evidencias</h3><p>Supervisión de proyectos</p></div>
                     </div>
 
-                    <div class="card card-red" style="border-left-color: #d32f2f;" onclick="verBodegaHoy()">
-                        <div class="card-icon-container" style="background: #FFEBEE; color: #d32f2f;"><i class="fa-solid fa-truck-fast"></i></div>
-                        <div class="card-info">
-                            <h3>Resumen Bodega</h3>
-                            <p>Materiales para hoy y mañana</p>
-                        </div>
+                    <div class="card card-red" onclick="verBodegaHoy()">
+                        <div class="card-icon-container" style="background: rgba(244,163,0,0.15); color: #F4A300;"><i class="fa-solid fa-truck-fast"></i></div>
+                        <div class="card-info"><h3 style="color: #F4A300;">Resumen Bodega</h3><p>Materiales para hoy y mañana</p></div>
                     </div>
 
                 </div>
@@ -107,49 +80,28 @@
     <div class="modal-overlay" id="modalPerfil">
         <div class="modal-container" style="max-width: 500px;">
             <div class="modal-header">
-                <span id="modalTitulo" style="color: #198754;"><i class="fa-solid fa-user-pen"></i> Editar Mi Perfil</span>
+                <span id="modalTitulo"><i class="fa-solid fa-user-pen" style="color: #12CFF4;"></i> Editar Mi Perfil</span>
                 <button id="btnCerrarModalTop" class="btn-close-modal">✕</button>
             </div>
             
             <div class="modal-body">
                 <form id="perfilForm">
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Nombres</label>
-                            <input type="text" id="perfilFirstName" class="input-field" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Apellidos</label>
-                            <input type="text" id="perfilLastName" class="input-field" required>
-                        </div>
+                        <div class="form-group"><label>Nombres</label><input type="text" id="perfilFirstName" class="input-field" required></div>
+                        <div class="form-group"><label>Apellidos</label><input type="text" id="perfilLastName" class="input-field" required></div>
                     </div>
-
                     <div class="form-row" style="margin-top: 15px;">
-                        <div class="form-group">
-                            <label>DNI / Cédula</label>
-                            <input type="text" id="perfilDni" class="input-field" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Teléfono</label>
-                            <input type="text" id="perfilPhone" class="input-field" required>
-                        </div>
+                        <div class="form-group"><label>DNI / Cédula</label><input type="text" id="perfilDni" class="input-field" required></div>
+                        <div class="form-group"><label>Teléfono</label><input type="text" id="perfilPhone" class="input-field" required></div>
                     </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label>Correo Electrónico</label>
-                        <input type="email" id="perfilEmail" class="input-field" required>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label>Nueva Contraseña <small style="color: #666;">(Opcional)</small></label>
-                        <input type="password" id="perfilPassword" class="input-field" placeholder="Déjalo en blanco para mantener la actual">
-                    </div>
+                    <div class="form-group" style="margin-top: 15px;"><label>Correo Electrónico</label><input type="email" id="perfilEmail" class="input-field" required></div>
+                    <div class="form-group" style="margin-top: 15px;"><label>Nueva Contraseña <small style="color: #666;">(Opcional)</small></label><input type="password" id="perfilPassword" class="input-field" placeholder="Déjalo en blanco para mantener la actual"></div>
                 </form>
             </div>
             
             <div class="modal-footer">
                 <button id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
-                <button id="btnGuardarPerfil" class="btn-primary" style="background: #198754;">Guardar Cambios</button>
+                <button id="btnGuardarPerfil" class="btn-primary">Guardar Cambios</button>
             </div>
         </div>
     </div>

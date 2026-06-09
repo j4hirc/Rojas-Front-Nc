@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const userEmail = localStorage.getItem('user_email');
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_EMPLOYEE')) {
-        Swal.fire({ icon: 'error', title: 'Acceso Denegado', confirmButtonColor: '#0277bd' })
+        Swal.fire({ icon: 'error', title: 'Acceso Denegado', confirmButtonColor: '#12CFF4' })
         .then(() => { window.location.href = '../index.html'; });
         return;
     }
@@ -58,7 +58,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarMateriales();
     await cargarCalendarioEmpleado(userEmail);
 
-    // NUEVO PUNTOS 1: Controlar aparición de la casilla de garantía
     document.getElementById('evStatus').addEventListener('change', (e) => {
         const certBox = document.getElementById('certBox');
         if (e.target.value === 'COMPLETED') {
@@ -91,10 +90,11 @@ async function cargarCalendarioEmpleado(emailActual) {
         const misTrabajos = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
 
         const eventosFormateados = misTrabajos.map(job => {
-            let bgColor = '#ff9800'; 
-            if(job.status === 'IN_PROGRESS') bgColor = '#1e88e5'; 
-            if(job.status === 'COMPLETED') bgColor = '#2e7d32'; 
-            if(job.status === 'CANCELLED') bgColor = '#d32f2f';
+            // COLORES DE LA NUEVA PALETA PARA EL CALENDARIO
+            let bgColor = '#F4A300'; // PENDING -> Gold
+            if(job.status === 'IN_PROGRESS') bgColor = '#12CFF4'; // Cyan
+            if(job.status === 'COMPLETED') bgColor = '#0B0B0D'; // Black
+            if(job.status === 'CANCELLED') bgColor = '#2E3238'; // Slate
 
             return {
                 id: job.jobId,
@@ -124,56 +124,55 @@ async function cargarCalendarioEmpleado(emailActual) {
                 let badgeColor = '';
                 let estaBloqueado = false; 
 
-                if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#ff9800'; }
-                if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#1e88e5'; }
-                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#2e7d32'; estaBloqueado = true; }
-                if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#d32f2f'; estaBloqueado = true; }
+                if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#F4A300'; }
+                if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#12CFF4'; }
+                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#0B0B0D'; estaBloqueado = true; }
+                if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#2E3238'; estaBloqueado = true; }
 
                 let htmlBloqueo = estaBloqueado 
-                    ? `<div style="margin-top: 15px; padding: 12px; background: #e8f5e9; color: #2e7d32; border-radius: 8px; font-weight: bold; text-align: center; border: 1px solid #c8e6c9;">
-                        <i class="fa-solid fa-circle-check"></i> Proyecto Finalizado.
+                    ? `<div style="margin-top: 15px; padding: 12px; background: rgba(18, 207, 244, 0.1); color: #0B0B0D; border-radius: 8px; font-weight: bold; text-align: center; border: 1px solid #12CFF4;">
+                        <i class="fa-solid fa-circle-check" style="color: #12CFF4;"></i> Proyecto Finalizado.
                        </div>` 
                     : ``;
 
-                // PUNTOS 6, 7 y 3: Reordenado de datos con Contacto de la propiedad y PAGO ($)
                 Swal.fire({
-                    title: `<h3 style="color:#0f4c81; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
+                    title: `<h3 style="color:#0B0B0D; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
                     html: `
                         <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
                             <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #ccc;">
-                                <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold;">
+                                <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-transform: uppercase;">
                                     Estado: ${estadoTxt}
                                 </span>
                             </div>
                             
-                            <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-regular fa-calendar" style="color:#0277bd; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
+                                <strong><i class="fa-regular fa-calendar" style="color:#12CFF4; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
                             </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-solid fa-house" style="color:#0277bd; width:20px;"></i> Propiedad / Contacto:</strong> ${p.clientName}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
+                                <strong><i class="fa-solid fa-house" style="color:#12CFF4; width:20px;"></i> Propiedad / Contacto:</strong> ${p.clientName}
                             </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-solid fa-phone" style="color:#0277bd; width:20px;"></i> Teléfono Contacto:</strong> ${p.clientPhone}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
+                                <strong><i class="fa-solid fa-phone" style="color:#12CFF4; width:20px;"></i> Teléfono Contacto:</strong> ${p.clientPhone}
                             </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-solid fa-location-dot" style="color:#0277bd; width:20px;"></i> Dirección:</strong> ${p.address}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
+                                <strong><i class="fa-solid fa-location-dot" style="color:#12CFF4; width:20px;"></i> Dirección:</strong> ${p.address}
                             </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #444;">
-                                <strong><i class="fa-solid fa-key" style="color:#0277bd; width:20px;"></i> Código Caja Fuerte:</strong> ${p.safeDepositBoxCodes || 'No requiere'}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
+                                <strong><i class="fa-solid fa-key" style="color:#12CFF4; width:20px;"></i> Código Caja Fuerte:</strong> ${p.safeDepositBoxCodes || 'No requiere'}
                             </p>
                             
-                            <p style="margin: 12px 0 8px 0; font-size: 15px; color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 8px; border-radius: 4px; text-align: center;">
+                            <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F4A300; font-weight: bold; background: #0B0B0D; padding: 8px; border-radius: 4px; text-align: center;">
                                 <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${p.pay ? p.pay.toFixed(2) : '0.00'}
                             </p>
 
-                            <div style="margin-top: 15px; padding: 12px; background: #f8faff; border-radius: 8px; border-left: 3px solid #0277bd;">
-                                <strong style="font-size: 13px; color: #2B3674;">Notas de Trabajo:</strong>
-                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${p.description || 'Sin notas especiales'}"</p>
+                            <div style="margin-top: 15px; padding: 12px; background: rgba(18, 207, 244, 0.05); border-radius: 8px; border-left: 3px solid #12CFF4;">
+                                <strong style="font-size: 13px; color: #0B0B0D;">Notas de Trabajo:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #2E3238; font-style: italic;">"${p.description || 'Sin notas especiales'}"</p>
                             </div>
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/dir/?api=1&destination=$${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #0277bd; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #0B0B0D; color: #12CFF4; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-transform: uppercase;">
                                     <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
                                 </a>
                             </div>
@@ -183,8 +182,8 @@ async function cargarCalendarioEmpleado(emailActual) {
                     `,
                     showCancelButton: true,
                     showConfirmButton: !estaBloqueado, 
-                    confirmButtonColor: '#0277bd',
-                    cancelButtonColor: '#6c757d',
+                    confirmButtonColor: '#12CFF4',
+                    cancelButtonColor: '#2E3238',
                     confirmButtonText: '<i class="fa-solid fa-camera"></i> Hacer Reporte',
                     cancelButtonText: 'Cerrar',
                     width: '450px',
@@ -215,7 +214,7 @@ async function cargarMateriales() {
         containerMat.innerHTML = '';
         materials.forEach(mat => {
             containerMat.innerHTML += `
-                <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2b3674; font-size: 14px;">
+                <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2E3238; font-size: 14px; font-weight: 500;">
                     <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}"> 
                     ${mat.name}
                 </label>
@@ -236,7 +235,7 @@ function inicializarCanvasFirma() {
     const dibujar = (e) => {
         if (!drawing) return;
         e.preventDefault(); 
-        ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.strokeStyle = "#0f4c81"; 
+        ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.strokeStyle = "#12CFF4"; 
 
         let x = e.clientX || e.touches[0].clientX;
         let y = e.clientY || e.touches[0].clientY;
@@ -311,7 +310,7 @@ window.abrirModalEvidence = (jobId) => {
     document.getElementById('evidenceForm').reset();
     document.getElementById('evJobId').value = jobId;
     document.getElementById('imagePreviewContainer').innerHTML = ''; 
-    document.getElementById('certBox').style.display = 'none'; // Esconder garantía al abrir
+    document.getElementById('certBox').style.display = 'none'; 
     
     archivosSeleccionados = [];
     imagenesBase64Data = [];
@@ -371,9 +370,9 @@ window.guardarPerfil = async () => {
             miUsuarioActual = updatedUser; 
             document.getElementById('employee-email-display').textContent = `${updatedUser.firstName} ${updatedUser.lastName}`;
             cerrarModalPerfil();
-            Swal.fire({ icon: 'success', title: '¡Actualizado!', showConfirmButton: false, timer: 1500 });
+            Swal.fire({ icon: 'success', title: '¡Actualizado!', confirmButtonColor: '#12CFF4', timer: 1500 });
         } else {
-            Swal.fire('Error', 'No se pudo actualizar.', 'error');
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', confirmButtonColor: '#12CFF4'});
         }
     } catch (error) { Swal.fire('Error de red', 'Fallo de conexión.', 'error'); }
 };
@@ -384,9 +383,8 @@ window.guardarReporteYPdf = async () => {
     const status = document.getElementById('evStatus').value;
     let comment = document.getElementById('evComment').value.trim();
 
-    // PUNTO 1: Validación de Garantía si está Completado
     if (status === 'COMPLETED' && !document.getElementById('evCertification').checked) {
-        return Swal.fire('Certificación Obligatoria', 'Para terminar el proyecto debes marcar la casilla verde de Certificación de Garantía.', 'warning');
+        return Swal.fire({ icon: 'warning', title: 'Certificación Obligatoria', text: 'Para terminar el proyecto debes marcar la casilla de Certificación de Garantía.', confirmButtonColor: '#12CFF4' });
     }
 
     const isCanvasBlank = () => {
@@ -395,11 +393,10 @@ window.guardarReporteYPdf = async () => {
         return canvas.toDataURL() === blank.toDataURL();
     };
 
-    if (!comment) return Swal.fire('Faltan datos', 'Debes escribir un comentario.', 'warning');
-    if (archivosSeleccionados.length === 0) return Swal.fire('Faltan fotos', 'Debes adjuntar al menos una imagen.', 'warning');
-    if (isCanvasBlank()) return Swal.fire('Falta la Firma', 'Debes firmar el reporte en el recuadro blanco.', 'warning');
+    if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#12CFF4' });
+    if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#12CFF4' });
+    if (isCanvasBlank()) return Swal.fire({ icon: 'warning', title: 'Falta la Firma', text: 'Debes firmar el reporte en el recuadro blanco.', confirmButtonColor: '#12CFF4' });
 
-    // PUNTO 5: Añadir alerta de modificación al comentario final para el backend
     const hasModifications = document.getElementById('evModifications').checked;
     if (hasModifications) {
         comment = "⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones o cambios a la orden original.\n\n" + comment;
@@ -427,10 +424,8 @@ window.guardarReporteYPdf = async () => {
         document.getElementById('pdfMaterials').innerHTML = '<li>No se reportaron materiales adicionales.</li>';
     }
     
-    // Mostrar u ocultar garantía en el PDF impreso
     document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
     
-    // Imágenes más pequeñas para aguantar 15-20 fotos
     document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
         <div style="page-break-inside: avoid; margin-bottom: 5px;">
             <img src="${b64}" style="width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc;">
@@ -470,12 +465,11 @@ window.guardarReporteYPdf = async () => {
     } catch (e) {
         pdfWrapper.style.display = 'none';
         console.error("Error al generar PDF:", e);
-        return Swal.fire('Error', 'Hubo un problema al crear el archivo PDF en tu navegador.', 'error');
+        return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#12CFF4' });
     }
 
     pdfWrapper.style.display = 'none';
 
-    // DATOS AL BACKEND (Punto 5 y 1 van inyectados en comment y status)
     const dtoObject = {
         comment: comment,
         jobId: parseInt(currentJobInfo.jobId),
@@ -501,7 +495,7 @@ window.guardarReporteYPdf = async () => {
         });
 
         if (response.ok) {
-            Swal.fire('¡Éxito!', 'El reporte se subió correctamente y el Administrador será notificado.', 'success');
+            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'El reporte se subió correctamente y el Administrador será notificado.', confirmButtonColor: '#12CFF4' });
             cerrarModalEvidence();
             await cargarCalendarioEmpleado(document.getElementById('employee-email-display').textContent);
         } else {
@@ -510,11 +504,27 @@ window.guardarReporteYPdf = async () => {
                 const errorData = await response.json();
                 errorMsg = errorData.message || errorMsg;
             } catch(e) {}
-            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
+            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg, confirmButtonColor: '#12CFF4' });
         }
     } catch (error) {
-        Swal.fire('Error de Red', 'No se pudo conectar con el servidor.', 'error');
+        Swal.fire({ icon: 'error', title: 'Error de Red', text: 'No se pudo conectar con el servidor.', confirmButtonColor: '#12CFF4' });
     }
 };
 
-window.cerrarSesion = () => { localStorage.clear(); window.location.href = '../index.html'; };
+window.cerrarSesion = () => { 
+    Swal.fire({
+        title: "¿Cerrar sesión?",
+        text: "¿Estás seguro que deseas salir del portal?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#12CFF4",
+        cancelButtonColor: "#2E3238",
+        confirmButtonText: "Sí, salir",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.clear();
+            window.location.href = '../index.html';
+        }
+    });
+};

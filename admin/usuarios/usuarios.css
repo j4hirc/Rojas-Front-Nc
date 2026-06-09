@@ -1,14 +1,13 @@
 /* ========================================================
-   ESTILOS EXCLUSIVOS DEL MÓDULO DE USUARIOS
+   ESTILOS EXCLUSIVOS DEL MÓDULO DE USUARIOS (NUEVOS COLORES)
    ======================================================== */
 
-/* --- CONTENEDOR PRINCIPAL --- */
 .usuarios-container {
-    background: #ffffff;
+    background: var(--white);
     border-radius: 20px;
     padding: 30px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.03);
-    margin-top: -20px; /* Para que suba un poquito hacia el header azul */
+    margin-top: -20px; 
     position: relative;
     z-index: 10;
 }
@@ -22,39 +21,13 @@
     border-bottom: 1px solid #F4F7FE;
 }
 
-.btn-add {
-    background: linear-gradient(135deg, #0f4c81 0%, #1a73e8 100%);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-family: 'Poppins', sans-serif;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(15, 76, 129, 0.2);
-    transition: all 0.3s ease;
-}
-
-.btn-add:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(15, 76, 129, 0.3);
-}
-
-/* --- TABLA DE USUARIOS (Versión PC) --- */
-.table-container {
-    overflow-x: auto;
-}
-
-.user-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-}
-
+/* --- TABLA DE USUARIOS --- */
+.table-container { overflow-x: auto; }
+.user-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 .user-table th {
-    background: #F4F7FE;
-    color: #A3AED0;
-    font-weight: 600;
+    background: #F8FAFF;
+    color: var(--slate);
+    font-weight: 700;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 1px;
@@ -69,66 +42,33 @@
     padding: 18px 15px;
     border-bottom: 1px solid #F4F7FE;
     font-size: 0.95rem;
-    color: #2B3674;
+    color: var(--slate);
     vertical-align: middle;
 }
 
-.user-table tr:hover td {
-    background-color: #fcfcfc;
-}
-
-/* --- BADGES Y BOTONES DE ACCIÓN --- */
-.badge.rol {
-    background: #E3F2FD;
-    color: #1e88e5;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 600;
-}
-
-.btn-edit, .btn-delete {
-    border: none;
-    border-radius: 8px;
-    width: 36px;
-    height: 36px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    margin-right: 8px;
-    transition: 0.2s;
-    font-size: 1rem;
-}
-
-.btn-edit { background: #FFF3E0; color: #ff9800; }
-.btn-delete { background: #FBE9E7; color: #e64a19; }
-
-.btn-edit:hover { background: #ff9800; color: white; transform: scale(1.1); }
-.btn-delete:hover { background: #e64a19; color: white; transform: scale(1.1); }
-
+.user-table tr:hover td { background-color: #fcfcfc; }
 
 /* --- MODAL FLOTANTE --- */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(10, 20, 35, 0.7); /* Azul muy oscuro y transparente */
+    background: rgba(11, 11, 13, 0.85); /* Deep black transparente */
     backdrop-filter: blur(5px);
     z-index: 9999;
-    display: none; /* Controlado por JS */
+    display: none; 
     justify-content: center;
     align-items: center;
 }
 
 .modal-container {
-    background: white;
+    background: var(--white);
     border-radius: 24px;
     width: 95%;
-    max-width: 700px; /* Un poco más ancho para el grid de 2 columnas */
+    max-width: 700px; 
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.3s ease-out;
 }
 
@@ -139,7 +79,7 @@
 
 .modal-header {
     padding: 25px 30px;
-    background: #ffffff;
+    background: var(--white);
     border-bottom: 1px solid #F4F7FE;
     display: flex;
     justify-content: space-between;
@@ -149,7 +89,7 @@
 .modal-header span {
     font-weight: 700;
     font-size: 1.25rem;
-    color: #0f4c81;
+    color: var(--black);
     display: flex;
     align-items: center;
     gap: 12px;
@@ -158,7 +98,7 @@
 .btn-close-modal {
     background: #F4F7FE;
     border: none;
-    color: #A3AED0;
+    color: var(--slate);
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -167,10 +107,7 @@
     transition: 0.2s;
 }
 
-.btn-close-modal:hover {
-    background: #FBE9E7;
-    color: #e64a19;
-}
+.btn-close-modal:hover { background: #FBE9E7; color: #d32f2f; }
 
 .modal-body {
     padding: 30px;
@@ -178,45 +115,39 @@
     max-height: 65vh;
 }
 
-/* Formulario dentro del modal */
 .form-grid { display: flex; flex-direction: column; gap: 20px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 
 .form-group label {
     display: block;
     font-size: 0.85rem;
-    color: #2B3674;
-    font-weight: 600;
+    color: var(--slate);
+    font-weight: 700;
     margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .input-field {
     width: 100%;
     padding: 12px 18px;
-    border: 1px solid #E0E5F2;
+    border: 1.5px solid #E0E5F2;
     border-radius: 12px;
     background: #F9FAFC;
     font-family: inherit;
     font-size: 0.95rem;
-    color: #2B3674;
+    color: var(--black);
     transition: 0.3s;
 }
 
 .input-field:focus {
     outline: none;
-    border-color: #0f4c81;
-    background: white;
-    box-shadow: 0 0 0 4px rgba(15, 76, 129, 0.1);
+    border-color: var(--cyan);
+    background: var(--white);
+    box-shadow: 0 0 0 4px rgba(18, 207, 244, 0.15);
 }
 
-select.input-field {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A3AED0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 1em;
-}
+select.input-field { cursor: pointer; }
 
 .modal-footer {
     padding: 20px 30px;
@@ -230,11 +161,11 @@ select.input-field {
 .btn-secondary {
     padding: 12px 24px;
     border: 1px solid #E0E5F2;
-    background: white;
-    color: #2B3674;
+    background: var(--white);
+    color: var(--slate);
     border-radius: 12px;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 700;
     transition: 0.2s;
 }
 
@@ -243,68 +174,37 @@ select.input-field {
 .btn-primary {
     padding: 12px 30px;
     border: none;
-    background: #0f4c81;
-    color: white;
+    background: var(--cyan);
+    color: var(--black);
     border-radius: 12px;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     transition: 0.2s;
-    box-shadow: 0 4px 10px rgba(15, 76, 129, 0.2);
+    box-shadow: 0 4px 10px rgba(18, 207, 244, 0.25);
 }
 
 .btn-primary:hover {
-    background: #0a365c;
+    background: #2dd8f8;
     transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(18, 207, 244, 0.4);
 }
-
-
 
 .mobile-cards { display: none; }
 
 @media (max-width: 768px) {
-    /* Ajustes para el Modal Flotante */
-    .modal-container {
-        width: 95%;
-        max-height: 90vh; /* Evita que el modal sea más alto que la pantalla */
-    }
+    .modal-container { width: 95%; max-height: 90vh; }
     .modal-body { padding: 15px; }
     .modal-header { padding: 15px 20px; }
-    
-    /* Botones del modal a ancho completo en celular */
-    .modal-footer { 
-        padding: 15px 20px; 
-        flex-direction: column; 
-    }
-    .btn-secondary, .btn-primary { 
-        width: 100%; 
-        text-align: center; 
-        margin-bottom: 10px;
-    }
-
-    /* Oculta la tabla en móvil y muestra las tarjetas (Esto ya lo tenías, mantenlo) */
+    .modal-footer { padding: 15px 20px; flex-direction: column; }
+    .btn-secondary, .btn-primary { width: 100%; text-align: center; margin-bottom: 10px; }
     .table-container { display: none; } 
     .mobile-cards { display: grid; gap: 15px; margin-top: 20px;}
     
-    .card {
-        background: white;
-        padding: 20px;
-        border-radius: 16px;
-        border: 1px solid #E0E5F2;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.02);
-    }
-    
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        border-bottom: 1px dashed #E0E5F2;
-        padding-bottom: 10px;
-    }
-    
-    .card-header strong { font-size: 1.1rem; color: #0f4c81; }
+    .card { background: var(--white); padding: 20px; border-radius: 16px; border: 1px solid #E0E5F2; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; }
+    .card-header strong { font-size: 1.1rem; color: var(--black); }
     .card-actions { margin-top: 15px; display: flex; gap: 10px; }
-    
-    /* En móvil los inputs deben ser de 1 columna */
     .form-row { grid-template-columns: 1fr; gap: 15px;}
 }
