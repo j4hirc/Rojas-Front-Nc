@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             icon: 'error',
             title: 'Acceso Denegado',
             text: 'No tienes permisos para acceder a esta sección.',
-            confirmButtonColor: '#0f4c81'
+            confirmButtonColor: '#12CFF4'
         }).then(() => { window.location.href = '../../index.html'; });
         return;
     }

@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_ADMIN')) {
         Swal.fire({
-            icon: 'error', title: 'Acceso Denegado', text: 'No tienes permisos para acceder a esta sección.', confirmButtonColor: '#0f4c81'
+            icon: 'error', title: 'Acceso Denegado', text: 'No tienes permisos para acceder a esta sección.', confirmButtonColor: '#12CFF4'
         }).then(() => { window.location.href = '../../index.html'; });
         return;
     }
@@ -344,7 +344,7 @@ window.eliminarTrabajo = async (id) => {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
+        cancelButtonColor: '#2E3238',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
     }).then(async (result) => {
