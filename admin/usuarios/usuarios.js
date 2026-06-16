@@ -24,84 +24,72 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarUsuariosDesdeAPI();
 });
 
+// ¡AQUÍ ESTÁ LA SOLUCIÓN! TRAEMOS AMBOS ENDPOINTS PARA QUE NINGUNO SE QUEDE OCULTO
 async function cargarUsuariosDesdeAPI() {
     try {
-        const response = await fetch(`${API_URL}/all-users`, {
+        // 1. Traemos los usuarios Activos
+        const resActivos = await fetch(`${API_URL}/all-users`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${userToken}` }
         });
+        let activos = resActivos.ok ? await resActivos.json() : [];
 
-        if (response.ok) {
-            todosLosUsuariosCache = await response.json();
-            cargarUsuarios(); 
+        // 2. Traemos los usuarios Desempleados de tu endpoint especial
+        let inactivos = [];
+        try {
+            const resInactivos = await fetch(`${API_URL}/all-unemployed`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${userToken}` }
+            });
+            if (resInactivos.ok) {
+                inactivos = await resInactivos.json();
+            }
+        } catch (e) {
+            console.warn("No se encontraron inactivos o el endpoint falló.");
         }
+
+        // Unimos las dos listas y limpiamos duplicados (por si acaso tu Java repita alguno)
+        let todos = [...activos, ...inactivos];
+        const map = new Map();
+        todos.forEach(u => map.set(u.userId, u));
+        todosLosUsuariosCache = Array.from(map.values());
+
+        // Forzamos el selector en Activos por defecto y pintamos
+        document.getElementById('filtroEstado').value = 'Active';
+        cargarUsuarios(); 
+
     } catch (error) { 
         console.error('Error de red:', error);
-        Swal.fire('Error de conexión', 'No se pudieron cargar los usuarios de la base de datos.', 'error');
+        Swal.fire('Error de conexión', 'No se pudo contactar con el servidor.', 'error');
     }
 }
 
-window.cargarUsuarios = async () => {
+// ESTA FUNCIÓN PINTA LOS USUARIOS SEGÚN EL SELECTOR
+window.cargarUsuarios = () => {
     const estadoFiltro = document.getElementById('filtroEstado').value;
     const dniBuscado = document.getElementById('buscadorDni').value.trim();
 
-    try {
-        let urlDestino = `${API_URL}/all-users`;
-
-        // SI EL USUARIO SELECCIONA DESEMPLEADOS, USAMOS TU NUEVO ENDPOINT
-        if (estadoFiltro === 'Unemployed') {
-            urlDestino = `${API_URL}/all-unemployed`;
-        }
-
-        // Hacemos la petición directo al servidor
-        const response = await fetch(urlDestino, {
-            method: 'GET',
-            headers: { 'Authorization': `Bearer ${userToken}` }
-        });
-
-        if (response.ok) {
-            let usuarios = await response.json();
-
-            // Si el filtro era 'Active', hacemos el filtro rápido aquí 
-            // (o puedes crear un endpoint /all-active en tu Java si quieres)
-            if (estadoFiltro === 'Active') {
-                usuarios = usuarios.filter(user => user.status === 'Active' || user.userStatus === 'Active');
-            }
-
-            // Si además hay un DNI escrito en el buscador, lo filtramos encima
-            if (dniBuscado !== "") {
-                usuarios = usuarios.filter(user => user.dni && user.dni.includes(dniBuscado));
-            }
-
-            // Mandamos a pintar la tabla con los datos reales del servidor
-            renderizarUsuarios(usuarios);
-        } else {
-            console.error("Error en la respuesta del servidor:", response.status);
-        }
-    } catch (error) {
-        console.error('Error de red al filtrar:', error);
+    let usuariosAFiltrar = todosLosUsuariosCache;
+    
+    // 1. Filtro por el select
+    if (estadoFiltro === 'Active') {
+        usuariosAFiltrar = todosLosUsuariosCache.filter(user => user.status === 'Active' || !user.status);
+    } else if (estadoFiltro === 'Unemployed') {
+        usuariosAFiltrar = todosLosUsuariosCache.filter(user => user.status === 'Unemployed');
     }
+
+    // 2. Filtro por la barra de búsqueda (DNI)
+    if (dniBuscado !== "") {
+        usuariosAFiltrar = usuariosAFiltrar.filter(user => user.dni && user.dni.includes(dniBuscado));
+    }
+    
+    renderizarUsuarios(usuariosAFiltrar);
 };
 
-// Mantenemos el buscador conectado a la misma lógica
+// Se llama cuando escriben en el buscador
 window.buscarPorDni = () => {
     cargarUsuarios();
 };
-
-// Asegurar que el buscador use la misma lógica unificada
-window.buscarPorDni = () => {
-    cargarUsuarios();
-};
-
-window.buscarPorDni = () => {
-    const inputDni = document.getElementById('buscadorDni').value.trim();
-    if(inputDni === "") {
-        cargarUsuarios();
-        return;
-    }
-    const usuariosEncontrados = todosLosUsuariosCache.filter(user => user.dni && user.dni.includes(inputDni));
-    renderizarUsuarios(usuariosEncontrados);
-}
 
 function renderizarUsuarios(usuarios) {
     const tableBody = document.getElementById('userTableBody');
@@ -109,28 +97,36 @@ function renderizarUsuarios(usuarios) {
     tableBody.innerHTML = ''; mobileContainer.innerHTML = '';
 
     if(usuarios.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">No se encontraron usuarios.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #8a9099;">No se encontraron usuarios en esta categoría.</td></tr>`;
         return;
     }
 
     usuarios.forEach(user => {
         const rolesNombres = user.roles.map(r => r.name.replace('ROLE_', '')).join(', ');
-        const isUnemployed = user.status === 'Unemployed';
+        
+        // Verificamos si es desempleado
+        const isUnemployed = (user.status === 'Unemployed');
         
         const nombreMostrar = (user.firstName && user.lastName) 
             ? `${user.firstName} ${user.lastName}` : (user.name || 'Sin Nombre');
 
         const estadoHTML = isUnemployed 
-            ? '<span style="color:#d32f2f; font-size:12px; font-weight:bold;">(Desempleado)</span>' 
-            : '<span style="color:#2e7d32; font-size:12px; font-weight:bold;">(Activo)</span>';
+            ? '<span style="color:#d32f2f; font-size:12px; font-weight:bold;"><i class="fa-solid fa-circle-xmark"></i> Desempleado</span>' 
+            : '<span style="color:#2e7d32; font-size:12px; font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Activo</span>';
 
         const actionBtn = isUnemployed
             ? `<button class="btn-edit" style="background:#E8F5E9; color:#2e7d32; border:1px solid #2e7d32;" onclick="cambiarEstadoUsuario(${user.userId}, 'Active')" title="Re-emplear"><i class="fa-solid fa-user-check"></i></button>`
             : `<button class="btn-delete" style="background:#FFEBEE; color:#d32f2f; border:1px solid #d32f2f;" onclick="cambiarEstadoUsuario(${user.userId}, 'Unemployed')" title="Desemplear"><i class="fa-solid fa-user-minus"></i></button>`;
 
+        // ESTILO CYBERPUNK PARA FILAS: La fila desempleada se pone rojiza/gris
+        const trStyle = isUnemployed ? 'background-color: #FBE9E7; opacity: 0.85;' : '';
+
         const tr = document.createElement('tr');
+        tr.style = trStyle;
         tr.innerHTML = `
-            <td>${nombreMostrar} <br><small style="color: #666;">DNI: ${user.dni || 'N/A'}</small></td>
+            <td style="color: ${isUnemployed ? '#d32f2f' : '#2E3238'}; font-weight: ${isUnemployed ? 'bold' : 'normal'};">
+                ${nombreMostrar} <br><small style="color: #666;">DNI: ${user.dni || 'N/A'}</small>
+            </td>
             <td>${user.email}</td>
             <td>${user.phone}</td>
             <td><span class="badge rol">${rolesNombres}</span><br>${estadoHTML}</td>
@@ -141,10 +137,16 @@ function renderizarUsuarios(usuarios) {
         `;
         tableBody.appendChild(tr);
 
+        // Tarjeta para versión móvil
+        const cardStyle = isUnemployed ? 'border: 2px solid #d32f2f; background-color: #FBE9E7;' : '';
         const card = document.createElement('div');
         card.className = 'card';
+        card.style = cardStyle;
         card.innerHTML = `
-            <div class="card-header"><strong>${nombreMostrar}</strong> ${estadoHTML}</div>
+            <div class="card-header">
+                <strong style="color: ${isUnemployed ? '#d32f2f' : '#0B0B0D'};">${nombreMostrar}</strong> 
+                ${estadoHTML}
+            </div>
             <p style="margin: 5px 0; font-size: 14px;"><strong>DNI:</strong> ${user.dni || 'N/A'}</p>
             <p style="margin: 5px 0; font-size: 14px;"><strong>Email:</strong> ${user.email}</p>
             <p style="margin: 5px 0; font-size: 14px;"><strong>Tel:</strong> ${user.phone}</p>
@@ -191,10 +193,10 @@ window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
                     });
 
                     if (resPut.ok) {
-                        Swal.fire('¡Éxito!', `Usuario ha sido ${esDesempleo ? 'dado de baja' : 'reactivado'} correctamente.`, 'success');
+                        Swal.fire({ icon: 'success', title: '¡Éxito!', text: `Usuario ha sido ${esDesempleo ? 'dado de baja' : 'reactivado'} correctamente.`, confirmButtonColor: '#12CFF4' });
                         await cargarUsuariosDesdeAPI(); 
                     } else {
-                        Swal.fire('Error', 'Hubo un problema al cambiar el estado del usuario.', 'error');
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al cambiar el estado del usuario.', confirmButtonColor: '#12CFF4' });
                     }
                 }
             } catch (error) {
@@ -207,7 +209,7 @@ window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
 window.abrirModalCrear = () => {
     document.getElementById('formUsuario').reset();
     document.getElementById('userId').value = '';
-    document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-user-plus"></i> Nuevo Usuario';
+    document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#12CFF4;"></i> Nuevo Usuario';
     
     document.getElementById('userPassword').setAttribute('required', 'true');
     document.getElementById('userPassword').placeholder = "Requerida para nuevos usuarios";
@@ -218,7 +220,7 @@ window.abrirModalCrear = () => {
 
 window.abrirModalEditar = async (id) => {
     document.getElementById('formUsuario').reset();
-    document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editar Usuario';
+    document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:#12CFF4;"></i> Editar Usuario';
     document.getElementById('userId').value = id;
     
     document.getElementById('userPassword').removeAttribute('required'); 
@@ -260,7 +262,6 @@ window.guardarUsuario = async () => {
     const roleCheckboxes = document.querySelectorAll('input[name="userRoles"]:checked');
     const selectedRoles = Array.from(roleCheckboxes).map(cb => cb.value);
 
-    // NUEVO: Validaciones de campos obligatorios para no mandar basura al backend
     const firstName = document.getElementById('userFirstName').value.trim();
     const lastName = document.getElementById('userLastName').value.trim();
     const email = document.getElementById('userEmail').value.trim();
@@ -271,20 +272,20 @@ window.guardarUsuario = async () => {
     const dniInput = document.getElementById('userDni').value.trim();
 
     if(!firstName || !lastName || !email || !phone || !title || !birthDateInput || !entryDateInput || !dniInput) {
-        return Swal.fire('Faltan datos', 'Por favor, llena todos los campos obligatorios.', 'warning');
+        return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Por favor, llena todos los campos obligatorios.', confirmButtonColor: '#12CFF4' });
     }
 
     if (selectedRoles.length === 0) {
-        return Swal.fire('Faltan datos', 'Debes seleccionar al menos un rol para el usuario.', 'warning');
+        return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes seleccionar al menos un rol para el usuario.', confirmButtonColor: '#12CFF4' });
     }
 
     if(!/^\d{10}$/.test(dniInput)){
-        return Swal.fire('DNI Inválido', 'El DNI debe contener exactamente 10 números.', 'warning');
+        return Swal.fire({ icon: 'warning', title: 'DNI Inválido', text: 'El DNI debe contener exactamente 10 números.', confirmButtonColor: '#12CFF4' });
     }
 
     const passwordInput = document.getElementById('userPassword').value;
     if (!isEditing && passwordInput.trim() === "") {
-        return Swal.fire('Faltan datos', 'La contraseña es obligatoria para usuarios nuevos.', 'warning');
+        return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'La contraseña es obligatoria para usuarios nuevos.', confirmButtonColor: '#12CFF4' });
     }
 
     const hoy = new Date();
@@ -295,13 +296,13 @@ window.guardarUsuario = async () => {
     const mes = hoy.getMonth() - fechaNacimiento.getMonth();
     if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNacimiento.getDate())) { edad--; }
     if (edad < 18) {
-        return Swal.fire('Edad Inválida', 'El usuario debe ser mayor de 18 años.', 'warning');
+        return Swal.fire({ icon: 'warning', title: 'Edad Inválida', text: 'El usuario debe ser mayor de 18 años.', confirmButtonColor: '#12CFF4' });
     }
 
     const parts = entryDateInput.split('-');
     const fechaIngreso = new Date(parts[0], parts[1] - 1, parts[2]);
     if (fechaIngreso > hoy) {
-        return Swal.fire('Fecha Inválida', 'La fecha de ingreso no puede ser en el futuro.', 'warning');
+        return Swal.fire({ icon: 'warning', title: 'Fecha Inválida', text: 'La fecha de ingreso no puede ser en el futuro.', confirmButtonColor: '#12CFF4' });
     }
 
     const payload = {
@@ -331,28 +332,32 @@ window.guardarUsuario = async () => {
         });
 
         if (response.ok) {
-            Swal.fire('¡Éxito!', isEditing ? 'Usuario actualizado.' : 'Usuario registrado.', 'success');
+            Swal.fire({ icon: 'success', title: '¡Éxito!', text: isEditing ? 'Usuario actualizado.' : 'Usuario registrado.', confirmButtonColor: '#12CFF4' });
             cerrarModal();
             document.getElementById('buscadorDni').value = "";
             await cargarUsuariosDesdeAPI(); 
         } else {
-            // MAGIA: Formateamos la respuesta del backend para que SweetAlert no explote
-            let errorMsg = 'Verifica los datos y que no existan correos/DNIs duplicados.';
+            let errorText = 'Por favor verifica los datos.';
             try {
                 const errorData = await response.json();
-                if (errorData && typeof errorData.message === 'object') {
-                    // Si manda varios errores a la vez (ej: "DNI vacío", "Título vacío")
-                    errorMsg = Object.values(errorData.message).join('<br>');
-                } else if (errorData && errorData.message) {
-                    errorMsg = errorData.message;
-                }
-            } catch(e) {}
-            
-            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
+                if (errorData && errorData.message) {
+                    if (typeof errorData.message === 'object') {
+                        let mensajes = [];
+                        for (let key in errorData.message) {
+                            mensajes.push(`<b>${key}:</b> ${errorData.message[key]}`);
+                        }
+                        errorText = mensajes.join('<br>');
+                    } else {
+                        errorText = String(errorData.message);
+                    }
+                } 
+            } catch(e) { console.error("No se pudo leer el error del servidor", e); }
+
+            Swal.fire({ icon: 'error', title: 'Error de validación', html: String(errorText), confirmButtonColor: '#12CFF4' });
         }
     } catch (error) {
         console.error('Error al guardar:', error);
-        Swal.fire('Fallo de conexión', 'No se pudo contactar con el servidor.', 'error');
+        Swal.fire({ icon: 'error', title: 'Fallo de conexión', text: 'No se pudo contactar con el servidor.', confirmButtonColor: '#12CFF4' });
     }
 };
 
@@ -362,8 +367,8 @@ window.cerrarSesion = () => {
         text: "¿Estás seguro que deseas salir del sistema?",
         icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#0f4c81",
-        cancelButtonColor: "#d33",
+        confirmButtonColor: "#12CFF4",
+        cancelButtonColor: "#2E3238",
         confirmButtonText: "Sí, salir",
         cancelButtonText: "Cancelar"
     }).then((result) => {

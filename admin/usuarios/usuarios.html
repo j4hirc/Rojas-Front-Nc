@@ -12,6 +12,22 @@
     <link rel="stylesheet" href="../admin.css"> 
     <link rel="stylesheet" href="usuarios.css">
 </head>
+<style>
+        /* Ajuste para que los filtros no se rompan en pantallas pequeñas */
+        @media (max-width: 900px) {
+            .header-section {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 15px;
+            }
+            .filters-wrapper {
+                flex-direction: column;
+                width: 100%;
+            }
+            .filters-wrapper > div { width: 100% !important; }
+            .btn-add { width: 100%; justify-content: center; }
+        }
+    </style>
 <body>
 
     <div class="app-layout">
@@ -62,23 +78,26 @@
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
                     
-                    <div class="header-section" style="flex-wrap: wrap; gap: 15px;">
-                        <h2 style="margin: 0; color: #2B3674;">Directorio del Personal</h2>
+                    <div class="header-section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #F4F7FE;">
+                        <h2 style="margin: 0; color: #0B0B0D; font-weight: 700; font-size: 1.4rem;">Directorio del Personal</h2>
                         
-                        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <div class="filters-wrapper" style="display: flex; gap: 15px; align-items: center;">
                             
-                            <div style="position: relative;">
-                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #A3AED0;"></i>
-                                <input type="text" id="buscadorDni" class="input-field" placeholder="Buscar por DNI..." style="padding-left: 35px; width: 180px; padding-top: 10px; padding-bottom: 10px;" onkeyup="buscarPorDni()">
+                            <div style="position: relative; width: 220px;">
+                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8a9099;"></i>
+                                <input type="text" id="buscadorDni" class="input-field" placeholder="Buscar por DNI..." style="padding-left: 40px; padding-top: 10px; padding-bottom: 10px; width: 100%; border: 1px solid #E0E5F2; border-radius: 8px; font-size: 0.9rem;" oninput="buscarPorDni()">
                             </div>
 
-                            <select id="filtroEstado" class="input-field" style="width: auto; padding: 10px;" onchange="cargarUsuarios()">
-                                <option value="Active">Empleados (Activos)</option>
-                                <option value="Unemployed">Desempleados (Inactivos)</option>
+                            <select id="filtroEstado" class="input-field" style="padding: 10px 15px; cursor: pointer; font-weight: 600; color: #2E3238; border: 1px solid #E0E5F2; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFC;" onchange="cargarUsuarios()">
+                                <option value="Active">Empleados Activos</option>
+                                <option value="Unemployed">Desempleados</option>
                                 <option value="All">Ver Todos</option>
                             </select>
 
-                            <button class="btn-add" onclick="abrirModalCrear()">+ Nuevo Usuario</button>
+                            <button class="btn-add" onclick="abrirModalCrear()" style="white-space: nowrap; display: flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 0.9rem;">
+                                <i class="fa-solid fa-plus"></i> Nuevo Usuario
+                            </button>
+
                         </div>
                     </div>
 
@@ -106,7 +125,7 @@
     <div class="modal-overlay" id="modalUsuario">
         <div class="modal-container">
             <div class="modal-header">
-                <span id="modalTitulo"><i class="fa-solid fa-user-plus"></i> Nuevo Usuario</span>
+                <span id="modalTitulo"><i class="fa-solid fa-user-plus" style="color: #12CFF4;"></i> Nuevo Usuario</span>
                 <button onclick="cerrarModal()" class="btn-close-modal">✕</button>
             </div>
 
@@ -185,14 +204,14 @@
 
                         <div class="form-group">
                             <label>Roles (Puedes seleccionar varios)</label>
-                            <div style="display: flex; gap: 15px; background: #F9FAFC; padding: 12px 18px; border: 1px solid #E0E5F2; border-radius: 12px; flex-wrap: wrap;">
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                            <div style="display: flex; gap: 15px; background: rgba(18, 207, 244, 0.05); padding: 15px; border: 1px solid rgba(18, 207, 244, 0.2); border-radius: 12px; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
                                     <input type="checkbox" name="userRoles" value="ROLE_EMPLOYEE"> Empleado
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
                                     <input type="checkbox" name="userRoles" value="ROLE_JEFE"> Jefe
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
                                     <input type="checkbox" name="userRoles" value="ROLE_ADMIN"> Administrador
                                 </label>
                             </div>
