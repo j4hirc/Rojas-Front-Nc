@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Empleado - Rojas Remodeling</title>
+    <title>Panel de Empleado - RemoMN</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -100,7 +100,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Materiales Usados (Opcional)</label>
+                        <label>Materiales Usados (Añadidos en Oficina)</label>
                         <div id="employeeMaterialsContainer" style="max-height: 120px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
                             Cargando materiales...
                         </div>
@@ -118,6 +118,11 @@
                                 <strong>Alerta a la Oficina:</strong> Marca esta casilla si se hizo alguna modificación o cambio a la orden original que afecte el precio.
                             </span>
                         </label>
+                    </div>
+
+                    <div class="form-group" id="newPriceContainer" style="display: none; margin-top: 10px; background: #FFF3CD; padding: 12px; border-radius: 8px; border: 1px dashed #856404;">
+                        <label style="color: #856404; font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">Ingresa el nuevo precio acordado ($):</label>
+                        <input type="number" id="evNewPrice" class="input-field" step="0.01" placeholder="Ej: 250.00" style="border-color: #FFE69C;">
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
@@ -205,7 +210,10 @@
                 <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Dirección:</td><td id="pdfAddress" style="padding: 8px; border: 1px solid #ddd; color: #0B0B0D;"></td></tr>
                 <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Teléfono Contacto:</td><td id="pdfClientPhone" style="padding: 8px; border: 1px solid #ddd; color: #0B0B0D;"></td></tr>
                 <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Subcontratista:</td><td id="pdfEmployee" style="padding: 8px; border: 1px solid #ddd; color: #0B0B0D;"></td></tr>
-                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Valor a Pagar:</td><td id="pdfJobPay" style="padding: 8px; border: 1px solid #ddd; color: #F4A300; font-size: 16px; font-weight: bold;"></td></tr>
+                <tr><td style="padding: 8px; border: 1px solid #ddd; background: #0B0B0D; color: #12CFF4; font-weight: bold;">Valor a Pagar (Original):</td><td id="pdfJobPay" style="padding: 8px; border: 1px solid #ddd; color: #F4A300; font-size: 16px; font-weight: bold;"></td></tr>
+                
+                <tr id="pdfNewPriceRow" style="display: none;"><td style="padding: 8px; border: 1px solid #ddd; background: #FFF3CD; color: #856404; font-weight: bold;">ALERTA NUEVO PRECIO:</td><td id="pdfNewPrice" style="padding: 8px; border: 1px solid #ddd; color: #d32f2f; font-size: 16px; font-weight: bold;"></td></tr>
+
                 <tr><td style="padding: 8px; border: 1px solid #ddd; background: rgba(18, 207, 244, 0.1); font-weight: bold; color: #0B0B0D;">Estado Reportado:</td><td id="pdfStatus" style="padding: 8px; border: 1px solid #ddd; color: #0B0B0D; font-weight: bold; text-transform: uppercase;"></td></tr>
             </table>
 
@@ -217,6 +225,9 @@
                     ✓ CERTIFICACIÓN DE GARANTÍA: El subcontratista certifica que el proyecto está terminado y los errores encontrados después de terminar el proyecto serán cobrados al subcontratista como garantías del trabajo.
                 </p>
             </div>
+
+            <h3 style="color: #0B0B0D; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Materiales Utilizados</h3>
+            <ul id="pdfMaterials" style="margin-bottom: 20px; font-size: 13px; color: #2E3238; padding-left: 20px;"></ul>
 
             <h3 style="color: #0B0B0D; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Evidencias Fotográficas</h3>
             <div id="pdfImages" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; justify-content: flex-start;"></div>

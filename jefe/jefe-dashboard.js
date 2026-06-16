@@ -232,3 +232,90 @@ window.verBodegaHoy = async () => {
         Swal.fire('Error', 'No se pudo cargar la bodega.', 'error');
     }
 };
+
+window.verNominaSemanal = async () => {
+    Swal.fire({ title: 'Calculando nómina...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    try {
+        const token = localStorage.getItem('jwt_token');
+        const [resJobs, resUsers] = await Promise.all([
+            fetch('http://localhost:8081/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('http://localhost:8081/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        const jobs = await resJobs.json();
+        const users = await resUsers.json();
+
+        const hoy = new Date();
+        const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1; 
+        const inicioSemana = new Date(hoy);
+        inicioSemana.setDate(hoy.getDate() - diaSemana);
+        inicioSemana.setHours(0,0,0,0);
+
+        const finSemana = new Date(inicioSemana);
+        finSemana.setDate(inicioSemana.getDate() + 6);
+        finSemana.setHours(23,59,59,999);
+
+        let nominas = {};
+
+        jobs.forEach(job => {
+            if (job.status === 'COMPLETED' && job.employeeId) {
+                let jobDateStr = Array.isArray(job.jobDate)
+                    ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2,'0')}-${String(job.jobDate[2]).padStart(2,'0')}`
+                    : job.jobDate;
+
+                const jobDate = new Date(jobDateStr);
+                jobDate.setHours(12,0,0,0);
+
+                if (jobDate >= inicioSemana && jobDate <= finSemana) {
+                    if (!nominas[job.employeeId]) nominas[job.employeeId] = 0;
+                    nominas[job.employeeId] += (job.pay || 0);
+                }
+            }
+        });
+
+        let htmlContent = '<div style="max-height: 300px; overflow-y: auto;"><table style="width: 100%; border-collapse: collapse; text-align: left;">';
+        htmlContent += '<tr style="background-color: #0B0B0D; color: #12CFF4;">';
+        htmlContent += '<th style="padding: 10px; border-bottom: 1px solid #ddd;">Subcontratista</th>';
+        htmlContent += '<th style="padding: 10px; border-bottom: 1px solid #ddd;">Total a Pagar</th></tr>';
+
+        let totalNomina = 0;
+        let hayDatos = false;
+
+        for (let empId in nominas) {
+            hayDatos = true;
+            const emp = users.find(u => u.userId == empId);
+            const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
+            const pago = nominas[empId];
+            totalNomina += pago;
+
+            htmlContent += `<tr>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; color: #2E3238;">${nombre}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #eee; color: #F4A300; font-weight: bold;">$${pago.toFixed(2)}</td>
+            </tr>`;
+        }
+
+        if(!hayDatos) {
+            htmlContent += '<tr><td colspan="2" style="padding: 15px; text-align: center;">No hay trabajos completados esta semana.</td></tr>';
+        } else {
+            htmlContent += `<tr style="background-color: #f8faff;">
+                <td style="padding: 10px; font-weight: bold; text-align: right; color: #0B0B0D;">TOTAL SEMANA:</td>
+                <td style="padding: 10px; font-weight: bold; color: #2e7d32; font-size: 16px;">$${totalNomina.toFixed(2)}</td>
+            </tr>`;
+        }
+        htmlContent += '</table></div>';
+
+        const formatD = (d) => `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+        const strInicio = formatD(inicioSemana);
+        const strFin = formatD(finSemana);
+
+        Swal.fire({
+            title: '<i class="fa-solid fa-money-check-dollar" style="color:#12CFF4;"></i> Nómina Semanal',
+            html: `<p style="font-size: 13px; color: #666; margin-bottom: 15px;">Semana del <b>${strInicio}</b> al <b>${strFin}</b></p>${htmlContent}`,
+            confirmButtonColor: '#12CFF4',
+            width: '500px'
+        });
+
+    } catch (e) {
+        Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo calcular la nómina.', confirmButtonColor: '#12CFF4'});
+    }
+};

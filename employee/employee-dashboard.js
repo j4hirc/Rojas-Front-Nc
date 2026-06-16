@@ -67,6 +67,18 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.getElementById('evCertification').checked = false;
         }
     });
+
+    document.getElementById('evModifications').addEventListener('change', (e) => {
+        const priceContainer = document.getElementById('newPriceContainer');
+        if (e.target.checked) {
+            priceContainer.style.display = 'block';
+            document.getElementById('evNewPrice').setAttribute('required', 'true');
+        } else {
+            priceContainer.style.display = 'none';
+            document.getElementById('evNewPrice').removeAttribute('required');
+            document.getElementById('evNewPrice').value = '';
+        }
+    });
 });
 
 async function cargarCalendarioEmpleado(emailActual) {
@@ -90,11 +102,10 @@ async function cargarCalendarioEmpleado(emailActual) {
         const misTrabajos = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
 
         const eventosFormateados = misTrabajos.map(job => {
-            // COLORES DE LA NUEVA PALETA PARA EL CALENDARIO
-            let bgColor = '#F4A300'; // PENDING -> Gold
-            if(job.status === 'IN_PROGRESS') bgColor = '#12CFF4'; // Cyan
-            if(job.status === 'COMPLETED') bgColor = '#0B0B0D'; // Black
-            if(job.status === 'CANCELLED') bgColor = '#2E3238'; // Slate
+            let bgColor = '#F4A300'; 
+            if(job.status === 'IN_PROGRESS') bgColor = '#12CFF4'; 
+            if(job.status === 'COMPLETED') bgColor = '#0B0B0D'; 
+            if(job.status === 'CANCELLED') bgColor = '#2E3238'; 
 
             return {
                 id: job.jobId,
@@ -162,7 +173,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                             </p>
                             
                             <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F4A300; font-weight: bold; background: #0B0B0D; padding: 8px; border-radius: 4px; text-align: center;">
-                                <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${p.pay ? p.pay.toFixed(2) : '0.00'}
+                                <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${parseFloat(p.pay || 0).toFixed(2)}
                             </p>
 
                             <div style="margin-top: 15px; padding: 12px; background: rgba(18, 207, 244, 0.05); border-radius: 8px; border-left: 3px solid #12CFF4;">
@@ -311,12 +322,23 @@ window.abrirModalEvidence = (jobId) => {
     document.getElementById('evJobId').value = jobId;
     document.getElementById('imagePreviewContainer').innerHTML = ''; 
     document.getElementById('certBox').style.display = 'none'; 
+    document.getElementById('newPriceContainer').style.display = 'none';
     
     archivosSeleccionados = [];
     imagenesBase64Data = [];
     limpiarFirma();
     
-    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => { cb.checked = false; });
+    // MAGIA A PRUEBA DE BALAS PARA LOS MATERIALES
+    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => { 
+        cb.checked = false; 
+        if (currentJobInfo) {
+            let matArray = currentJobInfo.materials || currentJobInfo.jobMaterials || currentJobInfo.jobMaterial || [];
+            const arrIdMateriales = matArray.map(m => m.materialId || (m.material && m.material.materialId) || m.id);
+            if (arrIdMateriales.includes(parseInt(cb.value))) {
+                cb.checked = true; 
+            }
+        }
+    });
     
     document.getElementById('modalEvidence').style.display = 'flex';
     setTimeout(() => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }, 100);
@@ -398,8 +420,18 @@ window.guardarReporteYPdf = async () => {
     if (isCanvasBlank()) return Swal.fire({ icon: 'warning', title: 'Falta la Firma', text: 'Debes firmar el reporte en el recuadro blanco.', confirmButtonColor: '#12CFF4' });
 
     const hasModifications = document.getElementById('evModifications').checked;
+    const newPriceVal = document.getElementById('evNewPrice').value;
+
     if (hasModifications) {
-        comment = "⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones o cambios a la orden original.\n\n" + comment;
+        if (!newPriceVal) {
+            return Swal.fire({ icon: 'warning', title: 'Falta el precio', text: 'Marcaste la alerta de modificación. Debes ingresar el nuevo precio.', confirmButtonColor: '#12CFF4' });
+        }
+        comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones o cambios a la orden original.\nNUEVO PRECIO SUGERIDO: $${parseFloat(newPriceVal).toFixed(2)}\n\n` + comment;
+        
+        document.getElementById('pdfNewPriceRow').style.display = 'table-row';
+        document.getElementById('pdfNewPrice').textContent = `$${parseFloat(newPriceVal).toFixed(2)}`;
+    } else {
+        document.getElementById('pdfNewPriceRow').style.display = 'none';
     }
 
     const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
@@ -408,12 +440,12 @@ window.guardarReporteYPdf = async () => {
 
     Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-    // LLENADO DEL PDF
+    // LLENADO DEL PDF (Solución Crash .toFixed)
     document.getElementById('pdfJobName').textContent = currentJobInfo.clientName;
     document.getElementById('pdfAddress').textContent = currentJobInfo.address;
     document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
-    document.getElementById('pdfJobPay').textContent = `$${currentJobInfo.pay ? currentJobInfo.pay.toFixed(2) : '0.00'}`;
+    document.getElementById('pdfJobPay').textContent = `$${parseFloat(currentJobInfo.pay || 0).toFixed(2)}`;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
     document.getElementById('pdfDate').textContent = formatearFecha(currentJobInfo.jobDate); 
     document.getElementById('pdfComment').textContent = comment;
@@ -470,12 +502,14 @@ window.guardarReporteYPdf = async () => {
 
     pdfWrapper.style.display = 'none';
 
+    
     const dtoObject = {
         comment: comment,
         jobId: parseInt(currentJobInfo.jobId),
         employeeId: myEmployeeId,
         status: status,
-        materialIds: selectedMaterialIds
+        materialIds: selectedMaterialIds,
+        newPrice: hasModifications && newPriceVal ? parseFloat(newPriceVal) : null 
     };
     
     const formData = new FormData();
