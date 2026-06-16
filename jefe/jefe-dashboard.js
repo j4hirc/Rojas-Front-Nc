@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             icon: 'error',
             title: 'Acceso Denegado',
             text: 'Solo Jefes de obra pueden acceder a esta sección.',
-            confirmButtonColor: '#198754',
+            confirmButtonColor: '#12CFF4',
             allowOutsideClick: false
         }).then(() => {
             window.location.href = '../index.html'; 
@@ -132,7 +132,7 @@ async function guardarPerfil() {
                 icon: 'success',
                 title: '¡Perfil Actualizado!',
                 text: 'Tus datos se guardaron correctamente.',
-                confirmButtonColor: '#198754',
+                confirmButtonColor: '#12CFF4',
                 timer: 2000,
                 showConfirmButton: false
             });

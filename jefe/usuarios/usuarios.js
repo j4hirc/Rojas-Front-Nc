@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             icon: 'error',
             title: 'Acceso Denegado',
             text: 'Solo los Jefes pueden acceder a esta sección.',
-            confirmButtonColor: '#198754'
+            confirmButtonColor: '#12CFF4'
         }).then(() => {
             window.location.href = '../../index.html'; // RUTA CORREGIDA
         });
@@ -133,7 +133,7 @@ window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: esDesempleo ? '#d33' : '#2e7d32',
-        cancelButtonColor: '#6c757d',
+        cancelButtonColor: '#2E3238',
         confirmButtonText: esDesempleo ? 'Sí, desemplear' : 'Sí, emplear',
         cancelButtonText: 'Cancelar'
     }).then(async (result) => {

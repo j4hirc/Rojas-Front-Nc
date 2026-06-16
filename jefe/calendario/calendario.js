@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const userEmail = localStorage.getItem('user_email');
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_JEFE')) {
-        Swal.fire({ icon: 'error', title: 'Acceso Denegado', confirmButtonColor: '#198754' })
+        Swal.fire({ icon: 'error', title: 'Acceso Denegado', confirmButtonColor: '#12CFF4' })
         .then(() => { window.location.href = '../../index.html'; });
         return;
     }
@@ -175,7 +175,7 @@ async function cargarDatosYCronograma(emailActual) {
                             </div>
                         </div>
                     `,
-                    confirmButtonColor: '#198754',
+                    confirmButtonColor: '#12CFF4',
                     confirmButtonText: 'Cerrar detalle',
                     width: '450px',
                     showClass: { popup: 'animate__animated animate__fadeInUp animate__faster' },

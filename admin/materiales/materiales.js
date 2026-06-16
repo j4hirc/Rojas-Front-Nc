@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             icon: 'error',
             title: 'Acceso Denegado',
             text: 'No tienes permisos para acceder a esta sección.',
-            confirmButtonColor: '#0f4c81'
+            confirmButtonColor: '#12CFF4'
         }).then(() => {
             window.location.href = '../../index.html'; 
         });
@@ -181,7 +181,7 @@ window.eliminarMaterial = async (id) => {
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#d33',
-        cancelButtonColor: '#6c757d',
+        cancelButtonColor: '#2E3238',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
     }).then(async (result) => {

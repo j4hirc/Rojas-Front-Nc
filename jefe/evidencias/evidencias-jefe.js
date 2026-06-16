@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             icon: 'error',
             title: 'Acceso Denegado',
             text: 'Solo los Jefes de obra pueden acceder a esta sección.',
-            confirmButtonColor: '#198754'
+            confirmButtonColor: '#12CFF4'
         }).then(() => { window.location.href = '../../index.html'; });
         return;
     }
