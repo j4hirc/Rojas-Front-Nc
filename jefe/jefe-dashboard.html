@@ -8,6 +8,52 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="../admin/admin.css"> 
+
+    <style>
+        .input-field:focus {
+            outline: none;
+            border-color: #12CFF4 !important;
+            background: white !important;
+            box-shadow: 0 0 0 3px rgba(18, 207, 244, 0.15);
+        }
+        .btn-primary:hover {
+            background: #2dd8f8 !important;
+            transform: translateY(-2px);
+        }
+        .btn-secondary:hover {
+            background: #F4F7FE !important;
+        }
+
+        /* ESTILO CRÍTICO PARA EL MODAL */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 11, 13, 0.85); /* Deep black transparente */
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: none; /* OCULTO POR DEFECTO */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-container {
+            background: var(--white);
+            border-radius: 24px;
+            width: 95%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
 </head>
 <body>
 
@@ -15,8 +61,7 @@
         
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <i class="fa-solid fa-hard-hat"></i>
-                <span>Portal Jefe</span>
+                <img src="../img/logo.png" alt="Rojas Remodeling">
             </div>
             
             <nav class="sidebar-nav">
@@ -82,30 +127,48 @@
     </div>
 
     <div class="modal-overlay" id="modalPerfil">
-        <div class="modal-container" style="max-width: 500px;">
-            <div class="modal-header">
-                <span id="modalTitulo"><i class="fa-solid fa-user-pen" style="color: #12CFF4;"></i> Editar Mi Perfil</span>
-                <button id="btnCerrarModalTop" class="btn-close-modal">✕</button>
+        <div class="modal-container" style="background: #FFFFFF;">
+            <div class="modal-header" style="border-bottom: 1px solid #F4F7FE; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
+                <span id="modalTitulo" style="color: #0B0B0D; font-weight: 700; font-size: 1.2rem;"><i class="fa-solid fa-user-pen" style="color: #12CFF4; margin-right: 10px;"></i> Editar Mi Perfil</span>
+                <button id="btnCerrarModalTop" class="btn-close-modal" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #2E3238;">✕</button>
             </div>
             
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 25px; overflow-y: auto; max-height: 70vh;">
                 <form id="perfilForm">
-                    <div class="form-row">
-                        <div class="form-group"><label>Nombres</label><input type="text" id="perfilFirstName" class="input-field" required></div>
-                        <div class="form-group"><label>Apellidos</label><input type="text" id="perfilLastName" class="input-field" required></div>
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Nombres</label>
+                            <input type="text" id="perfilFirstName" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Apellidos</label>
+                            <input type="text" id="perfilLastName" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                        </div>
                     </div>
-                    <div class="form-row" style="margin-top: 15px;">
-                        <div class="form-group"><label>DNI / Cédula</label><input type="text" id="perfilDni" class="input-field" required></div>
-                        <div class="form-group"><label>Teléfono</label><input type="text" id="perfilPhone" class="input-field" required></div>
+                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        <div class="form-group">
+                            <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">DNI / Cédula</label>
+                            <input type="text" id="perfilDni" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Teléfono</label>
+                            <input type="text" id="perfilPhone" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                        </div>
                     </div>
-                    <div class="form-group" style="margin-top: 15px;"><label>Correo Electrónico</label><input type="email" id="perfilEmail" class="input-field" required></div>
-                    <div class="form-group" style="margin-top: 15px;"><label>Nueva Contraseña <small style="color: #666;">(Opcional)</small></label><input type="password" id="perfilPassword" class="input-field" placeholder="Déjalo en blanco para mantener la actual"></div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Correo Electrónico</label>
+                        <input type="email" id="perfilEmail" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Nueva Contraseña <small style="color: #666; font-weight: normal; text-transform: none;">(Opcional)</small></label>
+                        <input type="password" id="perfilPassword" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" placeholder="Déjalo en blanco para mantener la actual">
+                    </div>
                 </form>
             </div>
             
-            <div class="modal-footer">
-                <button id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
-                <button id="btnGuardarPerfil" class="btn-primary">Guardar Cambios</button>
+            <div class="modal-footer" style="background: #F9FAFC; border-top: 1px solid #F4F7FE; display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px;">
+                <button id="btnCerrarModalBot" class="btn-secondary" style="padding: 10px 20px; background: white; color: #2E3238; border: 1px solid #E0E5F2; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Cancelar</button>
+                <button id="btnGuardarPerfil" class="btn-primary" style="padding: 10px 20px; background: #12CFF4; color: #0B0B0D; border: none; border-radius: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(18, 207, 244, 0.25);">Guardar Cambios</button>
             </div>
         </div>
     </div>

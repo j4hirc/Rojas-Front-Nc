@@ -155,3 +155,27 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
     .content-body { padding: 15px; }
     .grid-cards { grid-template-columns: 1fr; }
 }
+
+
+/* --- SIDEBAR LOGO CON IMAGEN --- */
+.sidebar-logo {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centramos el logo */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    height: 90px; /* Alto fijo para mantener simetría */
+}
+
+.sidebar-logo img {
+    max-height: 65px; /* Ajusta este valor si lo quieres más grande o pequeño */
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+
+.sidebar-logo img:hover {
+    transform: scale(1.05); /* Efecto hover elegante */
+}
