@@ -1,5 +1,5 @@
-const API_URL = 'http://localhost:8081/api/v1/materials';
-const CATEGORIES_URL = 'http://localhost:8081/api/v1/categories'; // Para cargar el select
+const API_URL = 'https://api-remomn.onrender.com/api/v1/materials';
+const CATEGORIES_URL = 'https://api-remomn.onrender.com/api/v1/categories'; // Para cargar el select
 let userToken = '';
 
 document.addEventListener("DOMContentLoaded", async () => {

@@ -24,7 +24,7 @@ loginForm?.addEventListener('submit', async (e) => {
     const password = document.getElementById('password').value;
 
     try {
-        const response = await fetch('http://localhost:8081/api/v1/auth/login', {
+        const response = await fetch('https://api-rojas-remodeling.onrender.com/api/v1/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -113,7 +113,7 @@ if (forgotPasswordBtn) {
         if (email) {
             Swal.fire({ title: 'Generando y enviando contraseña...', text: 'Por favor, espera unos segundos.', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
             try {
-                const response = await fetch('http://localhost:8081/api/v1/auth/forgot-password', {
+                const response = await fetch('https://api-remomn.onrender.com/api/v1/auth/forgot-password', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: email })
