@@ -141,7 +141,7 @@ window.verBodegaHoy = async () => {
     Swal.fire({ title: 'Calculando materiales...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
     try {
         const token = localStorage.getItem('jwt_token');
-        const JOBS_URL = 'http://localhost:8081/api/v1/jobs/all';
+        const JOBS_URL = 'https://api-remomn.onrender.com/api/v1/jobs/all';
         const response = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${token}` } });
         const jobs = await response.json();
         
@@ -204,8 +204,8 @@ window.verNominaSemanal = async () => {
 
         // Siempre traemos datos frescos de la API al abrir
         const [resJobs, resUsers] = await Promise.all([
-            fetch('http://localhost:8081/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('http://localhost:8081/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         nominasJobsCache = await resJobs.json();
         nominasUsersCache = await resUsers.json();
