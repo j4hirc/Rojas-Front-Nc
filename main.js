@@ -24,7 +24,7 @@ loginForm?.addEventListener('submit', async (e) => {
     const password = document.getElementById('password').value;
 
     try {
-        const response = await fetch('https://api-rojas-remodeling.onrender.com/api/v1/auth/login', {
+        const response = await fetch('https://api-remomn.onrender.com/api/v1/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
