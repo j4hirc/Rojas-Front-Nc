@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const userEmail = localStorage.getItem('user_email');
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_EMPLOYEE')) {
-        Swal.fire({ icon: 'error', title: 'Acceso Denegado', confirmButtonColor: '#12CFF4' })
+        Swal.fire({ icon: 'error', title: 'Acceso Denegado', confirmButtonColor: '#00B8A9' })
         .then(() => { window.location.href = '../index.html'; });
         return;
     }
@@ -102,10 +102,10 @@ async function cargarCalendarioEmpleado(emailActual) {
         const misTrabajos = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
 
         const eventosFormateados = misTrabajos.map(job => {
-            let bgColor = '#F4A300'; 
-            if(job.status === 'IN_PROGRESS') bgColor = '#12CFF4'; 
-            if(job.status === 'COMPLETED') bgColor = '#0B0B0D'; 
-            if(job.status === 'CANCELLED') bgColor = '#2E3238'; 
+            let bgColor = '#F59E0B'; 
+            if(job.status === 'IN_PROGRESS') bgColor = '#00B8A9'; 
+            if(job.status === 'COMPLETED') bgColor = '#10B981'; 
+            if(job.status === 'CANCELLED') bgColor = '#EF4444'; 
 
             return {
                 id: job.jobId,
@@ -135,55 +135,55 @@ async function cargarCalendarioEmpleado(emailActual) {
                 let badgeColor = '';
                 let estaBloqueado = false; 
 
-                if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#F4A300'; }
-                if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#12CFF4'; }
-                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#0B0B0D'; estaBloqueado = true; }
-                if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#2E3238'; estaBloqueado = true; }
+                if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#F59E0B'; }
+                if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#00B8A9'; }
+                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#10B981'; estaBloqueado = true; }
+                if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#EF4444'; estaBloqueado = true; }
 
                 let htmlBloqueo = estaBloqueado 
-                    ? `<div style="margin-top: 15px; padding: 12px; background: rgba(18, 207, 244, 0.1); color: #0B0B0D; border-radius: 8px; font-weight: bold; text-align: center; border: 1px solid #12CFF4;">
-                        <i class="fa-solid fa-circle-check" style="color: #12CFF4;"></i> Proyecto Finalizado.
+                    ? `<div style="margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.1); color: #111C44; border-radius: 8px; font-weight: bold; text-align: center; border: 1px solid #10B981;">
+                        <i class="fa-solid fa-circle-check" style="color: #10B981;"></i> Proyecto Finalizado.
                        </div>` 
                     : ``;
 
                 Swal.fire({
-                    title: `<h3 style="color:#0B0B0D; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
+                    title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
                     html: `
                         <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
-                            <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #ccc;">
+                            <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #E2E8F0;">
                                 <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-transform: uppercase;">
                                     Estado: ${estadoTxt}
                                 </span>
                             </div>
                             
-                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
-                                <strong><i class="fa-regular fa-calendar" style="color:#12CFF4; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                                <strong><i class="fa-regular fa-calendar" style="color:#00B8A9; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
                             </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
-                                <strong><i class="fa-solid fa-house" style="color:#12CFF4; width:20px;"></i> Propiedad / Contacto:</strong> ${p.clientName}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                                <strong><i class="fa-solid fa-house" style="color:#00B8A9; width:20px;"></i> Propiedad / Contacto:</strong> ${p.clientName}
                             </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
-                                <strong><i class="fa-solid fa-phone" style="color:#12CFF4; width:20px;"></i> Teléfono Contacto:</strong> ${p.clientPhone}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                                <strong><i class="fa-solid fa-phone" style="color:#00B8A9; width:20px;"></i> Teléfono:</strong> ${p.clientPhone}
                             </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
-                                <strong><i class="fa-solid fa-location-dot" style="color:#12CFF4; width:20px;"></i> Dirección:</strong> ${p.address}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                                <strong><i class="fa-solid fa-location-dot" style="color:#00B8A9; width:20px;"></i> Dirección:</strong> ${p.address}
                             </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2E3238;">
-                                <strong><i class="fa-solid fa-key" style="color:#12CFF4; width:20px;"></i> Código Caja Fuerte:</strong> ${p.safeDepositBoxCodes || 'No requiere'}
+                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                                <strong><i class="fa-solid fa-key" style="color:#00B8A9; width:20px;"></i> Caja Fuerte:</strong> ${p.safeDepositBoxCodes || 'No requiere'}
                             </p>
                             
-                            <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F4A300; font-weight: bold; background: #0B0B0D; padding: 8px; border-radius: 4px; text-align: center;">
+                            <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F59E0B; font-weight: bold; background: #111C44; padding: 10px; border-radius: 8px; text-align: center;">
                                 <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${parseFloat(p.pay || 0).toFixed(2)}
                             </p>
 
-                            <div style="margin-top: 15px; padding: 12px; background: rgba(18, 207, 244, 0.05); border-radius: 8px; border-left: 3px solid #12CFF4;">
-                                <strong style="font-size: 13px; color: #0B0B0D;">Notas de Trabajo:</strong>
-                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #2E3238; font-style: italic;">"${p.description || 'Sin notas especiales'}"</p>
+                            <div style="margin-top: 15px; padding: 12px; background: #F8FAFC; border-radius: 8px; border-left: 3px solid #00B8A9;">
+                                <strong style="font-size: 13px; color: #111C44;">Notas de Trabajo:</strong>
+                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #A3AED0; font-style: italic;">"${p.description || 'Sin notas especiales'}"</p>
                             </div>
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #0B0B0D; color: #12CFF4; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); text-transform: uppercase;">
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;" onmouseover="this.style.background='#00B8A9'" onmouseout="this.style.background='#111C44'">
                                     <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
                                 </a>
                             </div>
@@ -193,8 +193,8 @@ async function cargarCalendarioEmpleado(emailActual) {
                     `,
                     showCancelButton: true,
                     showConfirmButton: !estaBloqueado, 
-                    confirmButtonColor: '#12CFF4',
-                    cancelButtonColor: '#2E3238',
+                    confirmButtonColor: '#00B8A9',
+                    cancelButtonColor: '#1B254B',
                     confirmButtonText: '<i class="fa-solid fa-camera"></i> Hacer Reporte',
                     cancelButtonText: 'Cerrar',
                     width: '450px',
@@ -225,7 +225,7 @@ async function cargarMateriales() {
         containerMat.innerHTML = '';
         materials.forEach(mat => {
             containerMat.innerHTML += `
-                <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2E3238; font-size: 14px; font-weight: 500;">
+                <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2B3674; font-size: 14px; font-weight: 500;">
                     <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}"> 
                     ${mat.name}
                 </label>
@@ -246,7 +246,8 @@ function inicializarCanvasFirma() {
     const dibujar = (e) => {
         if (!drawing) return;
         e.preventDefault(); 
-        ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.strokeStyle = "#12CFF4"; 
+        ctx.lineWidth = 2; ctx.lineCap = "round"; 
+        ctx.strokeStyle = "#00B8A9"; /* Tinta de la firma color Teal */
 
         let x = e.clientX || e.touches[0].clientX;
         let y = e.clientY || e.touches[0].clientY;
@@ -328,7 +329,6 @@ window.abrirModalEvidence = (jobId) => {
     imagenesBase64Data = [];
     limpiarFirma();
     
-    // MAGIA A PRUEBA DE BALAS PARA LOS MATERIALES
     document.querySelectorAll('input[name="empMaterials"]').forEach(cb => { 
         cb.checked = false; 
         if (currentJobInfo) {
@@ -392,21 +392,20 @@ window.guardarPerfil = async () => {
             miUsuarioActual = updatedUser; 
             document.getElementById('employee-email-display').textContent = `${updatedUser.firstName} ${updatedUser.lastName}`;
             cerrarModalPerfil();
-            Swal.fire({ icon: 'success', title: '¡Actualizado!', confirmButtonColor: '#12CFF4', timer: 1500 });
+            Swal.fire({ icon: 'success', title: '¡Actualizado!', confirmButtonColor: '#00B8A9', timer: 1500 });
         } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', confirmButtonColor: '#12CFF4'});
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', confirmButtonColor: '#00B8A9'});
         }
     } catch (error) { Swal.fire('Error de red', 'Fallo de conexión.', 'error'); }
 };
 
 // --- GUARDAR REPORTE ---
 window.guardarReporteYPdf = async () => {
-    const jobId = document.getElementById('evJobId').value;
     const status = document.getElementById('evStatus').value;
     let comment = document.getElementById('evComment').value.trim();
 
     if (status === 'COMPLETED' && !document.getElementById('evCertification').checked) {
-        return Swal.fire({ icon: 'warning', title: 'Certificación Obligatoria', text: 'Para terminar el proyecto debes marcar la casilla de Certificación de Garantía.', confirmButtonColor: '#12CFF4' });
+        return Swal.fire({ icon: 'warning', title: 'Certificación Obligatoria', text: 'Para terminar el proyecto debes marcar la casilla de Certificación de Garantía.', confirmButtonColor: '#00B8A9' });
     }
 
     const isCanvasBlank = () => {
@@ -415,16 +414,16 @@ window.guardarReporteYPdf = async () => {
         return canvas.toDataURL() === blank.toDataURL();
     };
 
-    if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#12CFF4' });
-    if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#12CFF4' });
-    if (isCanvasBlank()) return Swal.fire({ icon: 'warning', title: 'Falta la Firma', text: 'Debes firmar el reporte en el recuadro blanco.', confirmButtonColor: '#12CFF4' });
+    if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#00B8A9' });
+    if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
+    if (isCanvasBlank()) return Swal.fire({ icon: 'warning', title: 'Falta la Firma', text: 'Debes firmar el reporte en el recuadro blanco.', confirmButtonColor: '#00B8A9' });
 
     const hasModifications = document.getElementById('evModifications').checked;
     const newPriceVal = document.getElementById('evNewPrice').value;
 
     if (hasModifications) {
         if (!newPriceVal) {
-            return Swal.fire({ icon: 'warning', title: 'Falta el precio', text: 'Marcaste la alerta de modificación. Debes ingresar el nuevo precio.', confirmButtonColor: '#12CFF4' });
+            return Swal.fire({ icon: 'warning', title: 'Falta el precio', text: 'Marcaste la alerta de modificación. Debes ingresar el nuevo precio.', confirmButtonColor: '#00B8A9' });
         }
         comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones o cambios a la orden original.\nNUEVO PRECIO SUGERIDO: $${parseFloat(newPriceVal).toFixed(2)}\n\n` + comment;
         
@@ -440,12 +439,17 @@ window.guardarReporteYPdf = async () => {
 
     Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-    // LLENADO DEL PDF (Solución Crash .toFixed)
-    document.getElementById('pdfJobName').textContent = currentJobInfo.clientName;
-    document.getElementById('pdfAddress').textContent = currentJobInfo.address;
+    if (!currentJobInfo) {
+        return Swal.fire({ icon: 'error', title: 'Error del sistema', text: 'No se encontraron los datos del trabajo actual.', confirmButtonColor: '#00B8A9' });
+    }
+
+    const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay).toFixed(2) : '0.00';
+
+    document.getElementById('pdfJobName').textContent = currentJobInfo.clientName || 'Sin asignar';
+    document.getElementById('pdfAddress').textContent = currentJobInfo.address || 'Sin dirección';
     document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
-    document.getElementById('pdfJobPay').textContent = `$${parseFloat(currentJobInfo.pay || 0).toFixed(2)}`;
+    document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF}`;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
     document.getElementById('pdfDate').textContent = formatearFecha(currentJobInfo.jobDate); 
     document.getElementById('pdfComment').textContent = comment;
@@ -472,7 +476,7 @@ window.guardarReporteYPdf = async () => {
     await new Promise(r => setTimeout(r, 100)); 
 
     const element = document.getElementById('pdfTemplate');
-    const pdfFileName = `Reporte_${currentJobInfo.clientName.replace(/\s+/g, '_')}.pdf`;
+    const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
     const opt = {
         margin:       [10, 0, 10, 0], 
@@ -497,12 +501,11 @@ window.guardarReporteYPdf = async () => {
     } catch (e) {
         pdfWrapper.style.display = 'none';
         console.error("Error al generar PDF:", e);
-        return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#12CFF4' });
+        return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#00B8A9' });
     }
 
     pdfWrapper.style.display = 'none';
 
-    
     const dtoObject = {
         comment: comment,
         jobId: parseInt(currentJobInfo.jobId),
@@ -529,7 +532,7 @@ window.guardarReporteYPdf = async () => {
         });
 
         if (response.ok) {
-            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'El reporte se subió correctamente y el Administrador será notificado.', confirmButtonColor: '#12CFF4' });
+            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'El reporte se subió correctamente y el Administrador será notificado.', confirmButtonColor: '#00B8A9' });
             cerrarModalEvidence();
             await cargarCalendarioEmpleado(document.getElementById('employee-email-display').textContent);
         } else {
@@ -538,10 +541,10 @@ window.guardarReporteYPdf = async () => {
                 const errorData = await response.json();
                 errorMsg = errorData.message || errorMsg;
             } catch(e) {}
-            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg, confirmButtonColor: '#12CFF4' });
+            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg, confirmButtonColor: '#00B8A9' });
         }
     } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Error de Red', text: 'No se pudo conectar con el servidor.', confirmButtonColor: '#12CFF4' });
+        Swal.fire({ icon: 'error', title: 'Error de Red', text: 'No se pudo conectar con el servidor.', confirmButtonColor: '#00B8A9' });
     }
 };
 
@@ -551,8 +554,8 @@ window.cerrarSesion = () => {
         text: "¿Estás seguro que deseas salir del portal?",
         icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#12CFF4",
-        cancelButtonColor: "#2E3238",
+        confirmButtonColor: "#00B8A9",
+        cancelButtonColor: "#1B254B",
         confirmButtonText: "Sí, salir",
         cancelButtonText: "Cancelar"
     }).then((result) => {
