@@ -1,5 +1,5 @@
-const JOBS_URL = 'http://localhost:8081/api/v1/jobs/all';
-const USERS_URL = 'http://localhost:8081/api/v1/user/all-users';
+const JOBS_URL = 'https://api-remomn.onrender.com/api/v1/jobs/all';
+const USERS_URL = 'https://api-remomn.onrender.com/api/v1/user/all-users';
 let userToken = '';
 let myEmployeeId = null; 
 let misTrabajosCache = [];

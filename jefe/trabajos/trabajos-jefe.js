@@ -1,6 +1,6 @@
-const API_URL = 'http://localhost:8081/api/v1/jobs';
-const USERS_URL = 'http://localhost:8081/api/v1/user/all-users';
-const MATERIALS_URL = 'http://localhost:8081/api/v1/materials/all';
+const API_URL = 'https://api-remomn.onrender.com/api/v1/jobs';
+const USERS_URL = 'https://api-remomn.onrender.com/api/v1/user/all-users';
+const MATERIALS_URL = 'https://api-remomn.onrender.com/api/v1/materials/all';
 
 let userToken = '';
 let myManagerId = null; 
