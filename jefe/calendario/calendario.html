@@ -11,38 +11,111 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <link rel="stylesheet" href="../../admin/admin.css"> 
-    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 
     <style>
-        #calendar {
-            background: white;
+        /* SCROLLBAR PERSONALIZADO */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #F4F7FE; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #C8D0E7; border-radius: 10px; transition: 0.3s; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        /* DISEÑO DE CALENDARIO HORIZON UI */
+        .calendario-wrapper {
+            background: var(--white);
+            border-radius: var(--radius-card);
             padding: 25px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-            border: 1px solid #E0E5F2;
-            font-family: 'Poppins', sans-serif;
+            box-shadow: var(--shadow-sm);
+            width: 100%;
+            overflow-x: hidden; /* Evita desbordes horizontales raros */
+        }
+
+        #calendar { font-family: 'Poppins', sans-serif; }
+        
+        /* Título del Mes */
+        .fc-toolbar-title { 
+            font-size: 1.4rem !important; 
+            color: var(--text-main) !important; 
+            font-weight: 700 !important; 
+            text-transform: capitalize;
         }
         
-        .fc-toolbar-title { font-size: 1.3rem !important; color: #0f4c81; font-weight: 700; text-transform: capitalize;}
-        .fc-button-primary { background-color: #198754 !important; border-color: #198754 !important; text-transform: capitalize; font-weight: 600 !important; border-radius: 8px !important;}
-        .fc-button-primary:hover { background-color: #146c43 !important; border-color: #146c43 !important; box-shadow: 0 4px 10px rgba(25, 135, 84, 0.3) !important;}
-        .fc-button-active { background-color: #0f4c81 !important; border-color: #0f4c81 !important; }
+        /* Botones de control (Hoy, Mes, Semana) */
+        .fc-button-primary { 
+            background-color: var(--primary) !important; 
+            border-color: var(--primary) !important; 
+            color: white !important; 
+            font-weight: 600 !important; 
+            border-radius: 8px !important; 
+            text-transform: capitalize !important;
+            box-shadow: 0 4px 10px rgba(0, 184, 169, 0.2);
+            transition: all 0.3s ease;
+        }
+        .fc-button-primary:hover, .fc-button-primary:not(:disabled):active, .fc-button-primary:not(:disabled).fc-button-active { 
+            background-color: var(--primary-hover) !important; 
+            border-color: var(--primary-hover) !important; 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 184, 169, 0.3);
+        }
 
-        /* Efectos dinámicos vista MES */
-        .fc-event { cursor: pointer; border-radius: 6px; border: none; transition: transform 0.2s, box-shadow 0.2s; }
-        .fc-event:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 5 !important; }
-        .fc-daygrid-event { margin: 2px 5px !important; }
+        /* Estilo de los días (L, M, X, J, V...) y números */
+        .fc-col-header-cell-cushion, .fc-daygrid-day-number { 
+            color: var(--text-muted) !important; 
+            text-decoration: none !important; 
+            font-weight: 600; 
+        }
+        .fc-col-header-cell-cushion:hover, .fc-daygrid-day-number:hover { color: var(--text-main) !important; }
+        
+        /* Borde interno del calendario suave */
+        .fc-theme-standard td, .fc-theme-standard th { border-color: #E2E8F0 !important; }
+        
+        /* Ajuste de los eventos en vista lista */
+        .fc-list-event td { padding: 12px 10px !important; color: var(--text-main); font-weight: 500; }
+        
+        /* Ajuste de los eventos (cuadritos de colores) */
+        .fc-event { 
+            cursor: pointer; 
+            border-radius: 6px; 
+            border: none; 
+            transition: transform 0.2s, box-shadow 0.2s; 
+            padding: 3px 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        .fc-event:hover { 
+            transform: scale(1.03); 
+            box-shadow: 0 4px 12px rgba(11, 20, 55, 0.15); 
+            z-index: 5 !important; 
+        }
 
-        /* NUEVO: ESTILOS HERMOSOS PARA LA VISTA AGENDA (LISTA) */
-        .fc-list { border: none !important; border-radius: 12px; overflow: hidden; }
-        .fc-list-day-cushion { background-color: #E8F5E9 !important; color: #198754 !important; font-weight: 700 !important; padding: 12px 20px !important; font-size: 1.1rem; }
-        .fc-list-event td { padding: 15px 20px !important; border: none !important; border-bottom: 1px solid #E0E5F2 !important; transition: 0.3s; }
-        .fc-list-event:hover td { background-color: #f8faff !important; }
-        .fc-list-event-dot { display: none; } /* Ocultar el puntito default aburrido */
-        .fc-list-event-time { display: none; } /* Ocultar la hora vacía */
-        .fc-list-event-title { padding: 0 !important; }
+        .fc-day-today { background-color: #F8FAFC !important; }
+
+        /* ========================================================
+           RESPONSIVE DESIGN PARA CELULARES (¡AQUÍ ESTÁ LA MAGIA!)
+           ======================================================== */
+        @media (max-width: 768px) {
+            .calendario-wrapper { padding: 15px; border-radius: 16px; }
+            
+            /* Ajustamos la barra superior del calendario (Los botones) */
+            .fc-toolbar {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            .fc-toolbar-title { font-size: 1.2rem !important; }
+            
+            /* Hacemos los botones más compactos */
+            .fc-button-primary { padding: 6px 10px !important; font-size: 0.85rem !important; }
+            
+            /* Quitamos algo de padding interno para ganar espacio */
+            .fc-view-harness { padding-top: 5px; }
+            
+            .fc-event { font-size: 0.7rem; padding: 2px; overflow: hidden; text-overflow: ellipsis; }
+        }
     </style>
 </head>
 <body>
@@ -82,14 +155,14 @@
         <main class="main-content">
             <header class="top-navbar">
                 <div class="page-title">Cronograma de Proyectos</div>
-                <div class="user-profile" style="color: #198754; background: #E8F5E9;">
+                <div class="user-profile">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="jefe-email-display">Cargando...</span>
                 </div>
             </header>
 
             <div class="content-body">
-                <div class="usuarios-container" style="margin-top: 0; padding: 20px;">
+                <div class="calendario-wrapper">
                     <div id='calendar'></div>
                 </div>
             </div>
