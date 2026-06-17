@@ -214,11 +214,12 @@ window.verNominaSemanal = async () => {
 
         // 1. Abrimos el SweetAlert UNA SOLA VEZ y le dejamos una "Caja Vacía" con ID
         Swal.fire({
-            title: '<i class="fa-solid fa-money-check-dollar" style="color:#12CFF4;"></i> Tu Nómina Semanal',
+            title: '<h2 style="color: #0F2D4A; font-weight: 800; margin: 0; display: flex; align-items: center; justify-content: center;"><span style="background: #12CFF4; color: #FFFFFF; padding: 4px 10px; border-radius: 8px; font-size: 0.7em; margin-right: 12px;"><i class="fa-solid fa-money-check-dollar"></i></span>Tu Nómina Semanal</h2>',
             html: '<div id="nomina-contenedor">Generando reporte...</div>', // Caja Vacía
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
-            width: '550px'
+            width: '600px',
+            background: '#FFFFFF'
         });
 
         // 2. Llenamos esa caja vacía con los datos de la semana
@@ -278,21 +279,33 @@ function renderizarNomina(offset) {
     const strFin = formatD(finSemana);
 
     let htmlContent = `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(18, 207, 244, 0.1); padding: 10px; border-radius: 8px; border: 1px solid #12CFF4; margin-bottom: 15px;">
-            <button onclick="cambiarSemana(-1)" style="background: #0B0B0D; color: #12CFF4; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;"><i class="fa-solid fa-chevron-left"></i> Anterior</button>
-            <div style="text-align: center;">
-                <span style="display: block; font-size: 11px; color: #666; text-transform: uppercase;">Semana del</span>
-                <span style="font-size: 13px; color: #2E3238;"><b>${strInicio}</b> al <b>${strFin}</b></span>
-            </div>
-            <button onclick="cambiarSemana(1)" style="background: #0B0B0D; color: #12CFF4; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;">Siguiente <i class="fa-solid fa-chevron-right"></i></button>
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+        
+        <!-- Botón Anterior con fondo Azul Oscuro -->
+        <button onclick="cambiarSemana(-1)" style="background: #0F2D4A; color: #12CFF4; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-chevron-left"></i> Anterior
+        </button>
+
+        <div style="text-align: center;">
+            <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Semana del</span>
+            <span style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
         </div>
-        <div style="max-height: 250px; overflow-y: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                <tr style="background-color: #0B0B0D; color: #12CFF4; position: sticky; top: 0;">
-                    <th style="padding: 10px; border-bottom: 1px solid #ddd;">Subcontratista a tu cargo</th>
-                    <th style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right;">Total a Pagar</th>
-                </tr>
-    `;
+
+        <!-- Botón Siguiente con fondo Azul Oscuro -->
+        <button onclick="cambiarSemana(1)" style="background: #0F2D4A; color: #12CFF4; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+            Siguiente <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <div style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            
+            <!-- Encabezado de la tabla con fondo Azul Oscuro -->
+            <tr style="background-color: #0F2D4A; color: #12CFF4; position: sticky; top: 0; z-index: 10;">
+                <th style="padding: 15px; font-weight: 700;">Subcontratista a tu cargo</th>
+                <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
+            </tr>
+`;
 
     let totalNomina = 0;
     let hayDatos = false;
