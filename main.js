@@ -1,6 +1,19 @@
 const loginForm = document.getElementById('loginForm');
 const submitBtn = document.getElementById('submitBtn');
 const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('password');
+
+if (togglePassword && passwordInput) {
+    togglePassword.addEventListener('click', function () {
+        // Alternar el tipo de input
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        
+        // Cambiar el texto impreso
+        this.textContent = type === 'password' ? 'Mostrar' : 'Ocultar';
+    });
+}
 
 window.seleccionarRol = (rolElegido) => {
     localStorage.setItem('active_role', rolElegido);
