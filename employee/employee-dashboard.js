@@ -480,7 +480,10 @@ window.guardarReporteYPdf = async () => {
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
     document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF}`;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
-    document.getElementById('pdfDate').textContent = formatearFecha(currentJobInfo.jobDate); 
+    // Obtenemos la fecha exacta del día de hoy para el PDF
+    const hoy = new Date();
+    const fechaActual = `${String(hoy.getDate()).padStart(2, '0')}/${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
+    document.getElementById('pdfDate').textContent = fechaActual; 
     document.getElementById('pdfComment').textContent = comment;
 
     if (selectedMaterialNames) {
