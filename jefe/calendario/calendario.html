@@ -20,17 +20,17 @@
         /* SCROLLBAR PERSONALIZADO */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #F4F7FE; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: #C8D0E7; border-radius: 10px; transition: 0.3s; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+        ::-webkit-scrollbar-thumb { background: #D4D4D4; border-radius: 10px; transition: 0.3s; }
+        ::-webkit-scrollbar-thumb:hover { background: #12CFF4; }
 
         /* DISEÑO DE CALENDARIO HORIZON UI */
         .calendario-wrapper {
-            background: var(--white);
-            border-radius: var(--radius-card);
+            background: #FFFFFF;
+            border-radius: 16px;
             padding: 25px;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 4px 15px rgba(46, 50, 56, 0.05);
             width: 100%;
-            overflow-x: hidden; /* Evita desbordes horizontales raros */
+            overflow-x: hidden;
         }
 
         #calendar { font-family: 'Poppins', sans-serif; }
@@ -38,42 +38,46 @@
         /* Título del Mes */
         .fc-toolbar-title { 
             font-size: 1.4rem !important; 
-            color: var(--text-main) !important; 
-            font-weight: 700 !important; 
+            color: #0F2D4A !important; 
+            font-weight: 800 !important; 
             text-transform: capitalize;
+            letter-spacing: -0.5px !important;
         }
         
         /* Botones de control (Hoy, Mes, Semana) */
-        .fc-button-primary { 
-            background-color: var(--primary) !important; 
-            border-color: var(--primary) !important; 
-            color: white !important; 
+        .fc .fc-button-primary { 
+            background-color: #0F2D4A !important; 
+            border-color: #0F2D4A !important; 
+            color: #FFFFFF !important; 
             font-weight: 600 !important; 
             border-radius: 8px !important; 
             text-transform: capitalize !important;
-            box-shadow: 0 4px 10px rgba(0, 184, 169, 0.2);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(15, 45, 74, 0.2) !important;
+            transition: all 0.3s ease !important;
         }
-        .fc-button-primary:hover, .fc-button-primary:not(:disabled):active, .fc-button-primary:not(:disabled).fc-button-active { 
-            background-color: var(--primary-hover) !important; 
-            border-color: var(--primary-hover) !important; 
+        .fc .fc-button-primary:hover, 
+        .fc .fc-button-primary:not(:disabled):active, 
+        .fc .fc-button-primary:not(:disabled).fc-button-active { 
+            background-color: #12CFF4 !important; 
+            border-color: #12CFF4 !important; 
+            color: #0F2D4A !important; 
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 184, 169, 0.3);
+            box-shadow: 0 6px 15px rgba(18, 207, 244, 0.3) !important;
         }
 
         /* Estilo de los días (L, M, X, J, V...) y números */
         .fc-col-header-cell-cushion, .fc-daygrid-day-number { 
-            color: var(--text-muted) !important; 
+            color: #2E3238 !important; 
             text-decoration: none !important; 
             font-weight: 600; 
         }
-        .fc-col-header-cell-cushion:hover, .fc-daygrid-day-number:hover { color: var(--text-main) !important; }
+        .fc-col-header-cell-cushion:hover, .fc-daygrid-day-number:hover { color: #0F2D4A !important; }
         
         /* Borde interno del calendario suave */
         .fc-theme-standard td, .fc-theme-standard th { border-color: #E2E8F0 !important; }
         
         /* Ajuste de los eventos en vista lista */
-        .fc-list-event td { padding: 12px 10px !important; color: var(--text-main); font-weight: 500; }
+        .fc-list-event td { padding: 12px 10px !important; color: #0B0B0D; font-weight: 500; }
         
         /* Ajuste de los eventos (cuadritos de colores) */
         .fc-event { 
@@ -88,32 +92,21 @@
         }
         .fc-event:hover { 
             transform: scale(1.03); 
-            box-shadow: 0 4px 12px rgba(11, 20, 55, 0.15); 
+            box-shadow: 0 4px 12px rgba(15, 45, 74, 0.15); 
             z-index: 5 !important; 
         }
 
-        .fc-day-today { background-color: #F8FAFC !important; }
+        .fc-day-today { background-color: rgba(18, 207, 244, 0.05) !important; }
 
         /* ========================================================
-           RESPONSIVE DESIGN PARA CELULARES (¡AQUÍ ESTÁ LA MAGIA!)
+           RESPONSIVE DESIGN PARA CELULARES
            ======================================================== */
         @media (max-width: 768px) {
             .calendario-wrapper { padding: 15px; border-radius: 16px; }
-            
-            /* Ajustamos la barra superior del calendario (Los botones) */
-            .fc-toolbar {
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
+            .fc-toolbar { flex-direction: column; gap: 15px; text-align: center; }
             .fc-toolbar-title { font-size: 1.2rem !important; }
-            
-            /* Hacemos los botones más compactos */
             .fc-button-primary { padding: 6px 10px !important; font-size: 0.85rem !important; }
-            
-            /* Quitamos algo de padding interno para ganar espacio */
             .fc-view-harness { padding-top: 5px; }
-            
             .fc-event { font-size: 0.7rem; padding: 2px; overflow: hidden; text-overflow: ellipsis; }
         }
     </style>
