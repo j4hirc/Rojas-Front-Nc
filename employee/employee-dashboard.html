@@ -32,13 +32,13 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #C8D0E7;
+            background: #D4D4D4;
             border-radius: 10px;
             transition: 0.3s;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary);
+            background: #12CFF4; /* Cyan al pasar el mouse */
         }
 
         /* CALENDARIO ESTILO HORIZON UI */
@@ -46,48 +46,52 @@
             background: white;
             padding: 25px;
             border-radius: 20px;
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 4px 15px rgba(46, 50, 56, 0.05);
             border: 1px solid #E2E8F0;
             font-family: 'Poppins', sans-serif;
         }
 
+        /* --- TÍTULO Y BOTONES DEL CALENDARIO --- */
         .fc-toolbar-title {
             font-size: 1.4rem !important;
-            color: var(--text-main) !important;
-            font-weight: 700 !important;
+            color: #0F2D4A !important; /* Azul oscuro */
+            font-weight: 800 !important;
             text-transform: capitalize;
+            letter-spacing: -0.5px !important;
         }
 
-        .fc-button-primary {
-            background-color: var(--primary) !important;
-            border-color: var(--primary) !important;
-            color: white !important;
+        .fc .fc-button-primary {
+            background-color: #0F2D4A !important; /* Fondo Azul Oscuro */
+            border-color: #0F2D4A !important;
+            color: #FFFFFF !important; /* Letras Blancas */
             font-weight: 600 !important;
             border-radius: 8px !important;
             text-transform: capitalize !important;
-            box-shadow: 0 4px 10px rgba(0, 184, 169, 0.2);
-            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(15, 45, 74, 0.2) !important;
+            transition: all 0.3s ease !important;
         }
 
-        .fc-button-primary:hover,
-        .fc-button-primary:not(:disabled):active,
-        .fc-button-primary:not(:disabled).fc-button-active {
-            background-color: var(--primary-hover) !important;
-            border-color: var(--primary-hover) !important;
+        .fc .fc-button-primary:hover,
+        .fc .fc-button-primary:not(:disabled):active,
+        .fc .fc-button-primary:not(:disabled).fc-button-active {
+            background-color: #12CFF4 !important; /* Hover Cian */
+            border-color: #12CFF4 !important;
+            color: #0F2D4A !important; /* Texto Azul oscuro */
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 184, 169, 0.3);
+            box-shadow: 0 6px 15px rgba(18, 207, 244, 0.3) !important;
         }
+        /* -------------------------------------- */
 
         .fc-col-header-cell-cushion,
         .fc-daygrid-day-number {
-            color: var(--text-muted) !important;
+            color: #2E3238 !important; /* Gris oscuro para los números */
             text-decoration: none !important;
             font-weight: 600;
         }
 
         .fc-col-header-cell-cushion:hover,
         .fc-daygrid-day-number:hover {
-            color: var(--text-main) !important;
+            color: #0F2D4A !important;
         }
 
         .fc-theme-standard td,
@@ -97,7 +101,7 @@
 
         .fc-list-event td {
             padding: 12px 10px !important;
-            color: var(--text-main);
+            color: #0B0B0D; 
             font-weight: 500;
         }
 
@@ -113,18 +117,18 @@
 
         .fc-event:hover {
             transform: scale(1.02);
-            box-shadow: 0 4px 12px rgba(11, 20, 55, 0.15);
+            box-shadow: 0 4px 12px rgba(15, 45, 74, 0.15);
             z-index: 5 !important;
         }
 
         .fc-day-today {
-            background-color: #F8FAFC !important;
+            background-color: rgba(18, 207, 244, 0.05) !important; /* Toque súper ligero de Cian para el día de hoy */
         }
 
         /* UPLOAD DE EVIDENCIAS Y FIRMA */
         .file-upload-container {
             background: #F8FAFC;
-            border: 2px dashed var(--primary);
+            border: 2px dashed #12CFF4; /* Borde Cian */
             border-radius: 12px;
             padding: 20px;
             text-align: center;
@@ -134,7 +138,7 @@
         }
 
         .file-upload-container:hover {
-            background: rgba(0, 184, 169, 0.05);
+            background: rgba(18, 207, 244, 0.05);
             transform: translateY(-2px);
         }
 
@@ -154,7 +158,7 @@
             height: 75px;
             object-fit: cover;
             border-radius: 8px;
-            border: 2px solid var(--primary);
+            border: 2px solid #12CFF4; /* Borde de las fotos en Cian */
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
@@ -162,7 +166,7 @@
             position: absolute;
             top: -8px;
             right: -8px;
-            background: #EF4444;
+            background: #EF4444; /* Rojo para borrar */
             color: white;
             border: none;
             border-radius: 50%;
@@ -184,7 +188,6 @@
         }
 
         .signature-box {
-            border: 2px solid var(--primary);
             border-radius: 12px;
             background: white;
             width: 100%;
@@ -194,7 +197,7 @@
 
         /* CHECKBOX MEJORADO */
         input[type="checkbox"] {
-            accent-color: var(--primary);
+            accent-color: #12CFF4; /* Checkboxes de color Cian */
             width: 18px;
             height: 18px;
             cursor: pointer;
