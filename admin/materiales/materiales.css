@@ -179,9 +179,9 @@
 
 .btn-primary { 
     padding: 12px 28px; 
-    background: var(--primary); 
+    background: #12CFF4; 
     border: none; 
-    color: #0F2D4A ; 
+    color: #0B0B0D; 
     border-radius: 10px; 
     font-weight: 600; 
     cursor: pointer; 
