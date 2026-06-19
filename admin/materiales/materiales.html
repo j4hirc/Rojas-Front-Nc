@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Materiales - Rojas Remodeling</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <link rel="stylesheet" href="../admin.css"> 
-    <link rel="stylesheet" href="../usuarios/usuarios.css"> 
+    <link rel="stylesheet" href="materiales.css"> 
 </head>
 <body>
 
@@ -52,7 +53,7 @@
         <main class="main-content">
             
             <header class="top-navbar">
-                <div class="page-title">Gestión de Materiales</div>
+                <div class="page-title">Inventario de Materiales</div>
                 <div class="user-profile">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="admin-email-display">Cargando...</span>
@@ -60,65 +61,71 @@
             </header>
 
             <div class="content-body">
-                <div class="usuarios-container" style="margin-top: 0;">
+                <div class="materiales-container">
                     
                     <div class="header-section">
-                        <h2 style="margin: 0; color: #2B3674;">Listado de Materiales</h2>
-                        <button class="btn-add" onclick="abrirModalCrearMat()" style="background: #546e7a;">
-                            <i class="fa-solid fa-plus"></i> Nuevo Material
-                        </button>
+                        <h2 style="margin: 0; color: var(--navy); font-weight: 700; font-size: 1.4rem;">Listado de Materiales</h2>
+                        
+                        <div class="filters-wrapper">
+                            <div style="position: relative; width: 100%; max-width: 250px;">
+                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #A3AED0;"></i>
+                                <input type="text" id="buscadorMaterial" class="input-field" placeholder="Buscar por nombre..." style="padding-left: 40px; width: 100%;" onkeyup="buscarMaterial()">
+                            </div>
+                            <button class="btn-add" onclick="abrirModalCrear()">
+                                <i class="fa-solid fa-plus"></i> Nuevo Material
+                            </button>
+                        </div>
                     </div>
 
                     <div class="table-container">
                         <table class="user-table">
                             <thead>
                                 <tr>
-                                    <th>Material</th>
-                                    <th>Categoría Asociada</th>
-                                    <th>Acciones</th>
+                                    <th>ID</th>
+                                    <th>Nombre del Material</th>
+                                    <th style="text-align: center;">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody id="matTableBody"></tbody>
+                            <tbody id="materialTableBody">
+                                <!-- Filas JS -->
+                            </tbody>
                         </table>
                     </div>
+
+                    <div class="mobile-cards" id="mobileCardsContainer">
+                        <!-- Tarjetas JS -->
+                    </div>
+
                 </div>
             </div>
         </main>
     </div>
 
-    <div class="modal-overlay" id="modalMat">
-        <div class="modal-container" style="max-width: 450px;">
+    <div class="modal-overlay" id="modalMaterial">
+        <div class="modal-container">
             <div class="modal-header">
-                <span id="modalTitulo"><i class="fa-solid fa-box"></i> Material</span>
-                <button onclick="cerrarModalMat()" class="btn-close-modal">✕</button>
+                <span id="modalTitulo"><i class="fa-solid fa-box" style="color: var(--primary);"></i> Nuevo Material</span>
+                <button onclick="cerrarModal()" class="btn-close-modal">✕</button>
             </div>
-            
+
             <div class="modal-body">
-                <form id="formMat">
-                    <input type="hidden" id="matId"> 
+                <form id="formMaterial">
+                    <input type="hidden" id="materialId"> 
                     
                     <div class="form-group">
                         <label>Nombre del Material</label>
-                        <input type="text" id="matName" class="input-field" required placeholder="Ej: Cemento Portland">
+                        <input type="text" id="materialName" class="input-field" required placeholder="Ej: Cemento Portland">
                     </div>
-
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label>Categoría</label>
-                        <select id="matCategory" class="input-field" required>
-                            <option value="">Cargando categorías...</option>
-                        </select>
-                    </div>
-
                 </form>
             </div>
-            
+
             <div class="modal-footer">
-                <button onclick="cerrarModalMat()" class="btn-secondary">Cancelar</button>
-                <button onclick="guardarMaterial()" class="btn-primary" style="background: #546e7a;">Guardar</button>
+                <button onclick="cerrarModal()" class="btn-secondary">Cancelar</button>
+                <button onclick="guardarMaterial()" class="btn-primary">Guardar</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="materiales.js"></script>
+    <script src="materiales.js"></script>
 </body>
 </html>

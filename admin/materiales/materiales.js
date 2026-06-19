@@ -44,36 +44,57 @@ async function cargarMateriales() {
 }
 
 function renderizarMateriales(materiales) {
-    const tbody = document.getElementById('matTableBody');
-    tbody.innerHTML = ''; 
+    const tableBody = document.getElementById('materialTableBody');
+    const mobileContainer = document.getElementById('mobileCardsContainer');
     
+    tableBody.innerHTML = '';
+    mobileContainer.innerHTML = '';
+
     if(materiales.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 20px;">No hay materiales registrados.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 30px; color: #A3AED0;">No se encontraron materiales.</td></tr>`;
+        mobileContainer.innerHTML = `<p style="text-align:center; padding: 20px; color: #A3AED0;">No se encontraron materiales.</p>`;
         return;
     }
 
     materiales.forEach(mat => {
-        // Escapamos las comillas para no romper el HTML en el botón de edición
-        const safeName = mat.name ? mat.name.replace(/'/g, "\\'") : '';
-        const safeCategory = mat.categoryName ? mat.categoryName.replace(/'/g, "\\'") : '';
-
+        // --- VISTA DE TABLA (PC) ---
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>
-                <strong>${mat.name}</strong><br>
-                <small style="color:#A3AED0;">ID: #${mat.materialId}</small>
+            <td>#${mat.materialId}</td>
+            <td style="font-weight: 600;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-box"></i></div>
+                    ${mat.name}
+                </div>
             </td>
-            <td>
-                <span style="background: #e8f0fe; color: #1a73e8; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold;">
-                    ${mat.categoryName || 'Sin categoría'}
-                </span>
-            </td>
-            <td>
-                <button class="btn-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-delete" onclick="eliminarMaterial(${mat.materialId})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+            <td style="text-align: center;">
+                <div class="action-btns">
+                    <button class="btn-icon icon-edit" onclick="abrirModalEditar(${mat.materialId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                </div>
             </td>
         `;
-        tbody.appendChild(tr);
+        tableBody.appendChild(tr);
+
+        // --- VISTA DE TARJETA (MÓVIL) ---
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <div class="card-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fa-solid fa-box"></i></div>
+                    <div>
+                        <strong style="color: var(--navy); font-size: 1.1rem; display: block;">${mat.name}</strong> 
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">ID: #${mat.materialId}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="btn-icon icon-edit" onclick="abrirModalEditar(${mat.materialId})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        `;
+        mobileContainer.appendChild(card);
     });
 }
 
