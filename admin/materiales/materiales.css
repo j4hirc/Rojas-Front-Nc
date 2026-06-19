@@ -175,7 +175,7 @@
     cursor: pointer; 
     transition: 0.3s;
 }
-.btn-secondary:hover { background: #F4F7FE; border-color: #A3AED0; transform: translateY(-1px); }
+.btn-secondary:hover { background: #0F2D4A; border-color: #A3AED0; transform: translateY(-1px); }
 
 .btn-primary { 
     padding: 12px 28px; 
