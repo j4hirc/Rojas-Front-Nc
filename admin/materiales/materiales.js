@@ -1,6 +1,7 @@
 const API_URL = 'https://api-remomn.onrender.com/api/v1/materials';
-const CATEGORIES_URL = 'https://api-remomn.onrender.com/api/v1/categories'; // Para cargar el select
+const CATEGORIES_URL = 'https://api-remomn.onrender.com/api/v1/categories';
 let userToken = '';
+let todosLosMaterialesCache = []; // Caché para que el buscador funcione rápido
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -25,7 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarCategoriasEnSelect();
 });
 
-// 1. CARGAMOS LA TABLA DE MATERIALES
+// 1. CARGAMOS LA TABLA DE MATERIALES Y LOS GUARDAMOS EN CACHÉ
 async function cargarMateriales() {
     try {
         const response = await fetch(`${API_URL}/all`, {
@@ -35,6 +36,7 @@ async function cargarMateriales() {
 
         if (response.ok) {
             const materiales = await response.json();
+            todosLosMaterialesCache = materiales; // Guardamos en memoria para el buscador
             renderizarMateriales(materiales);
         }
     } catch (error) { 
@@ -42,6 +44,17 @@ async function cargarMateriales() {
         Swal.fire('Error de conexión', 'No se pudo cargar la lista de materiales.', 'error');
     }
 }
+
+// 2. FUNCIÓN DEL BUSCADOR (Se llama al escribir)
+window.buscarMaterial = () => {
+    const textoBuscado = document.getElementById('buscadorMaterial').value.toLowerCase().trim();
+    if(textoBuscado === "") {
+        renderizarMateriales(todosLosMaterialesCache);
+    } else {
+        const materialesFiltrados = todosLosMaterialesCache.filter(mat => mat.name.toLowerCase().includes(textoBuscado));
+        renderizarMateriales(materialesFiltrados);
+    }
+};
 
 function renderizarMateriales(materiales) {
     const tableBody = document.getElementById('materialTableBody');
@@ -57,6 +70,10 @@ function renderizarMateriales(materiales) {
     }
 
     materiales.forEach(mat => {
+        // Escapamos los nombres para que el botón "Editar" no se rompa
+        const safeName = mat.name ? mat.name.replace(/'/g, "\\'") : '';
+        const safeCategory = mat.categoryName ? mat.categoryName.replace(/'/g, "\\'") : '';
+
         // --- VISTA DE TABLA (PC) ---
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -64,12 +81,15 @@ function renderizarMateriales(materiales) {
             <td style="font-weight: 600;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-box"></i></div>
-                    ${mat.name}
+                    <div>
+                        ${mat.name}<br>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Cat: ${mat.categoryName || 'Sin categoría'}</span>
+                    </div>
                 </div>
             </td>
             <td style="text-align: center;">
                 <div class="action-btns">
-                    <button class="btn-icon icon-edit" onclick="abrirModalEditar(${mat.materialId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
                     <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </td>
@@ -85,12 +105,12 @@ function renderizarMateriales(materiales) {
                     <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fa-solid fa-box"></i></div>
                     <div>
                         <strong style="color: var(--navy); font-size: 1.1rem; display: block;">${mat.name}</strong> 
-                        <span style="font-size: 0.8rem; color: var(--text-muted);">ID: #${mat.materialId}</span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">ID: #${mat.materialId} | Cat: ${mat.categoryName || 'N/A'}</span>
                     </div>
                 </div>
             </div>
             <div class="card-actions">
-                <button class="btn-icon icon-edit" onclick="abrirModalEditar(${mat.materialId})"><i class="fa-solid fa-pen"></i></button>
+                <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}')"><i class="fa-solid fa-pen"></i></button>
                 <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})"><i class="fa-solid fa-trash"></i></button>
             </div>
         `;
@@ -98,7 +118,7 @@ function renderizarMateriales(materiales) {
     });
 }
 
-// 2. CARGAMOS LAS CATEGORÍAS EN EL DESPLEGABLE (SELECT)
+// 3. CARGAMOS LAS CATEGORÍAS EN EL DESPLEGABLE (SELECT)
 async function cargarCategoriasEnSelect() {
     try {
         const response = await fetch(`${CATEGORIES_URL}/all`, {
@@ -122,41 +142,39 @@ async function cargarCategoriasEnSelect() {
 // --- LÓGICA DEL MODAL Y CRUD ---
 
 window.abrirModalCrearMat = () => {
-    document.getElementById('formMat').reset();
-    document.getElementById('matId').value = '';
-    document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-box-open"></i> Nuevo Material';
-    document.getElementById('modalMat').style.display = 'flex';
+    document.getElementById('formMaterial').reset();
+    document.getElementById('materialId').value = '';
+    document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-box-open" style="color: var(--primary);"></i> Nuevo Material';
+    document.getElementById('modalMaterial').style.display = 'flex';
 };
 
-// NUEVA FUNCIÓN DE EDITAR QUE SELECCIONA LA CATEGORÍA SOLA
 window.abrirModalEditarMat = (id, name, categoryName) => {
-    document.getElementById('formMat').reset();
-    document.getElementById('matId').value = id;
-    document.getElementById('matName').value = name;
+    document.getElementById('formMaterial').reset();
+    document.getElementById('materialId').value = id;
+    document.getElementById('materialName').value = name;
     
-    // Magia para auto-seleccionar la categoría en el Dropdown
+    // Auto-seleccionar la categoría en el Dropdown
     const select = document.getElementById('matCategory');
     for (let i = 0; i < select.options.length; i++) {
-        // Compara el texto de la opción con el categoryName que recibimos de la tabla
         if (select.options[i].text === categoryName) {
             select.selectedIndex = i;
             break;
         }
     }
     
-    document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Material';
-    document.getElementById('modalMat').style.display = 'flex';
+    document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen" style="color: var(--primary);"></i> Editar Material';
+    document.getElementById('modalMaterial').style.display = 'flex';
 };
 
 window.cerrarModalMat = () => {
-    document.getElementById('modalMat').style.display = 'none';
+    document.getElementById('modalMaterial').style.display = 'none';
 };
 
 window.guardarMaterial = async () => {
-    const id = document.getElementById('matId').value;
+    const id = document.getElementById('materialId').value;
     const isEditing = id !== '';
     
-    const name = document.getElementById('matName').value.trim();
+    const name = document.getElementById('materialName').value.trim();
     const categoryId = document.getElementById('matCategory').value;
     
     if(!name || !categoryId) {
@@ -182,12 +200,12 @@ window.guardarMaterial = async () => {
         });
 
         if (response.ok) {
-            Swal.fire('¡Éxito!', isEditing ? 'Material actualizado.' : 'Material agregado.', 'success');
+            Swal.fire({ icon: 'success', title: '¡Éxito!', text: isEditing ? 'Material actualizado.' : 'Material agregado.', confirmButtonColor: '#00B8A9' });
             cerrarModalMat();
             await cargarMateriales(); 
         } else {
             const errorData = await response.json();
-            Swal.fire('Error', errorData.message || 'No se pudo guardar el material.', 'error');
+            Swal.fire({ icon: 'error', title: 'Error', text: errorData.message || 'No se pudo guardar el material.', confirmButtonColor: '#00B8A9' });
         }
     } catch (error) {
         console.error('Error al guardar:', error);
@@ -201,8 +219,8 @@ window.eliminarMaterial = async (id) => {
         text: "Se borrará permanentemente de la base de datos.",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#2E3238',
+        confirmButtonColor: '#EF4444',
+        cancelButtonColor: '#111C44',
         confirmButtonText: 'Sí, eliminar',
         cancelButtonText: 'Cancelar'
     }).then(async (result) => {
@@ -214,7 +232,7 @@ window.eliminarMaterial = async (id) => {
                 });
                 
                 if(res.ok) {
-                    Swal.fire('¡Eliminado!', 'El material fue borrado.', 'success');
+                    Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El material fue borrado.', confirmButtonColor: '#00B8A9' });
                     await cargarMateriales();
                 } else {
                     Swal.fire('Error', 'No se pudo eliminar el material.', 'error');
@@ -232,8 +250,8 @@ window.cerrarSesion = () => {
         text: "¿Estás seguro que deseas salir del sistema?",
         icon: "question",
         showCancelButton: true,
-        confirmButtonColor: "#0f4c81",
-        cancelButtonColor: "#d33",
+        confirmButtonColor: '#00B8A9',
+        cancelButtonColor: '#111C44',
         confirmButtonText: "Sí, salir",
         cancelButtonText: "Cancelar"
     }).then((result) => {

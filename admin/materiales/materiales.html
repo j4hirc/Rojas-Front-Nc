@@ -71,7 +71,7 @@
                                 <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #A3AED0;"></i>
                                 <input type="text" id="buscadorMaterial" class="input-field" placeholder="Buscar por nombre..." style="padding-left: 40px; width: 100%;" onkeyup="buscarMaterial()">
                             </div>
-                            <button class="btn-add" onclick="abrirModalCrear()">
+                            <button class="btn-add" onclick="abrirModalCrearMat()">
                                 <i class="fa-solid fa-plus"></i> Nuevo Material
                             </button>
                         </div>
@@ -87,14 +87,12 @@
                                 </tr>
                             </thead>
                             <tbody id="materialTableBody">
-                                <!-- Filas JS -->
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
 
                     <div class="mobile-cards" id="mobileCardsContainer">
-                        <!-- Tarjetas JS -->
-                    </div>
+                        </div>
 
                 </div>
             </div>
@@ -105,7 +103,7 @@
         <div class="modal-container">
             <div class="modal-header">
                 <span id="modalTitulo"><i class="fa-solid fa-box" style="color: var(--primary);"></i> Nuevo Material</span>
-                <button onclick="cerrarModal()" class="btn-close-modal">✕</button>
+                <button onclick="cerrarModalMat()" class="btn-close-modal">✕</button>
             </div>
 
             <div class="modal-body">
@@ -116,11 +114,18 @@
                         <label>Nombre del Material</label>
                         <input type="text" id="materialName" class="input-field" required placeholder="Ej: Cemento Portland">
                     </div>
+                    
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Categoría</label>
+                        <select id="matCategory" class="input-field" required>
+                            <option value="">Cargando categorías...</option>
+                        </select>
+                    </div>
                 </form>
             </div>
 
             <div class="modal-footer">
-                <button onclick="cerrarModal()" class="btn-secondary">Cancelar</button>
+                <button onclick="cerrarModalMat()" class="btn-secondary">Cancelar</button>
                 <button onclick="guardarMaterial()" class="btn-primary">Guardar</button>
             </div>
         </div>
