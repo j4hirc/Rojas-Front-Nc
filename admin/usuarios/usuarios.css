@@ -209,64 +209,75 @@ select.input-field { cursor: pointer; }
     .form-row { grid-template-columns: 1fr; gap: 15px;}
 }
 /* ==========================================================================
-   ESTILOS RESPONSIVOS PARA MÓVILES (REMO MN)
+   ESTILOS RESPONSIVOS CORREGIDOS PARA CELULARES (REMO MN)
    ========================================================================== */
 @media screen and (max-width: 768px) {
     
-    /* 1. Ajustar el contenedor principal para que no use márgenes gigantes en celular */
+    /* 1. Desbloquear el cuerpo principal y contenedores globales de la vista de admin */
+    .app-layout, 
+    .main-content, 
+    .content-body, 
     .usuarios-container {
-        padding: 10px !important;
-        margin: 10px !important;
-        width: calc(100% - 20px) !important;
-        overflow-x: hidden;
+        width: 100% !important;
+        max-width: 100vw !important;
+        min-width: 0 !important; /* Rompe el bloqueo rígido de ancho */
+        margin: 0 !important;
+        padding: 12px !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important; /* Evita que la pantalla baile hacia los lados */
     }
 
-    /* 2. El título "Directorio del Personal" y filtros */
-    .usuarios-container h2, 
-    .usuarios-container .page-title {
-        font-size: 1.4rem !important;
-        text-align: center;
+    /* 2. Forzar a que la lista o cuadrícula ocupe el ancho real disponible */
+    .usuarios-list,
+    .usuarios-grid,
+    .table-responsive {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 auto !important;
     }
 
-    /* 3. Hacer que las tarjetas de los usuarios pasen de horizontal a vertical */
+    /* 3. Re-estructurar las tarjetas de usuarios (Pasar de fila a columna) */
     .usuario-card, 
     .user-item, 
     .card-usuario { 
         display: flex !important;
-        flex-direction: column !important; /* Alinea todo uno abajo del otro */
+        flex-direction: column !important; /* Todo uno abajo del otro */
         align-items: flex-start !important;
+        width: 100% !important; /* Obliga a la tarjeta a quedarse dentro de la pantalla */
+        max-width: 100% !important;
+        min-width: 0 !important;
         padding: 15px !important;
-        gap: 12px !important;
-        width: 100% !important;
-        box-sizing: border-box;
+        gap: 10px !important;
+        box-sizing: border-box !important;
+        margin-bottom: 15px !important;
     }
 
-    /* 4. Ajustar el bloque del nombre, rol y estado para que no se encima con el DNI */
+    /* 4. Separador visual para el bloque principal (Nombre, Rol, Estado) */
     .user-info-main,
     .usuario-detalles-inicio {
         width: 100% !important;
         border-bottom: 1px solid #E0E5F2;
-        padding-bottom: 8px;
-        margin-bottom: 4px;
+        padding-bottom: 10px;
     }
 
-    /* 5. Asegurar que los textos largos de Email y DNI no rompan la pantalla */
+    /* 5. Ajustar los textos informativos (DNI, Email) para que salten de línea */
     .usuario-card p,
     .user-item span,
     .usuario-meta-info {
         font-size: 0.9rem !important;
-        word-break: break-all !important; /* Rompe el correo si es muy largo para que no se salga */
-        display: block !important;
+        white-space: normal !important; /* Permite el salto de línea si el texto toca el borde */
+        word-break: break-all !important; /* Rompe correos largos sin estirar la pantalla */
         width: 100% !important;
+        margin: 4px 0 !important;
     }
 
-    /* 6. Si tienes los botones de acción (Editar / Eliminar) dentro de la tarjeta */
+    /* 6. Alinear los botones en la parte inferior de la tarjeta */
     .user-actions,
     .usuario-botones {
         display: flex !important;
         width: 100% !important;
         justify-content: flex-end !important;
-        gap: 10px;
-        margin-top: 10px;
+        gap: 12px;
+        margin-top: 5px;
     }
 }
