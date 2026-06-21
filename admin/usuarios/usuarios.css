@@ -208,3 +208,65 @@ select.input-field { cursor: pointer; }
     .card-actions { margin-top: 15px; display: flex; gap: 10px; }
     .form-row { grid-template-columns: 1fr; gap: 15px;}
 }
+/* ==========================================================================
+   ESTILOS RESPONSIVOS PARA MÓVILES (REMO MN)
+   ========================================================================== */
+@media screen and (max-width: 768px) {
+    
+    /* 1. Ajustar el contenedor principal para que no use márgenes gigantes en celular */
+    .usuarios-container {
+        padding: 10px !important;
+        margin: 10px !important;
+        width: calc(100% - 20px) !important;
+        overflow-x: hidden;
+    }
+
+    /* 2. El título "Directorio del Personal" y filtros */
+    .usuarios-container h2, 
+    .usuarios-container .page-title {
+        font-size: 1.4rem !important;
+        text-align: center;
+    }
+
+    /* 3. Hacer que las tarjetas de los usuarios pasen de horizontal a vertical */
+    .usuario-card, 
+    .user-item, 
+    .card-usuario { 
+        display: flex !important;
+        flex-direction: column !important; /* Alinea todo uno abajo del otro */
+        align-items: flex-start !important;
+        padding: 15px !important;
+        gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* 4. Ajustar el bloque del nombre, rol y estado para que no se encima con el DNI */
+    .user-info-main,
+    .usuario-detalles-inicio {
+        width: 100% !important;
+        border-bottom: 1px solid #E0E5F2;
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+    }
+
+    /* 5. Asegurar que los textos largos de Email y DNI no rompan la pantalla */
+    .usuario-card p,
+    .user-item span,
+    .usuario-meta-info {
+        font-size: 0.9rem !important;
+        word-break: break-all !important; /* Rompe el correo si es muy largo para que no se salga */
+        display: block !important;
+        width: 100% !important;
+    }
+
+    /* 6. Si tienes los botones de acción (Editar / Eliminar) dentro de la tarjeta */
+    .user-actions,
+    .usuario-botones {
+        display: flex !important;
+        width: 100% !important;
+        justify-content: flex-end !important;
+        gap: 10px;
+        margin-top: 10px;
+    }
+}
