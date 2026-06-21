@@ -208,76 +208,53 @@ select.input-field { cursor: pointer; }
     .card-actions { margin-top: 15px; display: flex; gap: 10px; }
     .form-row { grid-template-columns: 1fr; gap: 15px;}
 }
+
 /* ==========================================================================
-   ESTILOS RESPONSIVOS CORREGIDOS PARA CELULARES (REMO MN)
+   SCROLL HORIZONTAL EXCLUSIVO PARA LA TABLA/LISTA EN MÓVILES
    ========================================================================== */
 @media screen and (max-width: 768px) {
     
-    /* 1. Desbloquear el cuerpo principal y contenedores globales de la vista de admin */
-    .app-layout, 
-    .main-content, 
-    .content-body, 
+    /* 1. Asegurar que la pantalla global NO se mueva hacia los lados */
+    html, body, .app-layout, .main-content {
+        overflow-x: hidden !important;
+    }
+
+    /* 2. El contenedor de los usuarios permitirá deslizar de izquierda a derecha */
     .usuarios-container {
         width: 100% !important;
-        max-width: 100vw !important;
-        min-width: 0 !important; /* Rompe el bloqueo rígido de ancho */
-        margin: 0 !important;
-        padding: 12px !important;
+        max-width: 100% !important;
+        margin: 10px 0 !important;
+        padding: 10px !important;
         box-sizing: border-box !important;
-        overflow-x: hidden !important; /* Evita que la pantalla baile hacia los lados */
+        
+        /* AQUÍ ACTIVAMOS EL SCROLL HORIZONTAL */
+        overflow-x: auto !important; 
+        -webkit-overflow-scrolling: touch; /* Suavidad en iPhone/Android */
     }
 
-    /* 2. Forzar a que la lista o cuadrícula ocupe el ancho real disponible */
-    .usuarios-list,
-    .usuarios-grid,
-    .table-responsive {
-        display: block !important;
-        width: 100% !important;
-        margin: 0 auto !important;
+    /* 3. Forzar a que la lista interna mantenga su tamaño original para que se pueda arrastrar */
+    .usuarios-list, 
+    .usuarios-grid, 
+    .usuarios-container table,
+    div[id*="contenedor"], 
+    form + div {
+        min-width: 650px !important; /* Le damos un ancho mínimo para obligar al scroll horizontal */
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
     }
 
-    /* 3. Re-estructurar las tarjetas de usuarios (Pasar de fila a columna) */
+    /* 4. Aseguramos que cada tarjeta mantenga una estructura interna fija al deslizar */
     .usuario-card, 
     .user-item, 
-    .card-usuario { 
+    .card-usuario {
         display: flex !important;
-        flex-direction: column !important; /* Todo uno abajo del otro */
-        align-items: flex-start !important;
-        width: 100% !important; /* Obliga a la tarjeta a quedarse dentro de la pantalla */
-        max-width: 100% !important;
-        min-width: 0 !important;
+        flex-direction: row !important; /* Mantenemos el orden horizontal original */
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        min-width: 630px !important; /* Evita que los componentes se aplasten entre sí */
         padding: 15px !important;
-        gap: 10px !important;
-        box-sizing: border-box !important;
-        margin-bottom: 15px !important;
-    }
-
-    /* 4. Separador visual para el bloque principal (Nombre, Rol, Estado) */
-    .user-info-main,
-    .usuario-detalles-inicio {
-        width: 100% !important;
-        border-bottom: 1px solid #E0E5F2;
-        padding-bottom: 10px;
-    }
-
-    /* 5. Ajustar los textos informativos (DNI, Email) para que salten de línea */
-    .usuario-card p,
-    .user-item span,
-    .usuario-meta-info {
-        font-size: 0.9rem !important;
-        white-space: normal !important; /* Permite el salto de línea si el texto toca el borde */
-        word-break: break-all !important; /* Rompe correos largos sin estirar la pantalla */
-        width: 100% !important;
-        margin: 4px 0 !important;
-    }
-
-    /* 6. Alinear los botones en la parte inferior de la tarjeta */
-    .user-actions,
-    .usuario-botones {
-        display: flex !important;
-        width: 100% !important;
-        justify-content: flex-end !important;
-        gap: 12px;
-        margin-top: 5px;
+        white-space: nowrap !important; /* Impide que los textos salten de línea */
     }
 }
