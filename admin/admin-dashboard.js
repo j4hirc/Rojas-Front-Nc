@@ -150,6 +150,122 @@ async function guardarPerfil() {
     }
 }
 
+// Variable global para almacenar el desglose de los pagos
+let infoTrabajosGlobal = [];
+let totalCalculadoGlobal = 0;
+
+// 1. FUNCIÓN PARA CALCULAR EL TOTAL EN LA TARJETA AUTOMÁTICAMENTE
+async function obtenerNominaGlobal() {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const res = await fetch('http://localhost:8081/api/v1/jobs/all', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+            infoTrabajosGlobal = await res.json();
+            totalCalculadoGlobal = 0;
+
+            infoTrabajosGlobal.forEach(job => {
+                if (job.pay && job.status !== 'CANCELLED') {
+                    totalCalculadoGlobal += job.pay;
+                }
+            });
+
+            const txtNomina = document.getElementById('txtNominaGlobal');
+            if (txtNomina) {
+                txtNomina.textContent = `$${totalCalculadoGlobal.toFixed(2)}`;
+            }
+        }
+    } catch (error) {
+        console.error("Error cargando nómina general:", error);
+    }
+}
+
+// 2. FUNCIÓN PARA ABRIR EL POP-UP DETALLADO (SWEETALERT2)
+function abrirPopUpNominaGlobal() {
+    if (infoTrabajosGlobal.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Sin datos',
+            text: 'No hay trabajos activos registrados en esta semana.',
+            confirmButtonColor: '#12CFF4'
+        });
+        return;
+    }
+
+    // Generar las filas de la tabla de forma dinámica
+    let filasTabla = '';
+    infoTrabajosGlobal.forEach(job => {
+        if(job.status !== 'CANCELLED') {
+            const empleado = job.employeeName || 'No asignado';
+            const jefe = job.managerName || 'Sin jefe';
+            const pago = job.pay ? `$${job.pay.toFixed(2)}` : '$0.00';
+            
+            // Colores limpios para los estados
+            let colorEstado = '#f4a300'; // Pending / In progress
+            if(job.status === 'COMPLETED') colorEstado = '#2e7d32';
+
+            filasTabla += `
+                <tr style="border-bottom: 1px solid #E0E5F2;">
+                    <td style="padding: 10px; font-weight: 600; text-align: left; color: #0B0B0D;">${job.clientName || 'Obra'}</td>
+                    <td style="padding: 10px; text-align: left; font-size: 0.85rem;">
+                        <div><strong>Emp:</strong> ${empleado}</div>
+                        <div style="color: #666; font-size: 0.8rem;"><strong>Jefe:</strong> ${jefe}</div>
+                    </td>
+                    <td style="padding: 10px; text-align: center;"><span style="color: ${colorEstado}; font-weight: bold; font-size: 0.8rem;">${job.status}</span></td>
+                    <td style="padding: 10px; text-align: right; font-weight: bold; color: #e65100;">${pago}</td>
+                </tr>
+            `;
+        }
+    });
+
+    // Lanzar el Pop-up con diseño premium integrado
+    Swal.fire({
+        title: '<span style="color: #0B0B0D; font-family:\'Poppins\',sans-serif; font-weight:700;">RESUMEN DE NÓMINA GENERAL</span>',
+        html: `
+            <div style="background: #EAFaf1; border: 1px solid #2e7d32; border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="text-align: left;">
+                    <p style="margin: 0; color: #2e7d32; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Total Acumulado Semanal</p>
+                    <h2 style="margin: 0; color: #2e7d32; font-size: 1.8rem; font-weight: 700;">$${totalCalculadoGlobal.toFixed(2)}</h2>
+                </div>
+                <i class="fa-solid fa-money-bill-wave" style="font-size: 2.5rem; color: #2e7d32; opacity: 0.3;"></i>
+            </div>
+
+            <!-- Contenedor con scroll para celulares -->
+            <div style="width: 100%; overflow-x: auto; max-height: 300px; overflow-y: auto; border: 1px solid #E0E5F2; border-radius: 8px;">
+                <table style="width: 100%; border-collapse: collapse; font-family: 'Poppins', sans-serif; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: #0B0B0D; color: #ffffff; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">
+                            <th style="padding: 10px; text-align: left;">Obra</th>
+                            <th style="padding: 10px; text-align: left;">Personal</th>
+                            <th style="padding: 10px; text-align: center;">Estado</th>
+                            <th style="padding: 10px; text-align: right;">Pago</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filasTabla}
+                    </tbody>
+                </table>
+            </div>
+        `,
+        width: '600px',
+        showCloseButton: true,
+        confirmButtonColor: '#0B0B0D',
+        confirmButtonText: 'Cerrar Ventana',
+        customClass: {
+            popup: 'animated fadeInDown'
+        }
+    });
+}
+
+// Inicializar el cálculo al cargar el archivo
+document.addEventListener('DOMContentLoaded', () => {
+    obtenerNominaGlobal();
+});
+
 // --- LOGOUT NORMAL ---
 function cerrarSesion() {
     Swal.fire({
