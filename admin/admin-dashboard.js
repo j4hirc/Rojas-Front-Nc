@@ -185,110 +185,121 @@ async function guardarPerfil() {
         Swal.fire("Error de red", "No se pudo contactar al servidor.", "error");
     }
 }
-// =================================================================================
-// --- NÓMINA SEMANAL GLOBAL (ESTILO JEFE - TOTALMENTE IDÉNTICO) ---
-// =================================================================================
-let nominasJobsCache = null;
-let nominasUsersCache = null;
-let semanaOffset = 0;
 
-window.verNominaSemanalGlobal = async () => {
-    Swal.fire({
-        title: "Obteniendo registros globales...",
-        allowOutsideClick: false,
-        didOpen: () => {
-            Swal.showLoading();
-        },
-    });
+// =================================================================================
+// --- ESTADO GLOBAL DE NÓMINA SEMANAL ---
+// =================================================================================
+window.nominasJobsCache = null;
+window.nominasUsersCache = null;
+window.semanaOffset = 0; 
+
+// 1. CARGA INICIAL AUTOMÁTICA DEL VALOR DE LA TARJETA EN HOME
+async function inicializarNominaAdmin() {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+    if (!token) return;
+
     try {
-        const token =
-            localStorage.getItem("jwt_token") || localStorage.getItem("token");
+        const res = await fetch('https://api-remomn.onrender.com/api/v1/jobs/all', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.ok) {
+            const trabajos = await res.json();
+            let sumaTotal = 0;
+            trabajos.forEach(j => {
+                if(j.pay && j.status !== 'CANCELLED') sumaTotal += j.pay;
+            });
+            
+            const txtCard = document.getElementById('txtNominaGlobal');
+            if(txtCard) txtCard.textContent = `$${sumaTotal.toFixed(2)}`;
+        }
+    } catch (e) {
+        console.error("Error al sincronizar nómina:", e);
+    }
+}
+
+// Ejecutar al cargar la página para pintar la tarjeta verde exterior
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarNominaAdmin();
+});
+
+// 2. FUNCIÓN PRINCIPAL PARA REVENTAR EL POP-UP (ESTILO JEFE)
+window.verNominaSemanalGlobal = async () => {
+    Swal.fire({ title: 'Obteniendo registros globales...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    try {
+        const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
 
         // Peticiones paralelas a los endpoints productivos en Render
         const [resJobs, resUsers] = await Promise.all([
-            fetch("https://api-remomn.onrender.com/api/v1/jobs/all", {
-                headers: { Authorization: `Bearer ${token}` },
-            }),
-            fetch("https://api-remomn.onrender.com/api/v1/user/all-users", {
-                headers: { Authorization: `Bearer ${token}` },
-            }),
+            fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
-        nominasJobsCache = await resJobs.json();
-        nominasUsersCache = await resUsers.json();
+        window.nominasJobsCache = await resJobs.json();
+        window.nominasUsersCache = await resUsers.json();
 
-        semanaOffset = 0; // Reiniciar vista a la semana actual
+        window.semanaOffset = 0; // Reiniciar vista a la semana actual
 
-        // 1. Lanzamos el SweetAlert inicial con la caja vacía idéntica a la de jefe
+        // Lanzamos el SweetAlert inicial con la caja vacía idéntica a la de jefe
         Swal.fire({
-            title:
-                '<h2 style="color: #0F2D4A; font-weight: 800; margin: 0; display: flex; align-items: center; justify-content: center;"><span style="background: #12CFF4; color: #FFFFFF; padding: 4px 10px; border-radius: 8px; font-size: 0.7em; margin-right: 12px;"><i class="fa-solid fa-money-check-dollar"></i></span>Nómina Semanal Global</h2>',
+            title: '<h2 style="color: #0F2D4A; font-weight: 800; margin: 0; display: flex; align-items: center; justify-content: center;"><span style="background: #12CFF4; color: #FFFFFF; padding: 4px 10px; border-radius: 8px; font-size: 0.7em; margin-right: 12px;"><i class="fa-solid fa-money-check-dollar"></i></span>Nómina Semanal Global</h2>',
             html: '<div id="nomina-contenedor-admin">Generando reporte...</div>',
-            confirmButtonColor: "#12CFF4",
-            confirmButtonText: "Cerrar",
-            width: "600px",
-            background: "#FFFFFF",
+            confirmButtonColor: '#12CFF4',
+            confirmButtonText: 'Cerrar',
+            width: '600px',
+            background: '#FFFFFF'
         });
 
-        // 2. Inyectamos la información calculada en la caja
-        renderizarNominaAdmin(semanaOffset);
+        // Inyectamos la información calculada en la caja
+        renderizarNominaAdmin(window.semanaOffset);
+
     } catch (e) {
         console.error(e);
-        Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "No se pudo calcular la nómina global.",
-            confirmButtonColor: "#12CFF4",
-        });
+        Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo calcular la nómina global.', confirmButtonColor: '#12CFF4'});
     }
 };
 
 // Vinculación de los botones Anterior y Siguiente
 window.cambiarSemanaAdmin = (delta) => {
-    semanaOffset += delta;
-    renderizarNominaAdmin(semanaOffset);
+    window.semanaOffset += delta;
+    renderizarNominaAdmin(window.semanaOffset);
 };
 
 // Renderizado dinámico por semanas sin recargar ni romper el Pop-up
 function renderizarNominaAdmin(offset) {
     const hoy = new Date();
-    hoy.setDate(hoy.getDate() + offset * 7);
+    hoy.setDate(hoy.getDate() + (offset * 7)); 
 
-    const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+    const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1; 
     const inicioSemana = new Date(hoy);
     inicioSemana.setDate(hoy.getDate() - diaSemana);
-    inicioSemana.setHours(0, 0, 0, 0);
+    inicioSemana.setHours(0,0,0,0);
 
     const finSemana = new Date(inicioSemana);
     finSemana.setDate(inicioSemana.getDate() + 6);
-    finSemana.setHours(23, 59, 59, 999);
+    finSemana.setHours(23,59,59,999);
 
     let nominas = {};
 
-    // --- PROCESAMIENTO GENERAL (ADMINISTRADOR VER TODO) ---
-    nominasJobsCache.forEach((job) => {
-        // Filtramos que el trabajo esté completado y tenga personal asignado
-        if (job.status === "COMPLETED" && job.employeeId) {
+    window.nominasJobsCache.forEach(job => {
+        if (job.status === 'COMPLETED' && job.employeeId) {
             let jobDateStr = Array.isArray(job.jobDate)
-                ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, "0")}-${String(job.jobDate[2]).padStart(2, "0")}`
+                ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2,'0')}-${String(job.jobDate[2]).padStart(2,'0')}`
                 : job.jobDate;
 
             const jobDate = new Date(jobDateStr);
-            jobDate.setHours(12, 0, 0, 0);
+            jobDate.setHours(12,0,0,0);
 
-            // Si entra en el rango de la semana seleccionada
             if (jobDate >= inicioSemana && jobDate <= finSemana) {
                 if (!nominas[job.employeeId]) nominas[job.employeeId] = 0;
-                nominas[job.employeeId] += job.pay || 0;
+                nominas[job.employeeId] += (job.pay || 0);
             }
         }
     });
 
-    const formatD = (d) =>
-        `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1).toString().padStart(2, "0")}/${d.getFullYear()}`;
+    const formatD = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth() + 1).toString().padStart(2,'0')}/${d.getFullYear()}`;
     const strInicio = formatD(inicioSemana);
     const strFin = formatD(finSemana);
 
-    // Render del HTML clonando perfectamente los estilos del jefe
     let htmlContent = `
         <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
             
@@ -298,21 +309,20 @@ function renderizarNominaAdmin(offset) {
 
             <div style="text-align: center; font-family: 'Poppins', sans-serif;">
                 <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Semana del</span>
-                <span style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
+                <span id="lblRangoSemanas" style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
             </div>
 
             <button type="button" onclick="exportarNominaSemanalAPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar esta semana a PDF">
-        <i class="fa-solid fa-file-pdf"></i> PDF
-    </button>
+                <i class="fa-solid fa-file-pdf"></i> PDF
+            </button>
 
             <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
                 Siguiente <i class="fa-solid fa-chevron-right"></i>
             </button>
         </div>
 
-        <div style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
+        <div id="tabla-exportar-pdf-container" style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: 'Poppins', sans-serif;">
-                
                 <tr style="background-color: #0F2D4A; color: #FFFFFF; position: sticky; top: 0; z-index: 10;">
                     <th style="padding: 15px; font-weight: 700;">Personal de la Empresa (Total)</th>
                     <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
@@ -324,7 +334,7 @@ function renderizarNominaAdmin(offset) {
 
     for (let empId in nominas) {
         hayDatos = true;
-        const emp = nominasUsersCache.find((u) => u.userId == empId);
+        const emp = window.nominasUsersCache.find(u => u.userId == empId);
         const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
         const pago = nominas[empId];
         totalNominaGlobal += pago;
@@ -335,55 +345,38 @@ function renderizarNominaAdmin(offset) {
         </tr>`;
     }
 
-    if (!hayDatos) {
-        htmlContent +=
-            '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por ningún personal en esta semana.</td></tr>';
+    if(!hayDatos) {
+        htmlContent += '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por ningún personal en esta semana.</td></tr>';
     } else {
         htmlContent += `<tr style="background-color: #f8faff;">
             <td style="padding: 12px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase; font-size: 12px;">Total Nómina Global:</td>
             <td style="padding: 12px; font-weight: bold; color: #2e7d32; font-size: 16px; text-align: right;">$${totalNominaGlobal.toFixed(2)}</td>
         </tr>`;
     }
-    htmlContent += "</table></div>";
+    htmlContent += '</table></div>';
 
-    // Inyectamos el reporte fresco directamente en la caja interna del SweetAlert activo
-    const contenedor = document.getElementById("nomina-contenedor-admin");
+    const contenedor = document.getElementById('nomina-contenedor-admin');
     if (contenedor) {
         contenedor.innerHTML = htmlContent;
     }
 }
 
+// 3. FUNCIÓN CORREGIDA DE DESCARGA PDF SIN DEPENDE DE ENTORNO EN CLONDADO
 window.exportarNominaSemanalAPdf = () => {
-    // 1. Intentar obtener el rango del HTML de forma segura, si no, calcularlo por código
-    let textoRango = "Reporte";
     const lblRango = document.getElementById('lblRangoSemanas');
-    
-    if (lblRango && lblRango.textContent) {
-        textoRango = lblRango.textContent;
-    } else {
-        // Respaldo automático si el ID no se encuentra en el DOM en ese instante
-        const finSemana = new Date(fechaInicioSemanaActual);
-        finSemana.setDate(finSemana.getDate() + 6);
-        const formatD = (d) => `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth() + 1).padStart(2,'0')}-${d.getFullYear()}`;
-        textoRango = `${formatD(fechaInicioSemanaActual)}_al_${formatD(finSemana)}`;
-    }
-
-    // Limpiar el texto para que sea un nombre de archivo válido
+    const textoRango = lblRango ? lblRango.textContent.trim() : "Reporte_Nomina";
     const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
 
-    // 2. Capturar el contenedor interno de la nómina
-    const tablaElemento = document.getElementById('cuerpoNominaGlobal');
+    const tablaElemento = document.getElementById('tabla-exportar-pdf-container');
     if (!tablaElemento) {
-        return Swal.fire('Error', 'No se encontró la tabla de datos para exportar.', 'error');
+        return Swal.fire('Error', 'No se encontraron registros renderizados para procesar el archivo.', 'error');
     }
 
-    // 3. Crear el contenedor temporal estilizado para el PDF impreso
     const contenedorImpresion = document.createElement('div');
     contenedorImpresion.style.padding = "30px 40px";
     contenedorImpresion.style.background = "#ffffff";
     contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
 
-    // Reutilizar el logo oficial y darle estructura limpia de la app
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 15px;">
@@ -395,33 +388,27 @@ window.exportarNominaSemanalAPdf = () => {
             </div>
             <div style="text-align: right; color: #2E3238;">
                 <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período Reportado:</p>
-                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango.replace(/_/g, ' ')}</p>
+                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango}</p>
             </div>
         </div>
-        <div style="margin-top: 10px;">
+        <div style="margin-top: 20px;">
             <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
-                ${tablaElemento.parentElement.innerHTML}
+                ${tablaElemento.innerHTML}
             </div>
         </div>
-        <div style="margin-top: 40px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
+        <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
             Este documento es un reporte financiero confidencial generado automáticamente por el Panel de Administración de RemoMN.
         </div>
     `;
 
-    // 4. Configuración avanzada de html2pdf
     const opcionesConfiguracion = {
         margin:       [12, 12, 12, 12],
         filename:     `Nomina_Semanal_${nombreArchivoClean}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { 
-            scale: 2.5, 
-            useCORS: true, 
-            logging: false 
-        },
+        html2canvas:  { scale: 2.5, useCORS: true, logging: false },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // Alerta de carga
     Swal.fire({
         title: 'Generando archivo PDF...',
         text: 'Preparando desglose financiero de la semana.',
@@ -429,14 +416,11 @@ window.exportarNominaSemanalAPdf = () => {
         didOpen: () => { Swal.showLoading(); }
     });
 
-    // Compilar y guardar
     html2pdf()
         .set(opcionesConfiguracion)
         .from(contenedorImpresion)
         .save()
-        .then(() => {
-            Swal.close(); 
-        })
+        .then(() => { Swal.close(); })
         .catch(err => {
             console.error("Fallo al exportar reporte PDF:", err);
             Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
