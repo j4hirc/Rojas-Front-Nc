@@ -126,11 +126,19 @@ async function cargarCategoriasEnSelect() {
         });
         if (response.ok) {
             const categorias = await response.json();
-            const select = document.getElementById('matCategory');
-            select.innerHTML = '<option value="">-- Selecciona una categoría --</option>'; 
+            const selectModal = document.getElementById('matCategory');
+            const selectFiltro = document.getElementById('filtroCategoria');
+            
+            // Limpiar y resetear ambos selectores
+            selectModal.innerHTML = '<option value="">-- Selecciona una categoría --</option>'; 
+            selectFiltro.innerHTML = '<option value="todos">Todas las categorías</option>'; 
             
             categorias.forEach(cat => {
-                select.innerHTML += `<option value="${cat.categoryId}">${cat.name}</option>`;
+                // El del modal guarda el ID numérico que espera tu backend al crear/editar
+                selectModal.innerHTML += `<option value="${cat.categoryId}">${cat.name}</option>`;
+                
+                // El del filtro usará el nombre string para compararlo con mat.categoryName en el caché
+                selectFiltro.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
             });
         }
     } catch (error) {
