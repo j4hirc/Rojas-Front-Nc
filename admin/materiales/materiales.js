@@ -47,13 +47,32 @@ async function cargarMateriales() {
 
 // 2. FUNCIÓN DEL BUSCADOR (Se llama al escribir)
 window.buscarMaterial = () => {
+    // 1. Obtenemos lo que escribió el usuario y lo que seleccionó en el combo box
     const textoBuscado = document.getElementById('buscadorMaterial').value.toLowerCase().trim();
-    if(textoBuscado === "") {
-        renderizarMateriales(todosLosMaterialesCache);
-    } else {
-        const materialesFiltrados = todosLosMaterialesCache.filter(mat => mat.name.toLowerCase().includes(textoBuscado));
-        renderizarMateriales(materialesFiltrados);
+    const categoriaSeleccionada = document.getElementById('filtroCategoria').value.toLowerCase().trim();
+
+    let materialesFiltrados = todosLosMaterialesCache;
+
+    // 2. Filtramos primero por la barra de búsqueda (si no está vacía)
+    if (textoBuscado !== "") {
+        materialesFiltrados = materialesFiltrados.filter(mat => 
+            mat.name && mat.name.toLowerCase().includes(textoBuscado)
+        );
     }
+
+    // 3. Filtramos por el Combo Box (si no eligió "Todos")
+    if (categoriaSeleccionada !== "todos") {
+        materialesFiltrados = materialesFiltrados.filter(mat => {
+            // Si el material no tiene categoría asignada en la BD, lo saltamos para que no tire error
+            if (!mat.categoryName) return false; 
+            
+            // Comparamos forzando ambos a minúsculas
+            return mat.categoryName.toLowerCase().trim() === categoriaSeleccionada;
+        });
+    }
+
+    // 4. Renderizamos el resultado (si no hay nada, la tabla mostrará "No se encontraron materiales")
+    renderizarMateriales(materialesFiltrados);
 };
 
 function renderizarMateriales(materiales) {
