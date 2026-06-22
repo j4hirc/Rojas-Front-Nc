@@ -150,11 +150,11 @@ async function guardarPerfil() {
     }
 }
 
-// Variables de control de nómina y fechas
+// CONTROL GLOBAL DE LA NÓMINA GENERAL
 let listaTrabajosAdmin = [];
-let fechaInicioSemanaActual = new Date('2026-06-15'); // Fecha base de tu captura
+let fechaInicioSemanaActual = new Date('2026-06-15');
 
-// 1. CARGA INICIAL DE DATOS AUTOMÁTICA
+// 1. Cargar datos generales de la API al iniciar la página
 async function inicializarNominaAdmin() {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) return;
@@ -167,21 +167,23 @@ async function inicializarNominaAdmin() {
         if (res.ok) {
             listaTrabajosAdmin = await res.json();
             
-            // Sumamos el global total para pintar el número de la tarjeta verde exterior
+            // Renderizar la suma total en el número grande de la tarjeta verde exterior
             let sumaTotal = 0;
             listaTrabajosAdmin.forEach(j => {
-                if(j.pay && j.status !== 'CANCELLED') sumaTotal += j.pay;
+                if(j.pay && j.status !== 'CANCELLED') {
+                    sumaTotal += j.pay;
+                }
             });
             
             const txtCard = document.getElementById('txtNominaGlobal');
             if(txtCard) txtCard.textContent = `$${sumaTotal.toFixed(2)}`;
         }
     } catch (e) {
-        console.error("Error al sincronizar nómina:", e);
+        console.error("Error cargando la nómina:", e);
     }
 }
 
-// 2. CONTROL DEL RANGO DE FECHAS (MOSTRAR SEMANAS)
+// 2. Formatear y calcular los rangos de fechas de la semana elegida
 function actualizarRangoFechasUI() {
     const finSemana = new Date(fechaInicioSemanaActual);
     finSemana.setDate(finSemana.getDate() + 6);
@@ -198,30 +200,17 @@ function cambiarSemanaNomina(direccion) {
     actualizarRangoFechasUI();
 }
 
-// 3. AGRUPAR TRABAJOS Y PINTARLOS EN LA VENTANA MODAL
+// 3. Agrupar por persona e inyectar el diseño exacto de la tabla de jefe
 function procesarYMostrarFilasNomina() {
     const contenedor = document.getElementById('cuerpoNominaGlobal');
     if (!contenedor) return;
     contenedor.innerHTML = '';
 
-    const finSemana = new Date(fechaInicioSemanaActual);
-    finSemana.setDate(finSemana.getDate() + 6);
-
-    // Diccionario para acumular dinero por persona
     const acumuladorPersonal = {};
 
     listaTrabajosAdmin.forEach(job => {
-        // Ignoramos cancelados y registros sin cobro
         if (job.status !== 'CANCELLED' && job.pay) {
-            
-            // Validación de filtros por fecha del trabajo (si tu backend la provee)
-            // Si quieres que filtre estrictamente por semana activa, descomenta las líneas de abajo:
-            /*
-            const fechaJob = new Date(job.date); 
-            if (fechaJob < fechaInicioSemanaActual || fechaJob > finSemana) return;
-            */
-
-            const nombre = job.employeeName || job.managerName || 'Personal Sin Nombre';
+            const nombre = job.employeeName || job.managerName || 'Personal Sin Asignar';
             const rol = job.employeeName ? 'Empleado' : 'Jefe';
 
             if (!acumuladorPersonal[nombre]) {
@@ -231,25 +220,25 @@ function procesarYMostrarFilasNomina() {
         }
     });
 
-    const personasFiltradas = Object.values(acumuladorPersonal);
+    const listaFinal = Object.values(acumuladorPersonal);
 
-    if (personasFiltradas.length === 0) {
+    if (listaFinal.length === 0) {
         contenedor.innerHTML = `
-            <div style="text-align: center; color: #8a9099; padding: 30px 10px; font-style: italic;">
+            <div style="text-align: center; color: #8a9099; padding: 40px 15px; font-style: italic; font-family: 'Poppins', sans-serif; font-size: 0.95rem; background: white;">
                 No hay trabajos completados por tu personal en esta semana.
             </div>`;
         return;
     }
 
-    // Generamos las filas visuales idénticas a tu diseño limpio
-    personasFiltradas.forEach(p => {
-        const divFila = document.createElement('div');
-        divFila.style = "display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid #E0E5F2; font-family: 'Poppins', sans-serif;";
+    // Dibujar las filas idénticas con estilos inline limpios
+    listaFinal.forEach(p => {
+        const fila = document.createElement('div');
+        fila.style = "display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-bottom: 1px solid #E0E5F2; font-family: 'Poppins', sans-serif; background: white;";
         
-        divFila.innerHTML = `
+        fila.innerHTML = `
             <div style="text-align: left;">
-                <div style="font-weight: 600; color: #0B0B0D; font-size: 0.95rem;">${p.nombre}</div>
-                <span style="font-size: 0.7rem; font-weight: bold; background: ${p.rol === 'Empleado' ? '#12CFF4' : '#f4a300'}; color: #0B0B0D; padding: 1px 5px; border-radius: 4px; text-transform: uppercase;">
+                <div style="font-weight: 600; color: #0B0B0D; font-size: 0.95rem; text-transform: capitalize;">${p.nombre.toLowerCase()}</div>
+                <span style="font-size: 0.65rem; font-weight: bold; background: ${p.role === 'Empleado' ? 'rgba(18,207,244,0.15)' : 'rgba(244,163,0,0.15)'}; color: #0B0B0D; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-top: 3px; display: inline-block;">
                     ${p.rol}
                 </span>
             </div>
@@ -257,21 +246,27 @@ function procesarYMostrarFilasNomina() {
                 $${p.total.toFixed(2)}
             </div>
         `;
-        contenedor.appendChild(divFila);
+        contenedor.appendChild(fila);
     });
 }
 
-// 4. FUNCIONES DE APERTURA Y CIERRE
+// 4. Funciones de Activación por Clases Nativa (.classList)
 function abrirPopUpNominaGlobal() {
-    document.getElementById('modalNominaGlobal').style.display = 'flex';
-    actualizarRangoFechasUI();
+    const modal = document.getElementById('modalNominaGlobal');
+    if(modal) {
+        modal.classList.add('active'); // <- Usa la clase nativa del framework CSS de tu app
+        actualizarRangoFechasUI();
+    }
 }
 
 function cerrarPopUpNomina() {
-    document.getElementById('modalNominaGlobal').style.display = 'none';
+    const modal = document.getElementById('modalNominaGlobal');
+    if(modal) {
+        modal.classList.remove('active');
+    }
 }
 
-// Cargar cálculo de nómina al iniciar el panel
+// Inicializar al cargar el DOM del dashboard
 document.addEventListener('DOMContentLoaded', () => {
     inicializarNominaAdmin();
 });
