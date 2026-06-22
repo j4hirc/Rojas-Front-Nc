@@ -150,12 +150,12 @@ async function guardarPerfil() {
     }
 }
 
-// Variables globales para el almacenamiento de datos agrupados
-let infoTrabajosGlobal = [];
-let totalCalculadoGlobal = 0;
+// Variables de control de nómina y fechas
+let listaTrabajosAdmin = [];
+let fechaInicioSemanaActual = new Date('2026-06-15'); // Fecha base de tu captura
 
-// 1. OBTENER LOS TRABAJOS DE LA API Y CALCULAR EL TOTAL GENERAL
-async function obtenerNominaGlobal() {
+// 1. CARGA INICIAL DE DATOS AUTOMÁTICA
+async function inicializarNominaAdmin() {
     const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (!token) return;
 
@@ -165,124 +165,115 @@ async function obtenerNominaGlobal() {
         });
         
         if (res.ok) {
-            infoTrabajosGlobal = await res.json();
-            totalCalculadoGlobal = 0;
-
-            infoTrabajosGlobal.forEach(job => {
-                if (job.pay && job.status !== 'CANCELLED') {
-                    totalCalculadoGlobal += job.pay;
-                }
+            listaTrabajosAdmin = await res.json();
+            
+            // Sumamos el global total para pintar el número de la tarjeta verde exterior
+            let sumaTotal = 0;
+            listaTrabajosAdmin.forEach(j => {
+                if(j.pay && j.status !== 'CANCELLED') sumaTotal += j.pay;
             });
-
-            const txtNomina = document.getElementById('txtNominaGlobal');
-            if (txtNomina) {
-                txtNomina.textContent = `$${totalCalculadoGlobal.toFixed(2)}`;
-            }
+            
+            const txtCard = document.getElementById('txtNominaGlobal');
+            if(txtCard) txtCard.textContent = `$${sumaTotal.toFixed(2)}`;
         }
-    } catch (error) {
-        console.error("Error cargando nómina general:", error);
+    } catch (e) {
+        console.error("Error al sincronizar nómina:", e);
     }
 }
 
-// 2. MOSTRAR EL POP-UP AGRUPADO POR PERSONA (COMO LO VE EL JEFE)
-function abrirPopUpNominaGlobal() {
-    if (infoTrabajosGlobal.length === 0) {
-        Swal.fire({
-            icon: 'info',
-            title: 'Sin datos',
-            text: 'No hay trabajos registrados para procesar los pagos.',
-            confirmButtonColor: '#12CFF4'
-        });
+// 2. CONTROL DEL RANGO DE FECHAS (MOSTRAR SEMANAS)
+function actualizarRangoFechasUI() {
+    const finSemana = new Date(fechaInicioSemanaActual);
+    finSemana.setDate(finSemana.getDate() + 6);
+
+    const fIn = `${String(fechaInicioSemanaActual.getDate()).padStart(2,'0')}/${String(fechaInicioSemanaActual.getMonth()+1).padStart(2,'0')}/${fechaInicioSemanaActual.getFullYear()}`;
+    const fFin = `${String(finSemana.getDate()).padStart(2,'0')}/${String(finSemana.getMonth()+1).padStart(2,'0')}/${finSemana.getFullYear()}`;
+    
+    document.getElementById('lblRangoSemanas').textContent = `${fIn} al ${fFin}`;
+    procesarYMostrarFilasNomina();
+}
+
+function cambiarSemanaNomina(direccion) {
+    fechaInicioSemanaActual.setDate(fechaInicioSemanaActual.getDate() + (direccion * 7));
+    actualizarRangoFechasUI();
+}
+
+// 3. AGRUPAR TRABAJOS Y PINTARLOS EN LA VENTANA MODAL
+function procesarYMostrarFilasNomina() {
+    const contenedor = document.getElementById('cuerpoNominaGlobal');
+    if (!contenedor) return;
+    contenedor.innerHTML = '';
+
+    const finSemana = new Date(fechaInicioSemanaActual);
+    finSemana.setDate(finSemana.getDate() + 6);
+
+    // Diccionario para acumular dinero por persona
+    const acumuladorPersonal = {};
+
+    listaTrabajosAdmin.forEach(job => {
+        // Ignoramos cancelados y registros sin cobro
+        if (job.status !== 'CANCELLED' && job.pay) {
+            
+            // Validación de filtros por fecha del trabajo (si tu backend la provee)
+            // Si quieres que filtre estrictamente por semana activa, descomenta las líneas de abajo:
+            /*
+            const fechaJob = new Date(job.date); 
+            if (fechaJob < fechaInicioSemanaActual || fechaJob > finSemana) return;
+            */
+
+            const nombre = job.employeeName || job.managerName || 'Personal Sin Nombre';
+            const rol = job.employeeName ? 'Empleado' : 'Jefe';
+
+            if (!acumuladorPersonal[nombre]) {
+                acumuladorPersonal[nombre] = { nombre, rol, total: 0 };
+            }
+            acumuladorPersonal[nombre].total += job.pay;
+        }
+    });
+
+    const personasFiltradas = Object.values(acumuladorPersonal);
+
+    if (personasFiltradas.length === 0) {
+        contenedor.innerHTML = `
+            <div style="text-align: center; color: #8a9099; padding: 30px 10px; font-style: italic;">
+                No hay trabajos completados por tu personal en esta semana.
+            </div>`;
         return;
     }
 
-    // --- AQUÍ OCURRE LA MAGIA DE LA AGRUPACIÓN ---
-    // Creamos un diccionario para acumular los pagos por el nombre de la persona
-    const resumenPagos = {};
-
-    infoTrabajosGlobal.forEach(job => {
-        if (job.status !== 'CANCELLED' && job.pay) {
-            // Evaluamos si el trabajo tiene un empleado asignado, si no, verificamos el jefe
-            let nombrePersona = job.employeeName || job.managerName || 'Personal No Asignado';
-            let rolPersona = job.employeeName ? 'Empleado' : 'Jefe/Manager';
-
-            if (!resumenPagos[nombrePersona]) {
-                resumenPagos[nombrePersona] = {
-                    nombre: nombrePersona,
-                    rol: rolPersona,
-                    totalPago: 0,
-                    obrasActivas: 0
-                };
-            }
-
-            resumenPagos[nombrePersona].totalPago += job.pay;
-            resumenPagos[nombrePersona].obrasActivas += 1;
-        }
-    });
-
-    // Construimos las filas de la tabla utilizando los datos agrupados
-    let filasTabla = '';
-    Object.values(resumenPagos).forEach(persona => {
-        const badgeColor = persona.rol === 'Empleado' ? '#12CFF4' : '#f4a300';
+    // Generamos las filas visuales idénticas a tu diseño limpio
+    personasFiltradas.forEach(p => {
+        const divFila = document.createElement('div');
+        divFila.style = "display: flex; justify-content: space-between; align-items: center; padding: 12px 10px; border-bottom: 1px solid #E0E5F2; font-family: 'Poppins', sans-serif;";
         
-        filasTabla += `
-            <tr style="border-bottom: 1px solid #E0E5F2;">
-                <td style="padding: 12px; text-align: left; color: #0B0B0D; font-weight: 600;">
-                    ${persona.nombre}
-                    <div style="margin-top: 2px;">
-                        <span style="background: ${badgeColor}; color: #0B0B0D; font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">
-                            ${persona.rol}
-                        </span>
-                    </div>
-                </td>
-                <td style="padding: 12px; text-align: center; color: #666; font-weight: 500;">
-                    ${persona.obrasActivas} ${persona.obrasActivas === 1 ? 'obra' : 'obras'}
-                </td>
-                <td style="padding: 12px; text-align: right; font-weight: 700; color: #2e7d32; font-size: 1.05rem;">
-                    $${persona.totalPago.toFixed(2)}
-                </td>
-            </tr>
+        divFila.innerHTML = `
+            <div style="text-align: left;">
+                <div style="font-weight: 600; color: #0B0B0D; font-size: 0.95rem;">${p.nombre}</div>
+                <span style="font-size: 0.7rem; font-weight: bold; background: ${p.rol === 'Empleado' ? '#12CFF4' : '#f4a300'}; color: #0B0B0D; padding: 1px 5px; border-radius: 4px; text-transform: uppercase;">
+                    ${p.rol}
+                </span>
+            </div>
+            <div style="font-weight: 700; color: #0B0B0D; font-size: 1.05rem;">
+                $${p.total.toFixed(2)}
+            </div>
         `;
-    });
-
-    // Lanzamos el Pop-up Premium con SweetAlert2
-    Swal.fire({
-        title: '<span style="color: #0B0B0D; font-family:\'Poppins\',sans-serif; font-weight:700;">PAGO SEMANAL DEL PERSONAL</span>',
-        html: `
-            <div style="background: #EAFaf1; border: 1px solid #2e7d32; border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
-                <div style="text-align: left;">
-                    <p style="margin: 0; color: #2e7d32; font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Nómina Total de la Empresa</p>
-                    <h2 style="margin: 0; color: #2e7d32; font-size: 1.8rem; font-weight: 700;">$${totalCalculadoGlobal.toFixed(2)}</h2>
-                </div>
-                <i class="fa-solid fa-users" style="font-size: 2.3rem; color: #2e7d32; opacity: 0.25;"></i>
-            </div>
-
-            <!-- Contenedor con scroll para que se adapte perfecto a celulares sin romperse -->
-            <div style="width: 100%; overflow-x: auto; max-height: 320px; overflow-y: auto; border: 1px solid #E0E5F2; border-radius: 8px;">
-                <table style="width: 100%; border-collapse: collapse; font-family: 'Poppins', sans-serif; font-size: 0.9rem;">
-                    <thead>
-                        <tr style="background: #0B0B0D; color: #ffffff; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">
-                            <th style="padding: 10px; text-align: left;">Nombre del Personal</th>
-                            <th style="padding: 10px; text-align: center;">Trabajos</th>
-                            <th style="padding: 10px; text-align: right;">Total a Pagar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filasTabla}
-                    </tbody>
-                </table>
-            </div>
-        `,
-        width: '550px',
-        showCloseButton: true,
-        confirmButtonColor: '#0B0B0D',
-        confirmButtonText: 'Entendido',
+        contenedor.appendChild(divFila);
     });
 }
 
-// Inicializar la carga cuando el documento esté listo
+// 4. FUNCIONES DE APERTURA Y CIERRE
+function abrirPopUpNominaGlobal() {
+    document.getElementById('modalNominaGlobal').style.display = 'flex';
+    actualizarRangoFechasUI();
+}
+
+function cerrarPopUpNomina() {
+    document.getElementById('modalNominaGlobal').style.display = 'none';
+}
+
+// Cargar cálculo de nómina al iniciar el panel
 document.addEventListener('DOMContentLoaded', () => {
-    obtenerNominaGlobal();
+    inicializarNominaAdmin();
 });
 
 // --- LOGOUT NORMAL ---

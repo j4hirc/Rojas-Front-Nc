@@ -174,6 +174,52 @@
     </div>
 
     <script type="module" src="admin-dashboard.js"></script>
+    <!-- POP-UP NATIVO DE NÓMINA GENERAL (ESTILO JEFE) -->
+    <div class="modal-overlay" id="modalNominaGlobal" style="display: none;">
+        <div class="modal-container" style="max-width: 600px; padding: 25px;">
+            
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h1 style="color: #0B0B0D; font-size: 2rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                    <i class="fa-solid fa-money-check-dollar" style="color: #12CFF4;"></i> Tu Nómina Semanal
+                </h1>
+            </div>
+
+            <!-- Selector de Semanas -->
+            <div style="border: 2px solid #12CFF4; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white;">
+                <button type="button" onclick="cambiarSemanaNomina(-1)" style="background: #0B0B0D; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    <i class="fa-solid fa-chevron-left"></i> Anterior
+                </button>
+                <div style="text-align: center; font-family: 'Poppins', sans-serif;">
+                    <small style="text-transform: uppercase; font-size: 0.75rem; color: #666; font-weight: bold; letter-spacing: 0.5px;">Semana Del</small>
+                    <div style="font-weight: 700; color: #0B0B0D; font-size: 0.95rem;" id="lblRangoSemanas">15/06/2026 al 21/06/2026</div>
+                </div>
+                <button type="button" onclick="cambiarSemanaNomina(1)" style="background: #0B0B0D; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer;">
+                    Siguiente <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Tabla de Datos -->
+            <div style="border-radius: 8px; overflow: hidden; border: 1px solid #E0E5F2; margin-bottom: 20px;">
+                <div style="background: #0B0B0D; color: white; padding: 12px 15px; display: flex; justify-content: space-between; font-weight: bold; font-size: 0.95rem;">
+                    <span>Personal de la Empresa</span>
+                    <span>Total a Pagar</span>
+                </div>
+                
+                <!-- Cuerpo dinámico con scroll -->
+                <div id="cuerpoNominaGlobal" style="max-height: 250px; overflow-y: auto; background: white; padding: 10px;">
+                    <!-- Aquí se cargan las filas desde JavaScript -->
+                </div>
+            </div>
+
+            <!-- Botón Cerrar -->
+            <div style="text-align: center;">
+                <button type="button" onclick="cerrarPopUpNomina()" style="background: #12CFF4; color: #0B0B0D; border: none; padding: 10px 30px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; text-transform: uppercase;">
+                    Cerrar
+                </button>
+            </div>
+
+        </div>
+    </div>
 </body>
 
 </html>
