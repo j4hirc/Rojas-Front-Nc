@@ -107,13 +107,13 @@
                         </div>
                     </div>
 
-                    <div class="card card-green" onclick="abrirPopUpNominaGlobal()" style="cursor: pointer;">
-                        <div class="card-icon-container" style="background: rgba(46, 125, 50, 0.15); color: #2e7d32;">
-                            <i class="fa-solid fa-money-bill-trend-up"></i>
+                    <div class="card card-green" onclick="verNominaSemanalGlobal()" style="cursor: pointer;">
+                        <div class="card-icon-container">
+                            <i class="fa-solid fa-money-check-dollar"></i>
                         </div>
                         <div class="card-info">
-                            <h3 id="txtNominaGlobal">$0.00</h3>
-                            <p>Nómina Semanal Global</p>
+                            <h3>Nómina Semanal Global</h3>
+                            <p>Pagos completados de todo el personal</p>
                         </div>
                     </div>
 
@@ -174,56 +174,6 @@
     </div>
 
     <script type="module" src="admin-dashboard.js"></script>
-    <!-- MODAL DE NÓMINA IDÉNTICA A LA DE JEFE -->
-    <div class="modal-overlay" id="modalNominaGlobal">
-        <div class="modal-container" style="max-width: 650px;">
-            <div class="modal-header">
-                <span style="font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.4rem; color: #0B0B0D; display: flex; align-items: center; gap: 10px;">
-                    <i class="fa-solid fa-money-check-dollar" style="color: #12CFF4;"></i> Tu Nómina Semanal
-                </span>
-                <button onclick="cerrarPopUpNomina()" class="btn-close-modal">✕</button>
-            </div>
-            
-            <div class="modal-body" style="padding: 20px;">
-                <!-- Selector de Semanas Estilo Jefe -->
-                <div style="border: 1px solid #12CFF4; border-radius: 12px; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #f8faff;">
-                    <button type="button" onclick="cambiarSemanaNomina(-1)" style="background: #0B0B0D; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;">
-                        <i class="fa-solid fa-chevron-left"></i> Anterior
-                    </button>
-                    <div style="text-align: center; font-family: 'Poppins', sans-serif;">
-                        <small style="text-transform: uppercase; font-size: 0.7rem; color: #666; font-weight: 700; letter-spacing: 0.5px; display: block; margin-bottom: 2px;">Semana Del</small>
-                        <div style="font-weight: 700; color: #0B0B0D; font-size: 0.95rem;" id="lblRangoSemanas">15/06/2026 al 21/06/2026</div>
-                    </div>
-                    <button type="button" onclick="cambiarSemanaNomina(1)" style="background: #0B0B0D; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;">
-                        Siguiente <i class="fa-solid fa-chevron-right"></i>
-                    </button>
-                </div>
-
-                <!-- Tabla Idéntica a la Estructura de Jefe -->
-                <div style="border-radius: 8px; overflow: hidden; border: 1px solid #E0E5F2;">
-                    <table style="width: 100%; border-collapse: collapse; font-family: 'Poppins', sans-serif;">
-                        <thead>
-                            <tr style="background: #0B0B0D; color: white; font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">
-                                <th style="padding: 12px 15px; text-align: left;">Subcontratista a tu cargo</th>
-                                <th style="padding: 12px 15px; text-align: right;">Total a Pagar</th>
-                            </tr>
-                        </thead>
-                    </table>
-                    
-                    <!-- Contenedor del scroll idéntico -->
-                    <div id="cuerpoNominaGlobal" style="max-height: 280px; overflow-y: auto; background: white;">
-                        <!-- Filas inyectadas por JS -->
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-footer" style="display: flex; justify-content: center; padding: 15px;">
-                <button type="button" onclick="cerrarPopUpNomina()" class="btn-primary" style="background: #12CFF4; color: #0B0B0D; padding: 10px 40px; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
-                    Cerrar
-                </button>
-            </div>
-        </div>
-    </div>
 </body>
 
 </html>
