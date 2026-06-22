@@ -354,21 +354,40 @@ function renderizarNominaAdmin(offset) {
 }
 
 window.exportarNominaSemanalAPdf = () => {
-    // 1. Obtenemos las fechas actuales que se ven en pantalla para el título del archivo
-    const rangoFechas = document.getElementById('lblRangoSemanas').textContent.replace(/\//g, '-').replace(/\s+/g, '_');
-    const tablaElemento = document.getElementById('cuerpoNominaGlobal').parentElement; // Captura la tabla completa
+    // 1. Intentar obtener el rango del HTML de forma segura, si no, calcularlo por código
+    let textoRango = "Reporte";
+    const lblRango = document.getElementById('lblRangoSemanas');
+    
+    if (lblRango && lblRango.textContent) {
+        textoRango = lblRango.textContent;
+    } else {
+        // Respaldo automático si el ID no se encuentra en el DOM en ese instante
+        const finSemana = new Date(fechaInicioSemanaActual);
+        finSemana.setDate(finSemana.getDate() + 6);
+        const formatD = (d) => `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth() + 1).padStart(2,'0')}-${d.getFullYear()}`;
+        textoRango = `${formatD(fechaInicioSemanaActual)}_al_${formatD(finSemana)}`;
+    }
 
-    // 2. Crear un contenedor temporal estilizado exclusivo para el PDF impreso
+    // Limpiar el texto para que sea un nombre de archivo válido
+    const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
+
+    // 2. Capturar el contenedor interno de la nómina
+    const tablaElemento = document.getElementById('cuerpoNominaGlobal');
+    if (!tablaElemento) {
+        return Swal.fire('Error', 'No se encontró la tabla de datos para exportar.', 'error');
+    }
+
+    // 3. Crear el contenedor temporal estilizado para el PDF impreso
     const contenedorImpresion = document.createElement('div');
     contenedorImpresion.style.padding = "30px 40px";
     contenedorImpresion.style.background = "#ffffff";
     contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
 
-    // Encabezado premium con el logo e identidad corporativa de RemoMN
+    // Reutilizar el logo oficial y darle estructura limpia de la app
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="../logo.jpeg" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;">
+                <img src="../logo.jpeg" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;" onerror="this.src='../../logo.jpeg'">
                 <div>
                     <h1 style="color: #0B0B0D; margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase;">REPORTE DE NÓMINA GENERAL</h1>
                     <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Plataforma RemoMN — Área de Administración</p>
@@ -376,31 +395,33 @@ window.exportarNominaSemanalAPdf = () => {
             </div>
             <div style="text-align: right; color: #2E3238;">
                 <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período Reportado:</p>
-                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${document.getElementById('lblRangoSemanas').textContent}</p>
+                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango.replace(/_/g, ' ')}</p>
             </div>
         </div>
         <div style="margin-top: 10px;">
-            ${tablaElemento.innerHTML} 
+            <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
+                ${tablaElemento.parentElement.innerHTML}
+            </div>
         </div>
         <div style="margin-top: 40px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
             Este documento es un reporte financiero confidencial generado automáticamente por el Panel de Administración de RemoMN.
         </div>
     `;
 
-    // 3. Opciones de configuración de html2pdf
+    // 4. Configuración avanzada de html2pdf
     const opcionesConfiguracion = {
         margin:       [12, 12, 12, 12],
-        filename:     `Nomina_Semanal_${rangoFechas}.pdf`,
+        filename:     `Nomina_Semanal_${nombreArchivoClean}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { 
-            scale: 2.5, // Mayor escala para que los textos y logos salgan súper nítidos
-            useCORS: true, // Evita bloqueos de seguridad con las imágenes locales
+            scale: 2.5, 
+            useCORS: true, 
             logging: false 
         },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    // Alertas informativas mientras se compila
+    // Alerta de carga
     Swal.fire({
         title: 'Generando archivo PDF...',
         text: 'Preparando desglose financiero de la semana.',
@@ -408,13 +429,13 @@ window.exportarNominaSemanalAPdf = () => {
         didOpen: () => { Swal.showLoading(); }
     });
 
-    // Ejecutar compilación y descarga
+    // Compilar y guardar
     html2pdf()
         .set(opcionesConfiguracion)
         .from(contenedorImpresion)
         .save()
         .then(() => {
-            Swal.close(); // Cierra el cargando al terminar con éxito
+            Swal.close(); 
         })
         .catch(err => {
             console.error("Fallo al exportar reporte PDF:", err);
