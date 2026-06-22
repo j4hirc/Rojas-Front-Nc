@@ -46,32 +46,30 @@ async function cargarMateriales() {
 }
 
 // 2. FUNCIÓN DEL BUSCADOR (Se llama al escribir)
+// 2. FUNCIÓN DEL BUSCADOR (Combina texto y categoría)
 window.buscarMaterial = () => {
-    // 1. Obtenemos lo que escribió el usuario y lo que seleccionó en el combo box
+    // Capturamos el texto y la categoría
     const textoBuscado = document.getElementById('buscadorMaterial').value.toLowerCase().trim();
-    const categoriaSeleccionada = document.getElementById('filtroCategoria').value.toLowerCase().trim();
+    const categoriaSeleccionada = document.getElementById('filtroCategoria').value;
 
     let materialesFiltrados = todosLosMaterialesCache;
 
-    // 2. Filtramos primero por la barra de búsqueda (si no está vacía)
+    // Filtro 1: Por Nombre
     if (textoBuscado !== "") {
         materialesFiltrados = materialesFiltrados.filter(mat => 
             mat.name && mat.name.toLowerCase().includes(textoBuscado)
         );
     }
 
-    // 3. Filtramos por el Combo Box (si no eligió "Todos")
+    // Filtro 2: Por Categoría (compara los values en minúscula que le dimos al select)
     if (categoriaSeleccionada !== "todos") {
         materialesFiltrados = materialesFiltrados.filter(mat => {
-            // Si el material no tiene categoría asignada en la BD, lo saltamos para que no tire error
-            if (!mat.categoryName) return false; 
-            
-            // Comparamos forzando ambos a minúsculas
+            if (!mat.categoryName) return false;
             return mat.categoryName.toLowerCase().trim() === categoriaSeleccionada;
         });
     }
 
-    // 4. Renderizamos el resultado (si no hay nada, la tabla mostrará "No se encontraron materiales")
+    // Pintamos en pantalla
     renderizarMateriales(materialesFiltrados);
 };
 
@@ -138,6 +136,7 @@ function renderizarMateriales(materiales) {
 }
 
 // 3. CARGAMOS LAS CATEGORÍAS EN EL DESPLEGABLE (SELECT)
+// 3. CARGAMOS LAS CATEGORÍAS EN LOS SELECTS (Modal y Filtro)
 async function cargarCategoriasEnSelect() {
     try {
         const response = await fetch(`${CATEGORIES_URL}/all`, {
@@ -145,19 +144,21 @@ async function cargarCategoriasEnSelect() {
         });
         if (response.ok) {
             const categorias = await response.json();
-            const selectModal = document.getElementById('matCategory');
-            const selectFiltro = document.getElementById('filtroCategoria');
             
-            // Limpiar y resetear ambos selectores
+            // Select del formulario de crear/editar
+            const selectModal = document.getElementById('matCategory');
             selectModal.innerHTML = '<option value="">-- Selecciona una categoría --</option>'; 
+            
+            // Select del filtro arriba de la tabla
+            const selectFiltro = document.getElementById('filtroCategoria');
             selectFiltro.innerHTML = '<option value="todos">Todas las categorías</option>'; 
             
             categorias.forEach(cat => {
-                // El del modal guarda el ID numérico que espera tu backend al crear/editar
+                // Al modal le pasamos el ID numérico
                 selectModal.innerHTML += `<option value="${cat.categoryId}">${cat.name}</option>`;
                 
-                // El del filtro usará el nombre string para compararlo con mat.categoryName en el caché
-                selectFiltro.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
+                // Al filtro le pasamos el nombre en minúscula para poder compararlo
+                selectFiltro.innerHTML += `<option value="${cat.name.toLowerCase()}">${cat.name}</option>`;
             });
         }
     } catch (error) {
