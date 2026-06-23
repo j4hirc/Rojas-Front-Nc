@@ -575,8 +575,10 @@ window.guardarReporteYPdf = async () => {
     await new Promise(r => setTimeout(r, 150)); // Un pelín más de espera para garantizar renderizado en móviles
 
     pdfWrapper.style.visibility = 'visible';
-    pdfWrapper.style.width = '750px';
-    await new Promise(r => setTimeout(r, 300)); // Esperamos que el DOM se pinte completo
+    pdfWrapper.style.top = '0';
+    pdfWrapper.style.left = '0';
+
+    await new Promise(r => setTimeout(r, 300));
 
     const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
@@ -589,16 +591,25 @@ window.guardarReporteYPdf = async () => {
             scale: 2,
             useCORS: true,
             logging: false,
-            windowWidth: 750,      // ← Clave: siempre renderiza como si fuera PC
-            windowHeight: 1123,    // ← Alto A4 en px a 96dpi
+            windowWidth: 750,
             scrollX: 0,
             scrollY: 0,
-            x: 0,
-            y: 0
+            onclone: (doc) => {
+                const wrapper = doc.getElementById('pdfWrapper');
+                const template = doc.getElementById('pdfTemplate');
+                wrapper.style.top = '0';
+                wrapper.style.left = '0';
+                wrapper.style.margin = '0';
+                wrapper.style.padding = '0';
+                wrapper.style.position = 'absolute';
+                wrapper.style.visibility = 'visible';
+                template.style.marginTop = '0';
+                template.style.paddingTop = '20px';
+            }
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: {
-            mode: 'avoid-all',     // ← Evita guillotina
+            mode: 'avoid-all',
             before: '#pagebreak'
         }
     };
