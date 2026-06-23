@@ -2,15 +2,15 @@ const JOBS_URL = 'https://api-remomn.onrender.com/api/v1/jobs/all';
 const USERS_URL = 'https://api-remomn.onrender.com/api/v1/user/all-users';
 const MATERIALS_URL = 'https://api-remomn.onrender.com/api/v1/materials/all';
 const UPDATE_URL = 'https://api-remomn.onrender.com/api/v1/job-updates/create';
-const USER_API_URL = 'https://api-remomn.onrender.com/api/v1/user'; 
+const USER_API_URL = 'https://api-remomn.onrender.com/api/v1/user';
 
 let userToken = '';
 let myEmployeeId = null;
-let currentJobInfo = null; 
-let miUsuarioActual = null; 
+let currentJobInfo = null;
+let miUsuarioActual = null;
 
 let archivosSeleccionados = [];
-let imagenesBase64Data = []; 
+let imagenesBase64Data = [];
 let matQuantityInfo = ''
 
 // Variables para la doble firma
@@ -24,7 +24,7 @@ function formatearFecha(fecha) {
         const mes = String(fecha[1]).padStart(2, '0');
         const anio = fecha[0];
         return `${dia}/${mes}/${anio}`;
-    } 
+    }
     else if (typeof fecha === 'string') {
         const partes = fecha.split('-');
         if (partes.length === 3) {
@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_EMPLOYEE')) {
         Swal.fire({ icon: 'error', title: 'Acceso Denegado', confirmButtonColor: '#00B8A9' })
-        .then(() => { window.location.href = '../index.html'; });
+            .then(() => { window.location.href = '../index.html'; });
         return;
     }
 
@@ -85,12 +85,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function cargarCalendarioEmpleado(emailActual) {
     try {
-        Swal.fire({ title: 'Cargando tus trabajos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        Swal.fire({ title: 'Cargando tus trabajos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         const users = await resUsers.json();
         const yo = users.find(u => u.email.toLowerCase() === emailActual.toLowerCase());
-        
+
         if (yo) {
             myEmployeeId = yo.userId;
             miUsuarioActual = yo;
@@ -99,53 +99,53 @@ async function cargarCalendarioEmpleado(emailActual) {
             document.getElementById('employee-email-display').textContent = emailActual;
         }
 
-        const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         const todosLosTrabajos = await resJobs.json();
         const misTrabajos = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
 
         const eventosFormateados = misTrabajos.map(job => {
-            let bgColor = '#F59E0B'; 
-            if(job.status === 'IN_PROGRESS') bgColor = '#00B8A9'; 
-            if(job.status === 'COMPLETED') bgColor = '#10B981'; 
-            if(job.status === 'CANCELLED') bgColor = '#EF4444'; 
+            let bgColor = '#F59E0B';
+            if (job.status === 'IN_PROGRESS') bgColor = '#00B8A9';
+            if (job.status === 'COMPLETED') bgColor = '#10B981';
+            if (job.status === 'CANCELLED') bgColor = '#EF4444';
 
             return {
                 id: job.jobId,
                 title: job.clientName,
-                start: fechaParaCalendario(job.jobDate), 
+                start: fechaParaCalendario(job.jobDate),
                 backgroundColor: bgColor,
                 borderColor: bgColor,
                 extendedProps: {
                     ...job,
                     fechaHermosa: formatearFecha(job.jobDate)
-                } 
+                }
             };
         });
 
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth', 
+            initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
             locale: 'es', height: 'auto',
             headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
             events: eventosFormateados,
-            
-            eventClick: function(info) {
+
+            eventClick: function (info) {
                 const p = info.event.extendedProps;
-                currentJobInfo = p; 
-                
-                let estadoTxt = ''; 
+                currentJobInfo = p;
+
+                let estadoTxt = '';
                 let badgeColor = '';
-                let estaBloqueado = false; 
+                let estaBloqueado = false;
 
-                if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#F59E0B'; }
-                if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#00B8A9'; }
-                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#10B981'; estaBloqueado = true; }
-                if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#EF4444'; estaBloqueado = true; }
+                if (p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#F59E0B'; }
+                if (p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#00B8A9'; }
+                if (p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#10B981'; estaBloqueado = true; }
+                if (p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#EF4444'; estaBloqueado = true; }
 
-                let htmlBloqueo = estaBloqueado 
+                let htmlBloqueo = estaBloqueado
                     ? `<div style="margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.1); color: #111C44; border-radius: 8px; font-weight: bold; text-align: center; border: 1px solid #10B981;">
                         <i class="fa-solid fa-circle-check" style="color: #10B981;"></i> Proyecto Finalizado.
-                       </div>` 
+                       </div>`
                     : ``;
 
                 Swal.fire({
@@ -194,7 +194,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                         </div>
                     `,
                     showCancelButton: true,
-                    showConfirmButton: !estaBloqueado, 
+                    showConfirmButton: !estaBloqueado,
                     confirmButtonColor: '#00B8A9',
                     cancelButtonColor: '#1B254B',
                     confirmButtonText: '<i class="fa-solid fa-camera"></i> Hacer Reporte',
@@ -221,11 +221,11 @@ async function cargarCalendarioEmpleado(emailActual) {
 
 async function cargarMateriales() {
     try {
-        const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         const materials = await resMat.json();
         const containerMat = document.getElementById('employeeMaterialsContainer');
         containerMat.innerHTML = '';
-        
+
         if (!materials || materials.length === 0) {
             containerMat.innerHTML = '<p style="color: #64748B; font-size: 13px;">No hay materiales registrados.</p>';
             return;
@@ -253,18 +253,18 @@ async function cargarMateriales() {
 // --- NUEVA LÓGICA DE FIRMAS (DOBLE CANVAS) ---
 window.inicializarCanvasFirma = () => {
     canvasSub = document.getElementById('signaturePadSub');
-    if(canvasSub) ctxSub = canvasSub.getContext('2d');
-    
+    if (canvasSub) ctxSub = canvasSub.getContext('2d');
+
     canvasCli = document.getElementById('signaturePadCli');
-    if(canvasCli) ctxCli = canvasCli.getContext('2d');
+    if (canvasCli) ctxCli = canvasCli.getContext('2d');
 
     setTimeout(() => {
-        if(canvasSub) { canvasSub.width = canvasSub.offsetWidth; canvasSub.height = canvasSub.offsetHeight; }
-        if(canvasCli) { canvasCli.width = canvasCli.offsetWidth; canvasCli.height = canvasCli.offsetHeight; }
+        if (canvasSub) { canvasSub.width = canvasSub.offsetWidth; canvasSub.height = canvasSub.offsetHeight; }
+        if (canvasCli) { canvasCli.width = canvasCli.offsetWidth; canvasCli.height = canvasCli.offsetHeight; }
     }, 200);
 
-    if(canvasSub) setupCanvasEvents(canvasSub, ctxSub, (val) => drawingSub = val, '#0F2D4A');
-    if(canvasCli) setupCanvasEvents(canvasCli, ctxCli, (val) => drawingCli = val, '#0F2D4A');
+    if (canvasSub) setupCanvasEvents(canvasSub, ctxSub, (val) => drawingSub = val, '#0F2D4A');
+    if (canvasCli) setupCanvasEvents(canvasCli, ctxCli, (val) => drawingCli = val, '#0F2D4A');
 };
 
 function setupCanvasEvents(canvasObj, ctxObj, setDrawing, colorStroke) {
@@ -272,9 +272,9 @@ function setupCanvasEvents(canvasObj, ctxObj, setDrawing, colorStroke) {
     const endPos = () => { setDrawing(false); ctxObj.beginPath(); };
     const draw = (e) => {
         if (canvasObj === canvasSub ? !drawingSub : !drawingCli) return;
-        e.preventDefault(); 
-        ctxObj.lineWidth = 2.5; 
-        ctxObj.lineCap = "round"; 
+        e.preventDefault();
+        ctxObj.lineWidth = 2.5;
+        ctxObj.lineCap = "round";
         ctxObj.strokeStyle = colorStroke;
 
         let x = e.clientX || (e.touches && e.touches[0].clientX);
@@ -288,13 +288,13 @@ function setupCanvasEvents(canvasObj, ctxObj, setDrawing, colorStroke) {
     canvasObj.addEventListener('mousedown', startPos);
     canvasObj.addEventListener('mouseup', endPos);
     canvasObj.addEventListener('mousemove', draw);
-    canvasObj.addEventListener('touchstart', startPos, {passive: false});
+    canvasObj.addEventListener('touchstart', startPos, { passive: false });
     canvasObj.addEventListener('touchend', endPos);
-    canvasObj.addEventListener('touchmove', draw, {passive: false});
+    canvasObj.addEventListener('touchmove', draw, { passive: false });
 }
 
-window.limpiarFirmaSub = () => { if(ctxSub) ctxSub.clearRect(0, 0, canvasSub.width, canvasSub.height); };
-window.limpiarFirmaCli = () => { if(ctxCli) ctxCli.clearRect(0, 0, canvasCli.width, canvasCli.height); };
+window.limpiarFirmaSub = () => { if (ctxSub) ctxSub.clearRect(0, 0, canvasSub.width, canvasSub.height); };
+window.limpiarFirmaCli = () => { if (ctxCli) ctxCli.clearRect(0, 0, canvasCli.width, canvasCli.height); };
 // ------------------------------------------------
 
 window.mostrarPreview = (event) => {
@@ -302,29 +302,29 @@ window.mostrarPreview = (event) => {
     if (input.files) {
         Array.from(input.files).forEach(file => { archivosSeleccionados.push(file); });
     }
-    input.value = ''; 
+    input.value = '';
     renderizarGaleriaFotos();
 };
 
 function renderizarGaleriaFotos() {
     const previewContainer = document.getElementById('imagePreviewContainer');
     previewContainer.innerHTML = '';
-    imagenesBase64Data = []; 
+    imagenesBase64Data = [];
 
     archivosSeleccionados.forEach((file, index) => {
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             const b64 = e.target.result;
-            imagenesBase64Data[index] = b64; 
-            
+            imagenesBase64Data[index] = b64;
+
             const imgDiv = document.createElement('div');
             imgDiv.style.position = 'relative';
             imgDiv.style.display = 'inline-block';
-            
+
             const img = document.createElement('img');
-            img.src = b64; 
+            img.src = b64;
             img.className = 'preview-img';
-            
+
             const btnDelete = document.createElement('button');
             btnDelete.className = 'btn-delete-photo';
             btnDelete.innerHTML = '✕';
@@ -342,28 +342,28 @@ function renderizarGaleriaFotos() {
 }
 
 window.eliminarFoto = (index) => {
-    archivosSeleccionados.splice(index, 1); 
-    renderizarGaleriaFotos(); 
+    archivosSeleccionados.splice(index, 1);
+    renderizarGaleriaFotos();
 };
 
 window.abrirModalEvidence = (jobId) => {
     document.getElementById('evidenceForm').reset();
     document.getElementById('evJobId').value = jobId;
-    document.getElementById('imagePreviewContainer').innerHTML = ''; 
-    document.getElementById('certBox').style.display = 'none'; 
+    document.getElementById('imagePreviewContainer').innerHTML = '';
+    document.getElementById('certBox').style.display = 'none';
     document.getElementById('newPriceContainer').style.display = 'none';
-    
+
     archivosSeleccionados = [];
     imagenesBase64Data = [];
     matQuantityInfo = ''
-    
+
     // Limpiamos los DOS canvas
     limpiarFirmaSub();
     limpiarFirmaCli();
-    
-    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => { 
-        cb.checked = false; 
-        
+
+    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
+        cb.checked = false;
+
         // 1. Ocultamos todos los cuadritos por defecto al abrir el modal limpio
         const divOpciones = document.getElementById('opts_' + cb.value);
         if (divOpciones) divOpciones.style.display = 'none';
@@ -371,22 +371,22 @@ window.abrirModalEvidence = (jobId) => {
         if (currentJobInfo) {
             let matArray = currentJobInfo.materials || currentJobInfo.jobMaterials || currentJobInfo.jobMaterial || [];
             const arrIdMateriales = matArray.map(m => m.materialId || (m.material && m.material.materialId) || m.id);
-            
+
             if (arrIdMateriales.includes(parseInt(cb.value))) {
-                cb.checked = true; 
-                
+                cb.checked = true;
+
                 // 2. LA MAGIA: Si el jefe ya lo asignó, mostramos los cuadritos automáticamente
                 if (divOpciones) divOpciones.style.display = 'flex';
             }
         }
     });
-    
+
     document.getElementById('modalEvidence').style.display = 'flex';
-    
+
     // Redimensionamos ambos canvas al abrir el modal
-    setTimeout(() => { 
-        if(canvasSub) { canvasSub.width = canvasSub.offsetWidth; canvasSub.height = canvasSub.offsetHeight; }
-        if(canvasCli) { canvasCli.width = canvasCli.offsetWidth; canvasCli.height = canvasCli.offsetHeight; }
+    setTimeout(() => {
+        if (canvasSub) { canvasSub.width = canvasSub.offsetWidth; canvasSub.height = canvasSub.offsetHeight; }
+        if (canvasCli) { canvasCli.width = canvasCli.offsetWidth; canvasCli.height = canvasCli.offsetHeight; }
     }, 100);
 };
 
@@ -400,7 +400,7 @@ window.abrirModalPerfil = () => {
     document.getElementById('perfilDni').value = miUsuarioActual.dni || '';
     document.getElementById('perfilPhone').value = miUsuarioActual.phone || '';
     document.getElementById('perfilEmail').value = miUsuarioActual.email || '';
-    document.getElementById('perfilPassword').value = ''; 
+    document.getElementById('perfilPassword').value = '';
     document.getElementById('modalPerfil').style.display = 'flex';
 };
 
@@ -415,16 +415,16 @@ window.guardarPerfil = async () => {
         dni: document.getElementById('perfilDni').value.trim(),
         phone: document.getElementById('perfilPhone').value.trim(),
         email: document.getElementById('perfilEmail').value.trim(),
-        password: document.getElementById('perfilPassword').value, 
-        dateOfBirth: miUsuarioActual.dateOfBirth, 
-        title: miUsuarioActual.title || "Empleado" 
+        password: document.getElementById('perfilPassword').value,
+        dateOfBirth: miUsuarioActual.dateOfBirth,
+        title: miUsuarioActual.title || "Empleado"
     };
 
-    if(!payload.firstName || !payload.lastName || !payload.dni || !payload.phone || !payload.email) {
+    if (!payload.firstName || !payload.lastName || !payload.dni || !payload.phone || !payload.email) {
         return Swal.fire('Atención', 'Por favor llena todos los campos obligatorios.', 'warning');
     }
 
-    Swal.fire({ title: 'Actualizando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Actualizando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     try {
         const response = await fetch(`${USER_API_URL}/edit-user/${miUsuarioActual.userId}`, {
@@ -434,13 +434,13 @@ window.guardarPerfil = async () => {
         });
 
         if (response.ok) {
-            const updatedUser = await response.json(); 
-            miUsuarioActual = updatedUser; 
+            const updatedUser = await response.json();
+            miUsuarioActual = updatedUser;
             document.getElementById('employee-email-display').textContent = `${updatedUser.firstName} ${updatedUser.lastName}`;
             cerrarModalPerfil();
             Swal.fire({ icon: 'success', title: '¡Actualizado!', confirmButtonColor: '#00B8A9', timer: 1500 });
         } else {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', confirmButtonColor: '#00B8A9'});
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', confirmButtonColor: '#00B8A9' });
         }
     } catch (error) { Swal.fire('Error de red', 'Fallo de conexión.', 'error'); }
 };
@@ -480,7 +480,7 @@ window.guardarReporteYPdf = async () => {
             return Swal.fire({ icon: 'warning', title: 'Falta el precio', text: 'Marcaste la alerta de modificación. Debes ingresar el nuevo precio.', confirmButtonColor: '#00B8A9' });
         }
         comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones o cambios a la orden original.\nNUEVO PRECIO SUGERIDO: $${parseFloat(newPriceVal).toFixed(2)}\n\n` + comment;
-        
+
         document.getElementById('pdfNewPriceRow').style.display = 'table-row';
         document.getElementById('pdfNewPrice').textContent = `$${parseFloat(newPriceVal).toFixed(2)}`;
     } else {
@@ -496,17 +496,17 @@ window.guardarReporteYPdf = async () => {
         const matId = parseInt(cb.value);
         selectedMaterialIds.push(matId); // Guardamos el ID para tu backend
         const nombreMat = cb.getAttribute('data-name');
-        
+
         // Capturamos el número y la palabra de la unidad
         const cantidad = document.getElementById(`qty_${matId}`).value.trim() || '-';
         const unidad = document.getElementById(`unit_${matId}`).value.trim() || '';
-        
+
         // Armamos la frase final
         const cantidadTexto = cantidad !== '-' ? `${cantidad} ${unidad}`.trim() : 'No especificada';
 
         // 1. Lo que saldrá impreso en el PDF
         selectedMaterialNames += `<li style="margin-bottom: 6px; color: #2E3238;"><strong>${nombreMat}</strong>: <span style="color: #12CFF4; font-weight: bold;">${cantidadTexto}</span></li>`;
-        
+
         // 2. Lo que se guardará en texto para tu Base de Datos
         resumenMaterialesBD += `📦 ${nombreMat}: ${cantidadTexto}\n`;
     });
@@ -516,7 +516,7 @@ window.guardarReporteYPdf = async () => {
         comment = `[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}\n\n[COMENTARIOS]:\n${comment}`;
     }
 
-    Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     if (!currentJobInfo) {
         return Swal.fire({ icon: 'error', title: 'Error del sistema', text: 'No se encontraron los datos del trabajo actual.', confirmButtonColor: '#00B8A9' });
@@ -530,18 +530,18 @@ window.guardarReporteYPdf = async () => {
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
     document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF}`;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
-    
+
 
     const hoy = new Date();
     const fechaActual = `${String(hoy.getDate()).padStart(2, '0')}/${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
-    document.getElementById('pdfDate').textContent = fechaActual; 
-    
-    
+    document.getElementById('pdfDate').textContent = fechaActual;
+
+
     // Si el empleado puso cantidades, lo agregamos al comentario para que se guarde en la Base de Datos
     if (matQuantityInfo) {
         comment = `📦 [CANTIDADES REPORTADAS]: ${matQuantityInfo}\n\n` + comment;
     }
-    
+
     document.getElementById('pdfComment').textContent = comment;
 
     // Juntamos los checks de materiales con el texto de cantidades para el PDF
@@ -555,50 +555,65 @@ window.guardarReporteYPdf = async () => {
     } else {
         document.getElementById('pdfMaterials').innerHTML = '<li>No se reportaron materiales ni cantidades adicionales.</li>';
     }
-    
+
     document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
-    
+
     // Inyección de fotos usando inline-block seguro y evitando cortes por imagen
     document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
         <div style="display: inline-block; width: 210px; margin: 8px; page-break-inside: avoid; border: 1px solid #E2E8F0; border-radius: 8px; padding: 5px; background: #ffffff; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
             <img src="${b64}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px;">
         </div>
     `).join('');
-    
+
     // Inyectamos las DOS firmas en el PDF oculto de forma nativa
     document.getElementById('pdfSignatureSubImg').src = canvasSub.toDataURL("image/png");
     document.getElementById('pdfSignatureCliImg').src = canvasCli.toDataURL("image/png");
 
     const pdfWrapper = document.getElementById('pdfWrapper');
-    pdfWrapper.style.display = 'block'; 
-    
+    pdfWrapper.style.display = 'block';
+
     await new Promise(r => setTimeout(r, 150)); // Un pelín más de espera para garantizar renderizado en móviles
+
+    pdfWrapper.style.visibility = 'visible';
+    pdfWrapper.style.width = '750px';
+    await new Promise(r => setTimeout(r, 300)); // Esperamos que el DOM se pinte completo
 
     const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
-    // CONFIGURACIÓN DE CORTE INTELIGENTE DEFINITIVA
     const opt = {
-        margin:       [10, 10, 10, 10], // Margen perfecto: arriba, izquierda, abajo, derecha (Evita que el texto toque el filo de la hoja)
-        filename:     pdfFileName,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak:    { mode: ['css', 'legacy'], avoid: ['table', 'tr', 'td', 'h3', 'div[style*="avoid"]'] }
+        margin: [10, 10, 10, 10],
+        filename: pdfFileName,
+        image: { type: 'jpeg', quality: 0.92 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            windowWidth: 750,      // ← Clave: siempre renderiza como si fuera PC
+            windowHeight: 1123,    // ← Alto A4 en px a 96dpi
+            scrollX: 0,
+            scrollY: 0,
+            x: 0,
+            y: 0
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: {
+            mode: 'avoid-all',     // ← Evita guillotina
+            before: '#pagebreak'
+        }
     };
 
     let pdfBlob;
-try {
-    // Solo generamos el blob en memoria, sin abrir ni descargar nada
-    pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+    try {
+        pdfBlob = await html2pdf().set(opt).from(element).output('blob');
 
-} catch (e) {
+    } catch (e) {
+        pdfWrapper.style.visibility = 'hidden';
+        console.error("Error al generar PDF:", e);
+        return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#00B8A9' });
+    }
+
     pdfWrapper.style.visibility = 'hidden';
-    console.error("Error al generar PDF:", e);
-    return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#00B8A9' });
-}
-
-pdfWrapper.style.visibility = 'hidden';
 
 
     const dtoObject = {
@@ -607,16 +622,16 @@ pdfWrapper.style.visibility = 'hidden';
         employeeId: myEmployeeId,
         status: status,
         materialIds: selectedMaterialIds,
-        newPrice: hasModifications && newPriceVal ? parseFloat(newPriceVal) : null 
+        newPrice: hasModifications && newPriceVal ? parseFloat(newPriceVal) : null
     };
-    
+
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(dtoObject)], { type: 'application/json' }));
-    
-    for (let i = 0; i < archivosSeleccionados.length; i++) { 
-        formData.append('files', archivosSeleccionados[i]); 
+
+    for (let i = 0; i < archivosSeleccionados.length; i++) {
+        formData.append('files', archivosSeleccionados[i]);
     }
-    
+
     formData.append('files', pdfBlob, pdfFileName);
 
     try {
@@ -635,7 +650,7 @@ pdfWrapper.style.visibility = 'hidden';
             try {
                 const errorData = await response.json();
                 errorMsg = errorData.message || errorMsg;
-            } catch(e) {}
+            } catch (e) { }
             Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg, confirmButtonColor: '#00B8A9' });
         }
     } catch (error) {
@@ -643,7 +658,7 @@ pdfWrapper.style.visibility = 'hidden';
     }
 };
 
-window.cerrarSesion = () => { 
+window.cerrarSesion = () => {
     Swal.fire({
         title: "¿Cerrar sesión?",
         text: "¿Estás seguro que deseas salir del portal?",
