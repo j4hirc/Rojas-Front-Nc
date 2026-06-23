@@ -89,12 +89,15 @@ function inicializarMapa(lat, lng) {
         const geocoder = L.Control.Geocoder.nominatim();
 
         function obtenerDireccion(latlng) {
-            geocoder.reverse(latlng, mapa.options.crs.scale(mapa.getZoom()), results => {
-                if (results && results.length > 0) {
-                    document.getElementById('jobAddress').value = results[0].name;
-                }
-            });
-        }
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&accept-language=es`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.display_name) {
+                document.getElementById('jobAddress').value = data.display_name;
+            }
+        })
+        .catch(err => console.error('Error reverse geocoding:', err));
+}
 
         marcador.on('dragend', function () {
             const posicion = marcador.getLatLng();
