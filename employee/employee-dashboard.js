@@ -575,63 +575,36 @@ window.guardarReporteYPdf = async () => {
     const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
-    // 1. Detectar el dispositivo exacto
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isAndroid = /Android/.test(userAgent);
-    const esMovil = isIOS || isAndroid;
-
-    // 2. CONFIGURACIÓN OPTIMIZADA
+    // CONFIGURACIÓN DE CORTE INTELIGENTE DEFINITIVA
     const opt = {
-        margin:       [15, 10, 15, 10],
+        margin:       [15, 10, 15, 10], // Margen perfecto: arriba, izquierda, abajo, derecha (Evita que el texto toque el filo de la hoja)
         filename:     pdfFileName,
         image:        { type: 'jpeg', quality: 0.98 },
-        // SOLUCIÓN 1: Bajamos el scale a 1.5 en móviles para que no se quede colgado
-        html2canvas:  { scale: esMovil ? 1.5 : 2, useCORS: true, logging: false },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak:    { mode: ['css', 'legacy'], avoid: ['table', 'tr', 'td', 'h3', 'div[style*="avoid"]'] }
     };
 
     let pdfBlob;
-    try {
-        // Generamos el PDF en la memoria
-        pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-        
-        // SOLUCIÓN 2: Lógica dividida según el dispositivo
-        if (isIOS) {
-            // EN IOS/SAFARI: Usamos el menú nativo de compartir
-            const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-                try {
-                    await navigator.share({
-                        files: [pdfFile],
-                        title: 'Reporte de Obra'
-                    });
-                } catch (err) {
-                    console.log("El usuario cerró el menú de compartir de iOS.");
-                }
-            } else {
-                // Fallback si falla el share nativo
-                const fileURL = URL.createObjectURL(pdfBlob);
-                window.location.assign(fileURL);
-            }
-        } else {
-            // EN ANDROID Y PC: Usamos la descarga directa clásica
-            const urlDescarga = window.URL.createObjectURL(pdfBlob);
-            const a = document.createElement('a');
-            a.href = urlDescarga;
-            a.download = pdfFileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(urlDescarga);
-        }
+try {
+    // 1. Generamos el PDF en la memoria
+    pdfBlob = await html2pdf().set(opt).from(element).output('blob');
+    
+    // 2. Forzamos la descarga local en todos los dispositivos
+    const urlDescarga = window.URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = urlDescarga;
+    a.download = pdfFileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(urlDescarga);
 
-    } catch (e) {
-        pdfWrapper.style.display = 'none';
-        console.error("Error al generar PDF:", e);
-        return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#00B8A9' });
-    }
+} catch (e) {
+    pdfWrapper.style.display = 'none';
+    console.error("Error al generar PDF:", e);
+    return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#00B8A9' });
+}
 
     pdfWrapper.style.display = 'none';
 
