@@ -534,8 +534,6 @@ window.guardarReporteYPdf = async () => {
     const fechaActual = `${String(hoy.getDate()).padStart(2, '0')}/${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
     document.getElementById('pdfDate').textContent = fechaActual; 
     
-    // NUEVO: Capturamos el texto de las cajas/códigos
-    const matQuantityInfo = document.getElementById('evMatQuantity').value.trim();
     
     // Si el empleado puso cantidades, lo agregamos al comentario para que se guarde en la Base de Datos
     if (matQuantityInfo) {
