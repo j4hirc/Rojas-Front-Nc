@@ -570,13 +570,17 @@ window.guardarReporteYPdf = async () => {
     document.getElementById('pdfSignatureCliImg').src = canvasCli.toDataURL("image/png");
 
     const pdfWrapper = document.getElementById('pdfWrapper');
-    pdfWrapper.style.display = 'block';
 
-    await new Promise(r => setTimeout(r, 150)); // Un pelín más de espera para garantizar renderizado en móviles
-
-    pdfWrapper.style.visibility = 'visible';
-    pdfWrapper.style.top = '0';
-    pdfWrapper.style.left = '0';
+    // Lo ponemos visible pero fuera de pantalla para que html2canvas lo capture bien
+    pdfWrapper.style.cssText = `
+        display: block;
+        position: fixed;
+        top: -9999px;
+        left: -9999px;
+        width: 750px;
+        visibility: visible;
+        z-index: -1;
+    `;
 
     await new Promise(r => setTimeout(r, 300));
 
@@ -584,7 +588,7 @@ window.guardarReporteYPdf = async () => {
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
     const opt = {
-        margin: [10, 10, 10, 10],
+        margin: [5, 8, 5, 8],
         filename: pdfFileName,
         image: { type: 'jpeg', quality: 0.92 },
         html2canvas: {
@@ -597,34 +601,39 @@ window.guardarReporteYPdf = async () => {
             onclone: (doc) => {
                 const wrapper = doc.getElementById('pdfWrapper');
                 const template = doc.getElementById('pdfTemplate');
-                wrapper.style.top = '0';
-                wrapper.style.left = '0';
-                wrapper.style.margin = '0';
-                wrapper.style.padding = '0';
-                wrapper.style.position = 'absolute';
-                wrapper.style.visibility = 'visible';
-                template.style.marginTop = '0';
-                template.style.paddingTop = '20px';
+                if (wrapper) {
+                    wrapper.style.cssText = `
+                        display: block;
+                        position: relative;
+                        top: 0;
+                        left: 0;
+                        width: 750px;
+                        margin: 0;
+                        padding: 0;
+                        visibility: visible;
+                    `;
+                }
+                if (template) {
+                    template.style.marginTop = '0';
+                    template.style.paddingTop = '10px';
+                }
             }
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: {
-            mode: 'avoid-all',
-            before: '#pagebreak'
-        }
+        pagebreak: { mode: 'avoid-all' }
     };
 
     let pdfBlob;
     try {
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-
     } catch (e) {
-        pdfWrapper.style.visibility = 'hidden';
         console.error("Error al generar PDF:", e);
+        pdfWrapper.style.cssText = 'display: none;';
         return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#00B8A9' });
     }
 
-    pdfWrapper.style.visibility = 'hidden';
+    // Ocultamos completamente después de capturar
+    pdfWrapper.style.cssText = 'display: none;';
 
 
     const dtoObject = {
