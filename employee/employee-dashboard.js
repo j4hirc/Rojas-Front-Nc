@@ -579,7 +579,7 @@ window.guardarReporteYPdf = async () => {
 
     // CONFIGURACIÓN DE CORTE INTELIGENTE DEFINITIVA
     const opt = {
-        margin:       [15, 10, 15, 10], // Margen perfecto: arriba, izquierda, abajo, derecha (Evita que el texto toque el filo de la hoja)
+        margin:       [10, 10, 10, 10], // Margen perfecto: arriba, izquierda, abajo, derecha (Evita que el texto toque el filo de la hoja)
         filename:     pdfFileName,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, logging: false },
@@ -589,26 +589,17 @@ window.guardarReporteYPdf = async () => {
 
     let pdfBlob;
 try {
-    // 1. Generamos el PDF en la memoria
+    // Solo generamos el blob en memoria, sin abrir ni descargar nada
     pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-    
-    // 2. Forzamos la descarga local en todos los dispositivos
-    const urlDescarga = window.URL.createObjectURL(pdfBlob);
-    const a = document.createElement('a');
-    a.href = urlDescarga;
-    a.download = pdfFileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(urlDescarga);
 
 } catch (e) {
-    pdfWrapper.style.display = 'none';
+    pdfWrapper.style.visibility = 'hidden';
     console.error("Error al generar PDF:", e);
     return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#00B8A9' });
 }
 
-    pdfWrapper.style.display = 'none';
+pdfWrapper.style.visibility = 'hidden';
+
 
     const dtoObject = {
         comment: comment,
