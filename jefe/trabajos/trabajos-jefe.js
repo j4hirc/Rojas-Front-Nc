@@ -52,9 +52,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
     await cargarUsuariosYMateriales(userEmail); 
-    await cargarTrabajos();
+    await cargarTrabajos();            
+
     // ==================================================
-    // NUEVO: Escuchar los cambios manuales de coordenadas
+    // ESCUCHAR CAMBIOS MANUALES DE COORDENADAS
     // ==================================================
     const inputLat = document.getElementById('jobLat');
     const inputLng = document.getElementById('jobLng');
@@ -63,7 +64,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         inputLat.addEventListener('input', window.actualizarMapaDesdeInputs);
         inputLng.addEventListener('input', window.actualizarMapaDesdeInputs);
     }
-    // ==================================================            
+    // ==================================================
 
     Swal.close();
 });
@@ -74,14 +75,11 @@ function inicializarMapa(lat, lng) {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
         marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
         
-        // Al terminar de arrastrar el marcador, actualiza los campos de texto
         marcador.on('dragend', function (e) {
             const posicion = marcador.getLatLng();
             document.getElementById('jobLat').value = posicion.lat.toFixed(6);
             document.getElementById('jobLng').value = posicion.lng.toFixed(6);
         });
-
-        // Al hacer clic en cualquier parte del mapa, mueve el marcador y actualiza los campos
         mapa.on('click', function(e) {
             marcador.setLatLng(e.latlng);
             document.getElementById('jobLat').value = e.latlng.lat.toFixed(6);
@@ -92,23 +90,23 @@ function inicializarMapa(lat, lng) {
         marcador.setLatLng([lat, lng]);
     }
 
-    // Solo asigna los valores iniciales si los campos están vacíos
+    // AJUSTE AQUÍ: Solo rellena el input si no contiene un valor digitado previamente
     if (!document.getElementById('jobLat').value) document.getElementById('jobLat').value = lat.toFixed(6);
     if (!document.getElementById('jobLng').value) document.getElementById('jobLng').value = lng.toFixed(6);
     
     setTimeout(() => { mapa.invalidateSize(); }, 300);
 }
 
-// Función que lee los inputs y reubica el mapa/marcador en tiempo real
+// Función global que lee los inputs de coordenadas y mueve el mapa en tiempo real
 window.actualizarMapaDesdeInputs = () => {
     const latVal = parseFloat(document.getElementById('jobLat').value);
     const lngVal = parseFloat(document.getElementById('jobLng').value);
 
-    // Validamos que sean números correctos y coordenadas válidas antes de mover el mapa
+    // Verifica que el usuario haya escrito valores numéricos válidos en el rango de coordenadas
     if (!isNaN(latVal) && !isNaN(lngVal) && latVal >= -90 && latVal <= 90 && lngVal >= -180 && lngVal <= 180) {
         if (mapa && marcador) {
             marcador.setLatLng([latVal, lngVal]);
-            mapa.panTo([latVal, lngVal]); // Mueve la vista suavemente hacia la nueva coordenada
+            mapa.panTo([latVal, lngVal]); // Desplaza suavemente el mapa hacia la ubicación copiada/escrita
         }
     }
 };
