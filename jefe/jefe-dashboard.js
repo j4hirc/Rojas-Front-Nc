@@ -279,22 +279,22 @@ function renderizarNomina(offset) {
     const strFin = formatD(finSemana);
 
     let htmlContent = `
-    <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
         
-        <button onclick="cambiarSemana(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+        <button onclick="cambiarSemana(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
             <i class="fa-solid fa-chevron-left"></i> Anterior
         </button>
 
-        <div style="text-align: center;">
-            <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Semana del</span>
-            <span id="lblRangoNomina" style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
+        <div style="text-align: center; flex: 1; min-width: 140px;">
+            <span style="display: block; font-size: 10px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Semana del</span>
+            <span id="lblRangoNomina" style="font-size: 13px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
         </div>
 
-        <button type="button" onclick="exportarNominaJefePdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar a PDF">
+        <button type="button" onclick="exportarNominaJefePdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px;">
             <i class="fa-solid fa-file-pdf"></i> PDF
         </button>
 
-        <button onclick="cambiarSemana(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+        <button onclick="cambiarSemana(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
             Siguiente <i class="fa-solid fa-chevron-right"></i>
         </button>
     </div>
@@ -423,20 +423,30 @@ function renderizarNomina(offset) {
 
     try {
         const pdfBlob = await html2pdf().set(opt).from(contenedorImpresion).output('blob');
+        const esIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        // Base64 para evitar blob URL en Safari
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            const base64 = reader.result;
-            const link = document.createElement('a');
-            link.href = base64;
-            link.download = `Nomina_${nombreArchivoClean}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            Swal.close();
-        };
-        reader.readAsDataURL(pdfBlob);
+        if (esIOS) {
+            // En iOS abrimos el PDF en una nueva pestaña directamente
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                Swal.close();
+                window.open(reader.result, '_blank');
+            };
+            reader.readAsDataURL(pdfBlob);
+        } else {
+            // En Android y PC descargamos normalmente
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const link = document.createElement('a');
+                link.href = reader.result;
+                link.download = `Nomina_${nombreArchivoClean}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                Swal.close();
+            };
+            reader.readAsDataURL(pdfBlob);
+        }
 
     } catch (err) {
         console.error('Error exportando PDF:', err);
