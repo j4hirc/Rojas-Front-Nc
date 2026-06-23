@@ -11,6 +11,7 @@ let miUsuarioActual = null;
 
 let archivosSeleccionados = [];
 let imagenesBase64Data = []; 
+let matQuantityInfo = ''
 
 // Variables para la doble firma
 let canvasSub, ctxSub, canvasCli, ctxCli;
@@ -354,6 +355,7 @@ window.abrirModalEvidence = (jobId) => {
     
     archivosSeleccionados = [];
     imagenesBase64Data = [];
+    matQuantityInfo = ''
     
     // Limpiamos los DOS canvas
     limpiarFirmaSub();
