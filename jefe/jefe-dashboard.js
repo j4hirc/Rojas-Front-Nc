@@ -352,18 +352,9 @@ function renderizarNomina(offset) {
     const nombreJefe = miUsuarioActual ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}` : 'Jefe';
 
     const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.id = 'contenedor-nomina-jefe-pdf';
-    contenedorImpresion.style.cssText = `
-        padding: 30px 40px;
-        background: #ffffff;
-        font-family: 'Poppins', sans-serif;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 750px;
-        z-index: -9999;
-        visibility: hidden;
-    `;
+    contenedorImpresion.style.padding = "30px 40px";
+    contenedorImpresion.style.background = "#ffffff";
+    contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
 
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
@@ -387,8 +378,13 @@ function renderizarNomina(offset) {
         </div>
     `;
 
-    document.body.appendChild(contenedorImpresion);
-    await new Promise(r => setTimeout(r, 300));
+    const opt = {
+        margin: [12, 12, 12, 12],
+        filename: `Nomina_${nombreArchivoClean}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
 
     Swal.fire({
         title: 'Generando PDF...',
@@ -396,57 +392,14 @@ function renderizarNomina(offset) {
         didOpen: () => { Swal.showLoading(); }
     });
 
-    const opt = {
-        margin: [12, 12, 12, 12],
-        filename: `Nomina_${nombreArchivoClean}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            windowWidth: 750,
-            scrollX: 0,
-            scrollY: 0,
-            onclone: (doc) => {
-                const el = doc.getElementById('contenedor-nomina-jefe-pdf');
-                if (el) {
-                    el.style.visibility = 'visible';
-                    el.style.top = '0';
-                    el.style.left = '0';
-                    el.style.zIndex = '1';
-                }
-            }
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
-    };
-
-    try {
-        const pdfBlob = await html2pdf().set(opt).from(contenedorImpresion).output('blob');
-        const esIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            if (esIOS) {
-                Swal.close();
-                window.open(reader.result, '_blank');
-            } else {
-                const link = document.createElement('a');
-                link.href = reader.result;
-                link.download = `Nomina_${nombreArchivoClean}.pdf`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                Swal.close();
-            }
-        };
-        reader.readAsDataURL(pdfBlob);
-
-    } catch (err) {
-        console.error('Error exportando PDF:', err);
-        Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
-    } finally {
-        document.body.removeChild(contenedorImpresion);
-    }
+    html2pdf()
+        .set(opt)
+        .from(contenedorImpresion)
+        .save()
+        .then(() => { Swal.close(); })
+        .catch(err => {
+            console.error('Error exportando PDF:', err);
+            Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
+        });
 };
 }
