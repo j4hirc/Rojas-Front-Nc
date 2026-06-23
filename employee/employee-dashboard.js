@@ -494,30 +494,33 @@ window.guardarReporteYPdf = async () => {
     
     document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
     
+    // Inyección de fotos usando inline-block seguro y evitando cortes por imagen
     document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
-        <div style="page-break-inside: avoid; margin-bottom: 5px;">
-            <img src="${b64}" style="width: 160px; height: 120px; object-fit: cover; border-radius: 6px; border: 1px solid #ccc;">
+        <div style="display: inline-block; width: 210px; margin: 8px; page-break-inside: avoid; border: 1px solid #E2E8F0; border-radius: 8px; padding: 5px; background: #ffffff; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <img src="${b64}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px;">
         </div>
     `).join('');
     
-    // Inyectamos las DOS firmas en el PDF oculto
+    // Inyectamos las DOS firmas en el PDF oculto de forma nativa
     document.getElementById('pdfSignatureSubImg').src = canvasSub.toDataURL("image/png");
     document.getElementById('pdfSignatureCliImg').src = canvasCli.toDataURL("image/png");
 
     const pdfWrapper = document.getElementById('pdfWrapper');
     pdfWrapper.style.display = 'block'; 
     
-    await new Promise(r => setTimeout(r, 100)); 
+    await new Promise(r => setTimeout(r, 150)); // Un pelín más de espera para garantizar renderizado en móviles
 
     const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
+    // CONFIGURACIÓN DE CORTE INTELIGENTE DEFINITIVA
     const opt = {
-        margin:       [10, 0, 10, 0], 
+        margin:       [15, 12, 15, 12], // Margen perfecto: arriba, izquierda, abajo, derecha (Evita que el texto toque el filo de la hoja)
         filename:     pdfFileName,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['css', 'legacy'], avoid: ['table', 'tr', 'td', 'h3', 'div[style*="avoid"]'] }
     };
 
     let pdfBlob;
