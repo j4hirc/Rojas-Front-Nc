@@ -515,7 +515,7 @@ window.guardarReporteYPdf = async () => {
 
     // CONFIGURACIÓN DE CORTE INTELIGENTE DEFINITIVA
     const opt = {
-        margin:       [15, 12, 15, 12], // Margen perfecto: arriba, izquierda, abajo, derecha (Evita que el texto toque el filo de la hoja)
+        margin:       [15, 10, 15, 10], // Margen perfecto: arriba, izquierda, abajo, derecha (Evita que el texto toque el filo de la hoja)
         filename:     pdfFileName,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, logging: false },
