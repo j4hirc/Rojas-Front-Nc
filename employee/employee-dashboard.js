@@ -361,11 +361,20 @@ window.abrirModalEvidence = (jobId) => {
     
     document.querySelectorAll('input[name="empMaterials"]').forEach(cb => { 
         cb.checked = false; 
+        
+        // 1. Ocultamos todos los cuadritos por defecto al abrir el modal limpio
+        const divOpciones = document.getElementById('opts_' + cb.value);
+        if (divOpciones) divOpciones.style.display = 'none';
+
         if (currentJobInfo) {
             let matArray = currentJobInfo.materials || currentJobInfo.jobMaterials || currentJobInfo.jobMaterial || [];
             const arrIdMateriales = matArray.map(m => m.materialId || (m.material && m.material.materialId) || m.id);
+            
             if (arrIdMateriales.includes(parseInt(cb.value))) {
                 cb.checked = true; 
+                
+                // 2. LA MAGIA: Si el jefe ya lo asignó, mostramos los cuadritos automáticamente
+                if (divOpciones) divOpciones.style.display = 'flex';
             }
         }
     });
@@ -520,8 +529,6 @@ window.guardarReporteYPdf = async () => {
     document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF}`;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
     
-    // NUEVO: Inyectamos la instrucción original del jefe
-    document.getElementById('pdfOriginalDesc').textContent = currentJobInfo.description || 'Sin instrucciones originales';
 
     const hoy = new Date();
     const fechaActual = `${String(hoy.getDate()).padStart(2, '0')}/${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
