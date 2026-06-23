@@ -22,7 +22,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
     await cargarUsuariosYMateriales(); 
-    await cargarTrabajos();            
+    await cargarTrabajos(); 
+    
+    const inputLat = document.getElementById('jobLat');
+    const inputLng = document.getElementById('jobLng');
+    if (inputLat && inputLng) {
+        inputLat.addEventListener('input', window.actualizarMapaDesdeInputs);
+        inputLng.addEventListener('input', window.actualizarMapaDesdeInputs);
+    }
 
     Swal.close();
 });
@@ -32,24 +39,114 @@ function inicializarMapa(lat, lng) {
         mapa = L.map('jobMap').setView([lat, lng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
         marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
-        marcador.on('dragend', function (e) {
+
+        function obtenerDireccion(latlng) {
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&accept-language=es&addressdetails=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.address) {
+                        const a = data.address;
+                        const partes = [
+                            a.road || a.pedestrian || a.footway || '',
+                            a.house_number || '',
+                            a.suburb || a.neighbourhood || a.quarter || '',
+                            a.city || a.town || a.village || a.municipality || '',
+                            a.state || ''
+                        ].filter(p => p !== '');
+                        document.getElementById('jobAddress').value = partes.join(', ');
+                    }
+                })
+                .catch(err => console.error('Error reverse geocoding:', err));
+        }
+
+        marcador.on('dragend', function () {
             const posicion = marcador.getLatLng();
             document.getElementById('jobLat').value = posicion.lat.toFixed(6);
             document.getElementById('jobLng').value = posicion.lng.toFixed(6);
+            obtenerDireccion(posicion);
         });
-        mapa.on('click', function(e) {
+
+        mapa.on('click', function (e) {
             marcador.setLatLng(e.latlng);
             document.getElementById('jobLat').value = e.latlng.lat.toFixed(6);
             document.getElementById('jobLng').value = e.latlng.lng.toFixed(6);
+            obtenerDireccion(e.latlng);
         });
+
+        // Dirección → Mapa
+        const inputDireccion = document.getElementById('jobAddress');
+
+        function buscarDireccionEnMapa() {
+            const texto = inputDireccion.value.trim();
+            if (!texto) return;
+
+            const regexCoords = /^[-+]?\d+(\.\d+)?,\s*[-+]?\d+(\.\d+)?$/;
+            if (regexCoords.test(texto)) {
+                const partes = texto.split(',');
+                const latV = parseFloat(partes[0]);
+                const lngV = parseFloat(partes[1]);
+                if (!isNaN(latV) && !isNaN(lngV)) {
+                    document.getElementById('jobLat').value = latV.toFixed(6);
+                    document.getElementById('jobLng').value = lngV.toFixed(6);
+                    marcador.setLatLng([latV, lngV]);
+                    mapa.setView([latV, lngV], 16);
+                }
+                return;
+            }
+
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&accept-language=es&limit=1`)
+                .then(res => res.json())
+                .then(results => {
+                    if (results && results.length > 0) {
+                        const latV = parseFloat(results[0].lat);
+                        const lngV = parseFloat(results[0].lon);
+                        document.getElementById('jobLat').value = latV.toFixed(6);
+                        document.getElementById('jobLng').value = lngV.toFixed(6);
+                        marcador.setLatLng([latV, lngV]);
+                        mapa.setView([latV, lngV], 16);
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'No encontrado',
+                            text: 'No se encontró esa dirección. Intenta ser más específico o usa el mapa.',
+                            confirmButtonColor: '#12CFF4',
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                    }
+                })
+                .catch(err => console.error('Error geocoding:', err));
+        }
+
+        inputDireccion.addEventListener('blur', buscarDireccionEnMapa);
+        inputDireccion.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarDireccionEnMapa();
+            }
+        });
+
     } else {
         mapa.setView([lat, lng], 14);
         marcador.setLatLng([lat, lng]);
     }
+
     document.getElementById('jobLat').value = lat.toFixed(6);
     document.getElementById('jobLng').value = lng.toFixed(6);
     setTimeout(() => { mapa.invalidateSize(); }, 300);
 }
+
+// Actualiza el mapa al escribir coordenadas manualmente
+window.actualizarMapaDesdeInputs = () => {
+    const latVal = parseFloat(document.getElementById('jobLat').value);
+    const lngVal = parseFloat(document.getElementById('jobLng').value);
+    if (!isNaN(latVal) && !isNaN(lngVal) && latVal >= -90 && latVal <= 90 && lngVal >= -180 && lngVal <= 180) {
+        if (mapa && marcador) {
+            marcador.setLatLng([latVal, lngVal]);
+            mapa.panTo([latVal, lngVal]);
+        }
+    }
+};
 
 window.obtenerMiUbicacion = () => {
     if (navigator.geolocation) {
