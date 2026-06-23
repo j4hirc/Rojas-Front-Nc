@@ -362,7 +362,7 @@ function renderizarNominaAdmin(offset) {
 }
 
 // 3. FUNCIÓN CORREGIDA DE DESCARGA PDF SIN DEPENDE DE ENTORNO EN CLONDADO
-window.exportarNominaSemanalAPdf = () => {
+window.exportarNominaSemanalAPdf = async () => {
     const lblRango = document.getElementById('lblRangoSemanas');
     const textoRango = lblRango ? lblRango.textContent.trim() : "Reporte_Nomina";
     const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
@@ -373,9 +373,17 @@ window.exportarNominaSemanalAPdf = () => {
     }
 
     const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.style.padding = "30px 40px";
-    contenedorImpresion.style.background = "#ffffff";
-    contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
+    contenedorImpresion.style.cssText = `
+        padding: 30px 40px;
+        background: #ffffff;
+        font-family: 'Poppins', sans-serif;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 750px;
+        z-index: -9999;
+        visibility: hidden;
+    `;
 
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
@@ -401,13 +409,9 @@ window.exportarNominaSemanalAPdf = () => {
         </div>
     `;
 
-    const opcionesConfiguracion = {
-        margin:       [12, 12, 12, 12],
-        filename:     `Nomina_Semanal_${nombreArchivoClean}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2.5, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+    // Lo añadimos al DOM para que html2canvas pueda renderizarlo
+    document.body.appendChild(contenedorImpresion);
+    await new Promise(r => setTimeout(r, 300));
 
     Swal.fire({
         title: 'Generando archivo PDF...',
@@ -416,15 +420,38 @@ window.exportarNominaSemanalAPdf = () => {
         didOpen: () => { Swal.showLoading(); }
     });
 
-    html2pdf()
-        .set(opcionesConfiguracion)
-        .from(contenedorImpresion)
-        .save()
-        .then(() => { Swal.close(); })
-        .catch(err => {
-            console.error("Fallo al exportar reporte PDF:", err);
-            Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
-        });
+    const opcionesConfiguracion = {
+        margin: [12, 12, 12, 12],
+        filename: `Nomina_Semanal_${nombreArchivoClean}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            windowWidth: 750,
+            scrollX: 0,
+            scrollY: 0,
+            onclone: (doc, el) => {
+                el.style.visibility = 'visible';
+                el.style.top = '0';
+                el.style.left = '0';
+                el.style.zIndex = '1';
+            }
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' }
+    };
+
+    try {
+        await html2pdf().set(opcionesConfiguracion).from(contenedorImpresion).save();
+        Swal.close();
+    } catch (err) {
+        console.error("Fallo al exportar reporte PDF:", err);
+        Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
+    } finally {
+        // Siempre limpiamos el DOM aunque falle
+        document.body.removeChild(contenedorImpresion);
+    }
 };
 
 // --- LOGOUT NORMAL ---
