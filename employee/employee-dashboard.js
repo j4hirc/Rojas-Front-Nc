@@ -185,7 +185,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/dir/?api=1&destination=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;" onmouseover="this.style.background='#00B8A9'" onmouseout="this.style.background='#111C44'">
+                                <a href="https://maps.google.com/?q=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;" onmouseover="this.style.background='#00B8A9'" onmouseout="this.style.background='#111C44'">
                                     <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
                                 </a>
                             </div>
@@ -571,60 +571,35 @@ window.guardarReporteYPdf = async () => {
 
 
     const pdfWrapper = document.getElementById('pdfWrapper');
-    const pdfTemplate = document.getElementById('pdfTemplate');
+    const element = document.getElementById('pdfTemplate');
 
-    // Hacemos visible el template directamente, sin wrapper
+    // LA SOLUCIÓN: Lo hacemos "visible" para que html2canvas pueda renderizar las fotos y firmas, 
+    // pero lo escondemos fuera de la pantalla (top: -10000px) para que el usuario no lo vea parpadear.
     pdfWrapper.style.display = 'block';
     pdfWrapper.style.position = 'absolute';
-    pdfWrapper.style.top = '0';
+    pdfWrapper.style.top = '-10000px'; 
     pdfWrapper.style.left = '0';
     pdfWrapper.style.width = '750px';
     pdfWrapper.style.zIndex = '-9999';
-    pdfWrapper.style.visibility = 'hidden';
+    pdfWrapper.style.visibility = 'visible'; 
 
-    await new Promise(r => setTimeout(r, 300));
+    // Damos un poco más de tiempo (400ms) para asegurar que las firmas en Base64 carguen en el DOM
+    await new Promise(r => setTimeout(r, 400)); 
 
-    const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
+    // Simplificamos la configuración y quitamos el onclone que daba fallos
     const opt = {
-        margin: [5, 8, 5, 8],
+        margin: [10, 10, 10, 10], // Un margen más seguro para que no se corte
         filename: pdfFileName,
-        image: { type: 'jpeg', quality: 0.92 },
+        image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
             scale: 2,
             useCORS: true,
             logging: false,
-            windowWidth: 750,
-            scrollX: 0,
-            scrollY: 0,
-            onclone: (doc) => {
-                const wrapper = doc.getElementById('pdfWrapper');
-                const tmpl = doc.getElementById('pdfTemplate');
-                if (wrapper) {
-                    wrapper.style.display = 'block';
-                    wrapper.style.position = 'static';
-                    wrapper.style.top = 'auto';
-                    wrapper.style.left = 'auto';
-                    wrapper.style.width = '750px';
-                    wrapper.style.zIndex = 'auto';
-                    wrapper.style.visibility = 'visible';
-                    wrapper.style.overflow = 'visible';
-                    wrapper.style.height = 'auto';
-                    wrapper.style.margin = '0';
-                    wrapper.style.padding = '0';
-                }
-                if (tmpl) {
-                    tmpl.style.marginTop = '0';
-                    tmpl.style.paddingTop = '10px';
-                    tmpl.style.width = '750px';
-                    tmpl.style.height = 'auto';
-                    tmpl.style.overflow = 'visible';
-                }
-            }
+            letterRendering: true
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     let pdfBlob;
@@ -632,11 +607,15 @@ window.guardarReporteYPdf = async () => {
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
     } catch (e) {
         console.error("Error al generar PDF:", e);
+        // Reseteamos las propiedades si falla
         pdfWrapper.style.display = 'none';
+        pdfWrapper.style.visibility = 'hidden'; 
         return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF.', confirmButtonColor: '#00B8A9' });
     }
 
+    // Reseteamos las propiedades al terminar
     pdfWrapper.style.display = 'none';
+    pdfWrapper.style.visibility = 'hidden';
 
 
     const dtoObject = {
