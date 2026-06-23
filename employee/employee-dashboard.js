@@ -224,12 +224,26 @@ async function cargarMateriales() {
         const materials = await resMat.json();
         const containerMat = document.getElementById('employeeMaterialsContainer');
         containerMat.innerHTML = '';
+        
+        if (!materials || materials.length === 0) {
+            containerMat.innerHTML = '<p style="color: #64748B; font-size: 13px;">No hay materiales registrados.</p>';
+            return;
+        }
+
         materials.forEach(mat => {
+            // Usamos mat.materialId para relacionar el checkbox con sus propios inputs
             containerMat.innerHTML += `
-                <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2B3674; font-size: 14px; font-weight: 500;">
-                    <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}"> 
-                    ${mat.name}
-                </label>
+                <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2B3674; font-weight: bold; cursor: pointer;">
+                        <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}" onchange="document.getElementById('opts_${mat.materialId}').style.display = this.checked ? 'flex' : 'none'">
+                        ${mat.name}
+                    </label>
+                    
+                    <div id="opts_${mat.materialId}" style="display: none; gap: 10px; margin-top: 8px; margin-left: 24px;">
+                        <input type="number" id="qty_${mat.materialId}" placeholder="Nº (Ej: 26)" class="input-field" style="width: 80px; padding: 6px; border: 1px solid #12CFF4; border-radius: 5px;">
+                        <input type="text" id="unit_${mat.materialId}" placeholder="Unidad (box, lámina, pie)" class="input-field" style="flex: 1; padding: 6px; border: 1px solid #12CFF4; border-radius: 5px;">
+                    </div>
+                </div>
             `;
         });
     } catch (e) { console.error(e); }
@@ -463,8 +477,33 @@ window.guardarReporteYPdf = async () => {
     }
 
     const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
-    const selectedMaterialIds = Array.from(selectedMatNodes).map(cb => parseInt(cb.value));
-    const selectedMaterialNames = Array.from(selectedMatNodes).map(cb => `<li style="margin-bottom: 3px;">${cb.getAttribute('data-name')}</li>`).join('');
+    const selectedMaterialIds = [];
+    let selectedMaterialNames = '';
+    let resumenMaterialesBD = '';
+
+    selectedMatNodes.forEach(cb => {
+        const matId = parseInt(cb.value);
+        selectedMaterialIds.push(matId); // Guardamos el ID para tu backend
+        const nombreMat = cb.getAttribute('data-name');
+        
+        // Capturamos el número y la palabra de la unidad
+        const cantidad = document.getElementById(`qty_${matId}`).value.trim() || '-';
+        const unidad = document.getElementById(`unit_${matId}`).value.trim() || '';
+        
+        // Armamos la frase final
+        const cantidadTexto = cantidad !== '-' ? `${cantidad} ${unidad}`.trim() : 'No especificada';
+
+        // 1. Lo que saldrá impreso en el PDF
+        selectedMaterialNames += `<li style="margin-bottom: 6px; color: #2E3238;"><strong>${nombreMat}</strong>: <span style="color: #12CFF4; font-weight: bold;">${cantidadTexto}</span></li>`;
+        
+        // 2. Lo que se guardará en texto para tu Base de Datos
+        resumenMaterialesBD += `📦 ${nombreMat}: ${cantidadTexto}\n`;
+    });
+
+    // Unimos los materiales al comentario general que va a tu servidor
+    if (resumenMaterialesBD !== '') {
+        comment = `[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}\n\n[COMENTARIOS]:\n${comment}`;
+    }
 
     Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
