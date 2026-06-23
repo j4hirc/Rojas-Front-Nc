@@ -522,16 +522,24 @@ window.guardarReporteYPdf = async () => {
 
     let pdfBlob;
     try {
+        // 1. Generamos el PDF en la memoria
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
         
-        const urlDescarga = window.URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = urlDescarga;
-        a.download = pdfFileName;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(urlDescarga);
+        // 2. Detectamos si el usuario está desde un celular (Android o iOS)
+        const esMovil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        
+        // 3. SI NO ES MÓVIL (es decir, es una PC), forzamos la descarga local
+        if (!esMovil) {
+            const urlDescarga = window.URL.createObjectURL(pdfBlob);
+            const a = document.createElement('a');
+            a.href = urlDescarga;
+            a.download = pdfFileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(urlDescarga);
+        }
+
     } catch (e) {
         pdfWrapper.style.display = 'none';
         console.error("Error al generar PDF:", e);
