@@ -339,20 +339,18 @@ function renderizarNomina(offset) {
         contenedor.innerHTML = htmlContent;
     }
 
-    window.exportarNominaJefePdf = async () => {
-    const lblRango = document.getElementById('lblRangoNomina');
-    const textoRango = lblRango ? lblRango.textContent.trim() : 'Reporte_Nomina';
+    window.exportarNominaSemanalAPdf = async () => {
+    const lblRango = document.getElementById('lblRangoSemanas');
+    const textoRango = lblRango ? lblRango.textContent.trim() : "Reporte_Nomina";
     const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
 
-    const tablaElemento = document.getElementById('tabla-nomina-jefe');
+    const tablaElemento = document.getElementById('tabla-exportar-pdf-container');
     if (!tablaElemento) {
-        return Swal.fire('Error', 'No se encontraron registros para exportar.', 'error');
+        return Swal.fire('Error', 'No se encontraron registros renderizados para procesar el archivo.', 'error');
     }
 
-    const nombreJefe = miUsuarioActual ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}` : 'Jefe';
-
     const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.id = 'contenedor-nomina-jefe-pdf';
+    contenedorImpresion.id = 'contenedor-nomina-admin-pdf';
     contenedorImpresion.style.cssText = `
         padding: 30px 40px;
         background: #ffffff;
@@ -368,22 +366,24 @@ function renderizarNomina(offset) {
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="../img/logo.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;">
+                <img src="../logo.jpeg" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;" onerror="this.src='../../logo.jpeg'">
                 <div>
-                    <h1 style="color: #0B0B0D; margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">NÓMINA SEMANAL</h1>
-                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Jefe: ${nombreJefe}</p>
+                    <h1 style="color: #0B0B0D; margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase;">REPORTE DE NÓMINA GENERAL</h1>
+                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Plataforma RemoMN — Área de Administración</p>
                 </div>
             </div>
             <div style="text-align: right; color: #2E3238;">
-                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período:</p>
+                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período Reportado:</p>
                 <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango}</p>
             </div>
         </div>
-        <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
-            ${tablaElemento.innerHTML}
+        <div style="margin-top: 20px;">
+            <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
+                ${tablaElemento.innerHTML}
+            </div>
         </div>
         <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
-            Reporte generado automáticamente por el Portal RemoMN.
+            Este documento es un reporte financiero confidencial generado automáticamente por el Panel de Administración de RemoMN.
         </div>
     `;
 
@@ -391,14 +391,15 @@ function renderizarNomina(offset) {
     await new Promise(r => setTimeout(r, 300));
 
     Swal.fire({
-        title: 'Generando PDF...',
+        title: 'Generando archivo PDF...',
+        text: 'Preparando desglose financiero de la semana.',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
 
-    const opt = {
+    const opcionesConfiguracion = {
         margin: [12, 12, 12, 12],
-        filename: `Nomina_${nombreArchivoClean}.pdf`,
+        filename: `Nomina_Semanal_${nombreArchivoClean}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
             scale: 2,
@@ -408,7 +409,7 @@ function renderizarNomina(offset) {
             scrollX: 0,
             scrollY: 0,
             onclone: (doc) => {
-                const el = doc.getElementById('contenedor-nomina-jefe-pdf');
+                const el = doc.getElementById('contenedor-nomina-admin-pdf');
                 if (el) {
                     el.style.visibility = 'visible';
                     el.style.top = '0';
@@ -422,35 +423,31 @@ function renderizarNomina(offset) {
     };
 
     try {
-        const pdfBlob = await html2pdf().set(opt).from(contenedorImpresion).output('blob');
+        const pdfBlob = await html2pdf().set(opcionesConfiguracion).from(contenedorImpresion).output('blob');
         const esIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-        if (esIOS) {
-            // En iOS abrimos el PDF en una nueva pestaña directamente
-            const reader = new FileReader();
-            reader.onloadend = () => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            if (esIOS) {
+                // En iOS abrimos en nueva pestaña
                 Swal.close();
                 window.open(reader.result, '_blank');
-            };
-            reader.readAsDataURL(pdfBlob);
-        } else {
-            // En Android y PC descargamos normalmente
-            const reader = new FileReader();
-            reader.onloadend = () => {
+            } else {
+                // En Android y PC descargamos normalmente
                 const link = document.createElement('a');
                 link.href = reader.result;
-                link.download = `Nomina_${nombreArchivoClean}.pdf`;
+                link.download = `Nomina_Semanal_${nombreArchivoClean}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
                 Swal.close();
-            };
-            reader.readAsDataURL(pdfBlob);
-        }
+            }
+        };
+        reader.readAsDataURL(pdfBlob);
 
     } catch (err) {
-        console.error('Error exportando PDF:', err);
-        Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
+        console.error("Fallo al exportar reporte PDF:", err);
+        Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
     } finally {
         document.body.removeChild(contenedorImpresion);
     }
