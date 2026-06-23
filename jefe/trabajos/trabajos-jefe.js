@@ -89,15 +89,24 @@ function inicializarMapa(lat, lng) {
         const geocoder = L.Control.Geocoder.nominatim();
 
         function obtenerDireccion(latlng) {
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&accept-language=es`)
-        .then(res => res.json())
-        .then(data => {
-            if (data && data.display_name) {
-                document.getElementById('jobAddress').value = data.display_name;
-            }
-        })
-        .catch(err => console.error('Error reverse geocoding:', err));
-}
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&accept-language=es&addressdetails=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.address) {
+                        const a = data.address;
+                        // Armamos una dirección legible con los componentes disponibles
+                        const partes = [
+                            a.road || a.pedestrian || a.footway || '',
+                            a.house_number || '',
+                            a.suburb || a.neighbourhood || a.quarter || '',
+                            a.city || a.town || a.village || a.municipality || '',
+                            a.state || ''
+                        ].filter(p => p !== '');
+                        document.getElementById('jobAddress').value = partes.join(', ');
+                    }
+                })
+                .catch(err => console.error('Error reverse geocoding:', err));
+        }
 
         marcador.on('dragend', function () {
             const posicion = marcador.getLatLng();
@@ -136,25 +145,29 @@ function inicializarMapa(lat, lng) {
                 return;
             }
 
-            // Si escribió texto normal, lo buscamos con Nominatim
-            geocoder.geocode(texto, results => {
-                if (results && results.length > 0) {
-                    const latlng = results[0].center;
-                    document.getElementById('jobLat').value = latlng.lat.toFixed(6);
-                    document.getElementById('jobLng').value = latlng.lng.toFixed(6);
-                    marcador.setLatLng(latlng);
-                    mapa.setView(latlng, 16);
-                } else {
-                    Swal.fire({ 
-                        icon: 'warning', 
-                        title: 'No encontrado', 
-                        text: 'No se encontró esa dirección. Intenta ser más específico o usa el mapa.', 
-                        confirmButtonColor: '#e65100',
-                        timer: 3000,
-                        timerProgressBar: true
-                    });
-                }
-            });
+            // Si escribió texto, buscamos con Nominatim directamente
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&accept-language=es&limit=1`)
+                .then(res => res.json())
+                .then(results => {
+                    if (results && results.length > 0) {
+                        const latV = parseFloat(results[0].lat);
+                        const lngV = parseFloat(results[0].lon);
+                        document.getElementById('jobLat').value = latV.toFixed(6);
+                        document.getElementById('jobLng').value = lngV.toFixed(6);
+                        marcador.setLatLng([latV, lngV]);
+                        mapa.setView([latV, lngV], 16);
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'No encontrado',
+                            text: 'No se encontró esa dirección. Intenta ser más específico o usa el mapa.',
+                            confirmButtonColor: '#e65100',
+                            timer: 3000,
+                            timerProgressBar: true
+                        });
+                    }
+                })
+                .catch(err => console.error('Error geocoding:', err));
         }
 
         // Dispara al salir del campo
