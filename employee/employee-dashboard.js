@@ -575,33 +575,55 @@ window.guardarReporteYPdf = async () => {
     const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
-    // CONFIGURACIÓN DE CORTE INTELIGENTE DEFINITIVA
+    // 1. Detectar el dispositivo exacto
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+    const isIOS = /iPad|iPhone|iPod/.test(userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/.test(userAgent);
+    const esMovil = isIOS || isAndroid;
+
+    // 2. CONFIGURACIÓN OPTIMIZADA
     const opt = {
-        margin:       [15, 10, 15, 10], // Margen perfecto: arriba, izquierda, abajo, derecha (Evita que el texto toque el filo de la hoja)
+        margin:       [15, 10, 15, 10],
         filename:     pdfFileName,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        // SOLUCIÓN 1: Bajamos el scale a 1.5 en móviles para que no se quede colgado
+        html2canvas:  { scale: esMovil ? 1.5 : 2, useCORS: true, logging: false },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak:    { mode: ['css', 'legacy'], avoid: ['table', 'tr', 'td', 'h3', 'div[style*="avoid"]'] }
     };
 
     let pdfBlob;
     try {
-        // 1. Generamos el PDF en la memoria
+        // Generamos el PDF en la memoria
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
         
-        // 2. Detectamos si el usuario está desde un celular (Android o iOS)
-        const esMovil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        
-        // 3. SI NO ES MÓVIL (es decir, es una PC), forzamos la descarga local
-        if (!esMovil) {
+        // SOLUCIÓN 2: Lógica dividida según el dispositivo
+        if (isIOS) {
+            // EN IOS/SAFARI: Usamos el menú nativo de compartir
+            const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+                try {
+                    await navigator.share({
+                        files: [pdfFile],
+                        title: 'Reporte de Obra'
+                    });
+                } catch (err) {
+                    console.log("El usuario cerró el menú de compartir de iOS.");
+                }
+            } else {
+                // Fallback si falla el share nativo
+                const fileURL = URL.createObjectURL(pdfBlob);
+                window.location.assign(fileURL);
+            }
+        } else {
+            // EN ANDROID Y PC: Usamos la descarga directa clásica
             const urlDescarga = window.URL.createObjectURL(pdfBlob);
             const a = document.createElement('a');
             a.href = urlDescarga;
             a.download = pdfFileName;
             document.body.appendChild(a);
             a.click();
-            a.remove();
+            document.body.removeChild(a);
             window.URL.revokeObjectURL(urlDescarga);
         }
 
