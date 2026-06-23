@@ -3,7 +3,7 @@ const USERS_URL = 'https://api-remomn.onrender.com/api/v1/user/all-users';
 const MATERIALS_URL = 'https://api-remomn.onrender.com/api/v1/materials/all';
 
 let userToken = '';
-let myManagerId = null; 
+let myManagerId = null;
 let mapa, marcador;
 
 // FUNCIÓN PARA ARREGLAR LA FECHA "VIRADITA" EN LA TABLA
@@ -49,10 +49,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('jefe-email-display').textContent = userEmail || 'Jefe';
 
-    Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-    await cargarUsuariosYMateriales(userEmail); 
-    await cargarTrabajos();            
+    await cargarUsuariosYMateriales(userEmail);
+    await cargarTrabajos();
 
     // ==================================================
     // ESCUCHAR CAMBIOS MANUALES DE COORDENADAS
@@ -67,8 +67,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (inputDireccion) {
-        // Ejecuta la búsqueda cuando el usuario cambia de input o presiona Enter
         inputDireccion.addEventListener('change', window.actualizarMapaDesdeDireccion);
+        inputDireccion.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                window.actualizarMapaDesdeDireccion();
+            }
+        });
     }
     // ==================================================
 
@@ -80,35 +85,87 @@ function inicializarMapa(lat, lng) {
         mapa = L.map('jobMap').setView([lat, lng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
         marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
-        
-        // Instanciamos el geocodificador para traducir coordenadas <-> texto
+
         const geocoder = L.Control.Geocoder.nominatim();
 
-        // Función interna para obtener la dirección mediante coordenadas (Reverse Geocoding)
         function obtenerDireccion(latlng) {
             geocoder.reverse(latlng, mapa.options.crs.scale(mapa.getZoom()), results => {
                 if (results && results.length > 0) {
-                    // Coloca la dirección en formato texto en el campo correspondiente
                     document.getElementById('jobAddress').value = results[0].name;
                 }
             });
         }
-        
-        // Al terminar de arrastrar el marcador
-        marcador.on('dragend', function (e) {
+
+        marcador.on('dragend', function () {
             const posicion = marcador.getLatLng();
             document.getElementById('jobLat').value = posicion.lat.toFixed(6);
             document.getElementById('jobLng').value = posicion.lng.toFixed(6);
-            obtenerDireccion(posicion); // <--- Llena el campo de dirección de texto
+            obtenerDireccion(posicion);
         });
 
-        // Al hacer clic en cualquier parte del mapa
-        mapa.on('click', function(e) {
+        mapa.on('click', function (e) {
             marcador.setLatLng(e.latlng);
             document.getElementById('jobLat').value = e.latlng.lat.toFixed(6);
             document.getElementById('jobLng').value = e.latlng.lng.toFixed(6);
-            obtenerDireccion(e.latlng); // <--- Llena el campo de dirección de texto
+            obtenerDireccion(e.latlng);
         });
+
+        // ── Dirección → Mapa ──────────────────────────────────────────
+        const inputDireccion = document.getElementById('jobAddress');
+
+        // Busca en el mapa lo que el usuario escribió
+        function buscarDireccionEnMapa() {
+            const texto = inputDireccion.value.trim();
+            if (!texto) return;
+
+            // Si escribió coordenadas tipo "-2.900, -79.005"
+            const regexCoords = /^[-+]?\d+(\.\d+)?,\s*[-+]?\d+(\.\d+)?$/;
+            if (regexCoords.test(texto)) {
+                const partes = texto.split(',');
+                const latV = parseFloat(partes[0]);
+                const lngV = parseFloat(partes[1]);
+                if (!isNaN(latV) && !isNaN(lngV)) {
+                    document.getElementById('jobLat').value = latV.toFixed(6);
+                    document.getElementById('jobLng').value = lngV.toFixed(6);
+                    marcador.setLatLng([latV, lngV]);
+                    mapa.setView([latV, lngV], 16);
+                }
+                return;
+            }
+
+            // Si escribió texto normal, lo buscamos con Nominatim
+            geocoder.geocode(texto, results => {
+                if (results && results.length > 0) {
+                    const latlng = results[0].center;
+                    document.getElementById('jobLat').value = latlng.lat.toFixed(6);
+                    document.getElementById('jobLng').value = latlng.lng.toFixed(6);
+                    marcador.setLatLng(latlng);
+                    mapa.setView(latlng, 16);
+                } else {
+                    Swal.fire({ 
+                        icon: 'warning', 
+                        title: 'No encontrado', 
+                        text: 'No se encontró esa dirección. Intenta ser más específico o usa el mapa.', 
+                        confirmButtonColor: '#e65100',
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                }
+            });
+        }
+
+        // Dispara al salir del campo
+        inputDireccion.addEventListener('blur', buscarDireccionEnMapa);
+
+        // Dispara al presionar Enter sin enviar el form
+        inputDireccion.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarDireccionEnMapa();
+            }
+        });
+        // ─────────────────────────────────────────────────────────────
+
     } else {
         mapa.setView([lat, lng], 14);
         marcador.setLatLng([lat, lng]);
@@ -116,7 +173,7 @@ function inicializarMapa(lat, lng) {
 
     if (!document.getElementById('jobLat').value) document.getElementById('jobLat').value = lat.toFixed(6);
     if (!document.getElementById('jobLng').value) document.getElementById('jobLng').value = lng.toFixed(6);
-    
+
     setTimeout(() => { mapa.invalidateSize(); }, 300);
 }
 
@@ -145,7 +202,7 @@ window.actualizarMapaDesdeDireccion = () => {
         const partes = direccionEscrita.split(',');
         const latVal = parseFloat(partes[0]);
         const lngVal = parseFloat(partes[1]);
-        
+
         if (mapa && marcador) {
             document.getElementById('jobLat').value = latVal.toFixed(6);
             document.getElementById('jobLng').value = lngVal.toFixed(6);
@@ -183,7 +240,7 @@ window.obtenerMiUbicacion = () => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 if (mapa && marcador) {
-                    mapa.setView([lat, lng], 16); 
+                    mapa.setView([lat, lng], 16);
                     marcador.setLatLng([lat, lng]);
                 } else {
                     inicializarMapa(lat, lng);
@@ -203,10 +260,10 @@ window.obtenerMiUbicacion = () => {
 // Modificado para que NO cargue Jefes, solo Empleados
 async function cargarUsuariosYMateriales(emailActual) {
     try {
-        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resUsers.ok) {
             const users = await resUsers.json();
-            
+
             // Buscar el ID del jefe logueado
             const jefeActual = users.find(u => u.email === emailActual);
             if (jefeActual) {
@@ -215,17 +272,17 @@ async function cargarUsuariosYMateriales(emailActual) {
 
             const selectEmp = document.getElementById('jobEmployee');
             selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
-            
+
             const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
             empleados.forEach(u => selectEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
         }
 
-        const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resMat.ok) {
             const materials = await resMat.json();
             const containerMat = document.getElementById('materialsContainer');
             containerMat.innerHTML = '';
-            
+
             if (materials.length === 0) {
                 containerMat.innerHTML = '<span style="color:#666;">No hay materiales en inventario.</span>';
             } else {
@@ -257,21 +314,21 @@ async function cargarTrabajos() {
 function renderizarTrabajos(trabajos) {
     const tbody = document.getElementById('jobTableBody');
     const mobileContainer = document.getElementById('mobileCardsContainer');
-    
-    tbody.innerHTML = ''; 
-    if(mobileContainer) mobileContainer.innerHTML = '';
-    
-    if(trabajos.length === 0) {
+
+    tbody.innerHTML = '';
+    if (mobileContainer) mobileContainer.innerHTML = '';
+
+    if (trabajos.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No tienes trabajos asignados a tu cargo.</td></tr>`;
-        if(mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No tienes trabajos asignados a tu cargo.</div>`;
+        if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No tienes trabajos asignados a tu cargo.</div>`;
         return;
     }
 
     trabajos.forEach(job => {
         let statusBadge = '';
-        if(job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
-        else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
-        else if(job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
+        if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
+        else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
+        else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
         const empName = job.nameEmployee || 'Sin asignar';
@@ -309,13 +366,13 @@ function renderizarTrabajos(trabajos) {
         `;
         tbody.appendChild(tr);
 
-        if(mobileContainer) {
+        if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
             card.style.flexDirection = 'column';
             card.style.alignItems = 'flex-start';
             card.style.padding = '20px';
-            
+
             card.innerHTML = `
                 <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px;">
                     <h3 style="margin:0; font-size:1.1rem; color:#198754;">${job.clientName}</h3>
@@ -357,7 +414,7 @@ window.abrirModalCrearJob = () => {
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
-    inicializarMapa(-2.900128, -79.005896); 
+    inicializarMapa(-2.900128, -79.005896);
 };
 
 window.abrirModalEditarJob = async (id) => {
@@ -365,15 +422,15 @@ window.abrirModalEditarJob = async (id) => {
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
-    
+
     try {
-        Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
         const response = await fetch(`${API_URL}/find-id/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` } });
 
-        if(response.ok) {
+        if (response.ok) {
             const data = await response.json();
-            
+
             document.getElementById('jobClientName').value = data.clientName;
             document.getElementById('jobClientPhone').value = data.clientPhone;
             document.getElementById('jobDesc').value = data.description;
@@ -384,10 +441,10 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobSafeBox').value = data.safeDepositBoxCodes || '';
             document.getElementById('jobPay').value = data.pay;
             document.getElementById('jobStatus').value = data.status || 'PENDING';
-            
+
             document.getElementById('jobEmployee').value = data.employeeId;
 
-            if(data.materials && data.materials.length > 0) {
+            if (data.materials && data.materials.length > 0) {
                 const checkboxes = document.querySelectorAll('input[name="jobMaterials"]');
                 checkboxes.forEach(cb => {
                     cb.checked = data.materials.some(m => m.materialId == cb.value);
@@ -398,9 +455,9 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('modalJob').style.display = 'flex';
             inicializarMapa(data.latitude, data.longitude);
         }
-    } catch(error) { 
+    } catch (error) {
         Swal.close();
-        console.error("Error al obtener trabajo:", error); 
+        console.error("Error al obtener trabajo:", error);
     }
 };
 
@@ -411,7 +468,7 @@ window.cerrarModalJob = () => {
 window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
-    
+
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
 
@@ -428,16 +485,16 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: myManagerId, // <--- MAGIA: ASIGNAMOS EL ID DEL JEFE AUTOMÁTICAMENTE
-        materialIds: selectedMaterials 
+        materialIds: selectedMaterials
     };
-    
+
     // Eliminamos managerId de la validación porque ya lo estamos asignando arriba
-    if(!payload.clientName || !payload.employeeId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
+    if (!payload.clientName || !payload.employeeId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire('Error', 'Por favor llena todos los campos obligatorios, incluyendo la fecha.', 'error');
     }
 
-    Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-    
+    Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -451,7 +508,7 @@ window.guardarTrabajo = async () => {
         if (response.ok) {
             Swal.fire('¡Éxito!', isEditing ? 'Trabajo actualizado.' : 'Trabajo asignado correctamente.', 'success');
             cerrarModalJob();
-            await cargarTrabajos(); 
+            await cargarTrabajos();
         } else {
             let errorMsg = 'No se pudo guardar el trabajo.';
             try {
@@ -461,7 +518,7 @@ window.guardarTrabajo = async () => {
                 } else if (errorData && errorData.message) {
                     errorMsg = errorData.message;
                 }
-            } catch(e) {}
+            } catch (e) { }
             Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
         }
     } catch (error) {
@@ -482,22 +539,22 @@ window.eliminarTrabajo = async (id) => {
         cancelButtonText: 'Cancelar'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             try {
                 const res = await fetch(`${API_URL}/delete-job/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${userToken}` }
                 });
-                
-                if(res.ok) {
+
+                if (res.ok) {
                     Swal.fire('¡Eliminado!', 'El trabajo fue eliminado.', 'success');
                     await cargarTrabajos();
                 } else {
                     Swal.fire('Error', 'No se pudo eliminar el trabajo.', 'error');
                 }
-            } catch(e) { 
-                console.error(e); 
+            } catch (e) {
+                console.error(e);
                 Swal.fire('Error', 'Fallo de red', 'error');
             }
         }
