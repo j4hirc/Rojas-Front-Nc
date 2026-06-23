@@ -431,11 +431,14 @@ window.exportarNominaSemanalAPdf = async () => {
             windowWidth: 750,
             scrollX: 0,
             scrollY: 0,
-            onclone: (doc, el) => {
+            onclone: (doc) => {
+                const el = doc.getElementById('nomina-contenedor-admin');
+                if (el){
                 el.style.visibility = 'visible';
                 el.style.top = '0';
                 el.style.left = '0';
                 el.style.zIndex = '1';
+                }   
             }
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
