@@ -279,30 +279,33 @@ function renderizarNomina(offset) {
     const strFin = formatD(finSemana);
 
     let htmlContent = `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
-            
-            <button onclick="cambiarSemana(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-chevron-left"></i> Anterior
-            </button>
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+        
+        <button onclick="cambiarSemana(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-chevron-left"></i> Anterior
+        </button>
 
-            <div style="text-align: center;">
-                <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Semana del</span>
-                <span style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
-            </div>
-
-            <button onclick="cambiarSemana(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
-                Siguiente <i class="fa-solid fa-chevron-right"></i>
-            </button>
+        <div style="text-align: center;">
+            <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Semana del</span>
+            <span id="lblRangoNomina" style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
         </div>
 
-        <div style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                
-                <tr style="background-color: #0F2D4A; color: #FFFFFF; position: sticky; top: 0; z-index: 10;">
-                    <th style="padding: 15px; font-weight: 700;">Subcontratista a tu cargo</th>
-                    <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
-                </tr>
-    `;
+        <button type="button" onclick="exportarNominaJefePdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar a PDF">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+        </button>
+
+        <button onclick="cambiarSemana(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+            Siguiente <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <div id="tabla-nomina-jefe" style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <tr style="background-color: #0F2D4A; color: #FFFFFF; position: sticky; top: 0; z-index: 10;">
+                <th style="padding: 15px; font-weight: 700;">Subcontratista a tu cargo</th>
+                <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
+            </tr>
+`;
 
     let totalNomina = 0;
     let hayDatos = false;
@@ -335,4 +338,111 @@ function renderizarNomina(offset) {
     if (contenedor) {
         contenedor.innerHTML = htmlContent;
     }
+
+    window.exportarNominaJefePdf = async () => {
+    const lblRango = document.getElementById('lblRangoNomina');
+    const textoRango = lblRango ? lblRango.textContent.trim() : 'Reporte_Nomina';
+    const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
+
+    const tablaElemento = document.getElementById('tabla-nomina-jefe');
+    if (!tablaElemento) {
+        return Swal.fire('Error', 'No se encontraron registros para exportar.', 'error');
+    }
+
+    const nombreJefe = miUsuarioActual ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}` : 'Jefe';
+
+    const contenedorImpresion = document.createElement('div');
+    contenedorImpresion.id = 'contenedor-nomina-jefe-pdf';
+    contenedorImpresion.style.cssText = `
+        padding: 30px 40px;
+        background: #ffffff;
+        font-family: 'Poppins', sans-serif;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 750px;
+        z-index: -9999;
+        visibility: hidden;
+    `;
+
+    contenedorImpresion.innerHTML = `
+        <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <img src="../img/logo.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;">
+                <div>
+                    <h1 style="color: #0B0B0D; margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">NÓMINA SEMANAL</h1>
+                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Jefe: ${nombreJefe}</p>
+                </div>
+            </div>
+            <div style="text-align: right; color: #2E3238;">
+                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período:</p>
+                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango}</p>
+            </div>
+        </div>
+        <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
+            ${tablaElemento.innerHTML}
+        </div>
+        <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
+            Reporte generado automáticamente por el Portal RemoMN.
+        </div>
+    `;
+
+    document.body.appendChild(contenedorImpresion);
+    await new Promise(r => setTimeout(r, 300));
+
+    Swal.fire({
+        title: 'Generando PDF...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    const opt = {
+        margin: [12, 12, 12, 12],
+        filename: `Nomina_${nombreArchivoClean}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            windowWidth: 750,
+            scrollX: 0,
+            scrollY: 0,
+            onclone: (doc) => {
+                const el = doc.getElementById('contenedor-nomina-jefe-pdf');
+                if (el) {
+                    el.style.visibility = 'visible';
+                    el.style.top = '0';
+                    el.style.left = '0';
+                    el.style.zIndex = '1';
+                }
+            }
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' }
+    };
+
+    try {
+        const pdfBlob = await html2pdf().set(opt).from(contenedorImpresion).output('blob');
+
+        // Base64 para evitar blob URL en Safari
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const base64 = reader.result;
+            const link = document.createElement('a');
+            link.href = base64;
+            link.download = `Nomina_${nombreArchivoClean}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            Swal.close();
+        };
+        reader.readAsDataURL(pdfBlob);
+
+    } catch (err) {
+        console.error('Error exportando PDF:', err);
+        Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
+    } finally {
+        document.body.removeChild(contenedorImpresion);
+    }
+};
 }
