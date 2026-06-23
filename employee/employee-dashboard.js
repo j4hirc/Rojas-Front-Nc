@@ -480,16 +480,34 @@ window.guardarReporteYPdf = async () => {
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
     document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF}`;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
-    // Obtenemos la fecha exacta del día de hoy para el PDF
+    
+    // NUEVO: Inyectamos la instrucción original del jefe
+    document.getElementById('pdfOriginalDesc').textContent = currentJobInfo.description || 'Sin instrucciones originales';
+
     const hoy = new Date();
     const fechaActual = `${String(hoy.getDate()).padStart(2, '0')}/${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
     document.getElementById('pdfDate').textContent = fechaActual; 
+    
+    // NUEVO: Capturamos el texto de las cajas/códigos
+    const matQuantityInfo = document.getElementById('evMatQuantity').value.trim();
+    
+    // Si el empleado puso cantidades, lo agregamos al comentario para que se guarde en la Base de Datos
+    if (matQuantityInfo) {
+        comment = `📦 [CANTIDADES REPORTADAS]: ${matQuantityInfo}\n\n` + comment;
+    }
+    
     document.getElementById('pdfComment').textContent = comment;
 
-    if (selectedMaterialNames) {
-        document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames;
+    // Juntamos los checks de materiales con el texto de cantidades para el PDF
+    let materialesHTML = selectedMaterialNames;
+    if (matQuantityInfo) {
+        materialesHTML += `<li style="margin-top: 6px; color: #0F2D4A;"><strong>Cantidades / Códigos:</strong> ${matQuantityInfo}</li>`;
+    }
+
+    if (materialesHTML) {
+        document.getElementById('pdfMaterials').innerHTML = materialesHTML;
     } else {
-        document.getElementById('pdfMaterials').innerHTML = '<li>No se reportaron materiales adicionales.</li>';
+        document.getElementById('pdfMaterials').innerHTML = '<li>No se reportaron materiales ni cantidades adicionales.</li>';
     }
     
     document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
