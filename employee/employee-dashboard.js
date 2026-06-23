@@ -584,7 +584,7 @@ window.guardarReporteYPdf = async () => {
 
     await new Promise(r => setTimeout(r, 300));
 
-    const element = document.getElementById('pdfTemplate');
+    const element = document.getElementById('pdfWrapper');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
     const opt = {
@@ -603,19 +603,21 @@ window.guardarReporteYPdf = async () => {
                 const template = doc.getElementById('pdfTemplate');
                 if (wrapper) {
                     wrapper.style.cssText = `
-                        display: block;
-                        position: relative;
-                        top: 0;
-                        left: 0;
-                        width: 750px;
-                        margin: 0;
-                        padding: 0;
-                        visibility: visible;
-                    `;
+            display: block !important;
+            position: relative !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 750px;
+            margin: 0;
+            padding: 0;
+            visibility: visible !important;
+            overflow: visible !important;
+        `;
                 }
                 if (template) {
                     template.style.marginTop = '0';
                     template.style.paddingTop = '10px';
+                    template.style.width = '100%';
                 }
             }
         },
