@@ -59,10 +59,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ==================================================
     const inputLat = document.getElementById('jobLat');
     const inputLng = document.getElementById('jobLng');
+    const inputDireccion = document.getElementById('jobAddress'); // Campo de texto libre
 
     if (inputLat && inputLng) {
         inputLat.addEventListener('input', window.actualizarMapaDesdeInputs);
         inputLng.addEventListener('input', window.actualizarMapaDesdeInputs);
+    }
+
+    if (inputDireccion) {
+        // Ejecuta la búsqueda cuando el usuario cambia de input o presiona Enter
+        inputDireccion.addEventListener('change', window.actualizarMapaDesdeDireccion);
     }
     // ==================================================
 
@@ -75,22 +81,39 @@ function inicializarMapa(lat, lng) {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
         marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
         
+        // Instanciamos el geocodificador para traducir coordenadas <-> texto
+        const geocoder = L.Control.Geocoder.nominatim();
+
+        // Función interna para obtener la dirección mediante coordenadas (Reverse Geocoding)
+        function obtenerDireccion(latlng) {
+            geocoder.reverse(latlng, mapa.options.crs.scale(mapa.getZoom()), results => {
+                if (results && results.length > 0) {
+                    // Coloca la dirección en formato texto en el campo correspondiente
+                    document.getElementById('jobAddress').value = results[0].name;
+                }
+            });
+        }
+        
+        // Al terminar de arrastrar el marcador
         marcador.on('dragend', function (e) {
             const posicion = marcador.getLatLng();
             document.getElementById('jobLat').value = posicion.lat.toFixed(6);
             document.getElementById('jobLng').value = posicion.lng.toFixed(6);
+            obtenerDireccion(posicion); // <--- Llena el campo de dirección de texto
         });
+
+        // Al hacer clic en cualquier parte del mapa
         mapa.on('click', function(e) {
             marcador.setLatLng(e.latlng);
             document.getElementById('jobLat').value = e.latlng.lat.toFixed(6);
             document.getElementById('jobLng').value = e.latlng.lng.toFixed(6);
+            obtenerDireccion(e.latlng); // <--- Llena el campo de dirección de texto
         });
     } else {
         mapa.setView([lat, lng], 14);
         marcador.setLatLng([lat, lng]);
     }
 
-    // AJUSTE AQUÍ: Solo rellena el input si no contiene un valor digitado previamente
     if (!document.getElementById('jobLat').value) document.getElementById('jobLat').value = lat.toFixed(6);
     if (!document.getElementById('jobLng').value) document.getElementById('jobLng').value = lng.toFixed(6);
     
@@ -109,6 +132,47 @@ window.actualizarMapaDesdeInputs = () => {
             mapa.panTo([latVal, lngVal]); // Desplaza suavemente el mapa hacia la ubicación copiada/escrita
         }
     }
+};
+
+// Función para buscar en el mapa la dirección o coordenadas escritas a mano
+window.actualizarMapaDesdeDireccion = () => {
+    const direccionEscrita = document.getElementById('jobAddress').value.trim();
+    if (!direccionEscrita) return;
+
+    // 1. Validar si lo que escribió son coordenadas directamente (ej: "-2.900, -79.005")
+    const regexCoordenadas = /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
+    if (regexCoordenadas.test(direccionEscrita)) {
+        const partes = direccionEscrita.split(',');
+        const latVal = parseFloat(partes[0]);
+        const lngVal = parseFloat(partes[1]);
+        
+        if (mapa && marcador) {
+            document.getElementById('jobLat').value = latVal.toFixed(6);
+            document.getElementById('jobLng').value = lngVal.toFixed(6);
+            marcador.setLatLng([latVal, lngVal]);
+            mapa.setView([latVal, lngVal], 16);
+        }
+        return;
+    }
+
+    // 2. Si es texto normal, usamos el buscador (Forward Geocoding)
+    const geocoder = L.Control.Geocoder.nominatim();
+    geocoder.geocode(direccionEscrita, results => {
+        if (results && results.length > 0) {
+            const match = results[0];
+            const latlng = match.center;
+
+            // Actualizamos inputs de lat y lng numéricos
+            document.getElementById('jobLat').value = latlng.lat.toFixed(6);
+            document.getElementById('jobLng').value = latlng.lng.toFixed(6);
+
+            // Movemos el mapa y el marcador al lugar encontrado
+            if (mapa && marcador) {
+                marcador.setLatLng(latlng);
+                mapa.setView(latlng, 16);
+            }
+        }
+    });
 };
 
 window.obtenerMiUbicacion = () => {
