@@ -569,22 +569,22 @@ window.guardarReporteYPdf = async () => {
     document.getElementById('pdfSignatureSubImg').src = canvasSub.toDataURL("image/png");
     document.getElementById('pdfSignatureCliImg').src = canvasCli.toDataURL("image/png");
 
-    const pdfWrapper = document.getElementById('pdfWrapper');
 
-    // Lo ponemos visible pero fuera de pantalla para que html2canvas lo capture bien
-    pdfWrapper.style.cssText = `
-        display: block;
-        position: fixed;
-        top: -9999px;
-        left: -9999px;
-        width: 750px;
-        visibility: visible;
-        z-index: -1;
-    `;
+    const pdfWrapper = document.getElementById('pdfWrapper');
+    const pdfTemplate = document.getElementById('pdfTemplate');
+
+    // Hacemos visible el template directamente, sin wrapper
+    pdfWrapper.style.display = 'block';
+    pdfWrapper.style.position = 'absolute';
+    pdfWrapper.style.top = '0';
+    pdfWrapper.style.left = '0';
+    pdfWrapper.style.width = '750px';
+    pdfWrapper.style.zIndex = '-9999';
+    pdfWrapper.style.visibility = 'hidden';
 
     await new Promise(r => setTimeout(r, 300));
 
-    const element = document.getElementById('pdfWrapper');
+    const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
     const opt = {
@@ -600,24 +600,26 @@ window.guardarReporteYPdf = async () => {
             scrollY: 0,
             onclone: (doc) => {
                 const wrapper = doc.getElementById('pdfWrapper');
-                const template = doc.getElementById('pdfTemplate');
+                const tmpl = doc.getElementById('pdfTemplate');
                 if (wrapper) {
-                    wrapper.style.cssText = `
-            display: block !important;
-            position: relative !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 750px;
-            margin: 0;
-            padding: 0;
-            visibility: visible !important;
-            overflow: visible !important;
-        `;
+                    wrapper.style.display = 'block';
+                    wrapper.style.position = 'static';
+                    wrapper.style.top = 'auto';
+                    wrapper.style.left = 'auto';
+                    wrapper.style.width = '750px';
+                    wrapper.style.zIndex = 'auto';
+                    wrapper.style.visibility = 'visible';
+                    wrapper.style.overflow = 'visible';
+                    wrapper.style.height = 'auto';
+                    wrapper.style.margin = '0';
+                    wrapper.style.padding = '0';
                 }
-                if (template) {
-                    template.style.marginTop = '0';
-                    template.style.paddingTop = '10px';
-                    template.style.width = '100%';
+                if (tmpl) {
+                    tmpl.style.marginTop = '0';
+                    tmpl.style.paddingTop = '10px';
+                    tmpl.style.width = '750px';
+                    tmpl.style.height = 'auto';
+                    tmpl.style.overflow = 'visible';
                 }
             }
         },
@@ -630,12 +632,11 @@ window.guardarReporteYPdf = async () => {
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
     } catch (e) {
         console.error("Error al generar PDF:", e);
-        pdfWrapper.style.cssText = 'display: none;';
-        return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF en tu navegador.', confirmButtonColor: '#00B8A9' });
+        pdfWrapper.style.display = 'none';
+        return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF.', confirmButtonColor: '#00B8A9' });
     }
 
-    // Ocultamos completamente después de capturar
-    pdfWrapper.style.cssText = 'display: none;';
+    pdfWrapper.style.display = 'none';
 
 
     const dtoObject = {
