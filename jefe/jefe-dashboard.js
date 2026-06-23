@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             confirmButtonColor: '#12CFF4',
             allowOutsideClick: false
         }).then(() => {
-            window.location.href = '../index.html'; 
+            window.location.href = '../index.html';
         });
         return;
     }
@@ -25,12 +25,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         const response = await fetch(`${USERS_URL}/all-users`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (response.ok) {
             const users = await response.json();
             const emailLimpio = userEmail.replace(/['"]/g, '').trim().toLowerCase();
             miUsuarioActual = users.find(u => u.email && u.email.trim().toLowerCase() === emailLimpio);
-            
+
             if (miUsuarioActual) {
                 document.getElementById('jefe-email-display').textContent = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`;
             } else {
@@ -60,13 +60,13 @@ function abrirModalPerfil() {
     if (!miUsuarioActual) {
         return Swal.fire('Error', 'Cargando datos, por favor espera un momento o refresca la página.', 'error');
     }
-    
+
     document.getElementById('perfilFirstName').value = miUsuarioActual.firstName || '';
     document.getElementById('perfilLastName').value = miUsuarioActual.lastName || '';
     document.getElementById('perfilDni').value = miUsuarioActual.dni || '';
     document.getElementById('perfilPhone').value = miUsuarioActual.phone || '';
     document.getElementById('perfilEmail').value = miUsuarioActual.email || '';
-    document.getElementById('perfilPassword').value = ''; 
+    document.getElementById('perfilPassword').value = '';
     document.getElementById('modalPerfil').style.display = 'flex';
 }
 
@@ -81,16 +81,16 @@ async function guardarPerfil() {
         dni: document.getElementById('perfilDni').value.trim(),
         phone: document.getElementById('perfilPhone').value.trim(),
         email: document.getElementById('perfilEmail').value.trim(),
-        password: document.getElementById('perfilPassword').value, 
-        dateOfBirth: miUsuarioActual.dateOfBirth, 
-        title: miUsuarioActual.title || "Jefe"    
+        password: document.getElementById('perfilPassword').value,
+        dateOfBirth: miUsuarioActual.dateOfBirth,
+        title: miUsuarioActual.title || "Jefe"
     };
 
-    if(!payload.firstName || !payload.lastName || !payload.dni || !payload.phone || !payload.email) {
+    if (!payload.firstName || !payload.lastName || !payload.dni || !payload.phone || !payload.email) {
         return Swal.fire('Atención', 'Por favor llena todos los campos obligatorios.', 'warning');
     }
 
-    Swal.fire({ title: 'Actualizando tu perfil...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Actualizando tu perfil...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     try {
         const token = localStorage.getItem('jwt_token');
@@ -101,8 +101,8 @@ async function guardarPerfil() {
         });
 
         if (response.ok) {
-            const updatedUser = await response.json(); 
-            miUsuarioActual = updatedUser; 
+            const updatedUser = await response.json();
+            miUsuarioActual = updatedUser;
             document.getElementById('jefe-email-display').textContent = `${updatedUser.firstName} ${updatedUser.lastName}`;
             cerrarModalPerfil();
             Swal.fire({ icon: 'success', title: '¡Perfil Actualizado!', confirmButtonColor: '#12CFF4', timer: 2000, showConfirmButton: false });
@@ -112,7 +112,7 @@ async function guardarPerfil() {
                 const errorData = await response.json();
                 if (errorData && typeof errorData === 'object') errorMsg = Object.values(errorData).join('<br>');
                 else if (errorData && errorData.message) errorMsg = errorData.message;
-            } catch (e) {}
+            } catch (e) { }
             Swal.fire({ icon: 'error', title: 'Error', html: errorMsg, confirmButtonColor: '#12CFF4' });
         }
     } catch (error) { Swal.fire({ icon: 'error', title: 'Error de red', text: 'No se pudo contactar al servidor.', confirmButtonColor: '#12CFF4' }); }
@@ -138,13 +138,13 @@ function cerrarSesion() {
 
 // --- RESUMEN DE BODEGA ---
 window.verBodegaHoy = async () => {
-    Swal.fire({ title: 'Calculando materiales...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Calculando materiales...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
     try {
         const token = localStorage.getItem('jwt_token');
         const JOBS_URL = 'https://api-remomn.onrender.com/api/v1/jobs/all';
         const response = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${token}` } });
         const jobs = await response.json();
-        
+
         const hoy = new Date();
         const strHoy = hoy.toISOString().split('T')[0];
         const manana = new Date(hoy);
@@ -157,10 +157,10 @@ window.verBodegaHoy = async () => {
         jobs.forEach(job => {
             const jobManagerName = (job.nameManager || "").trim().toLowerCase();
             const esDeEsteJefe = (jobManagerName === jefeNombreCompleto) || (job.managerId == miUsuarioActual.userId);
-            
-            if (!esDeEsteJefe) return; 
 
-            let jobDateStr = Array.isArray(job.jobDate) ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2,'0')}-${String(job.jobDate[2]).padStart(2,'0')}` : job.jobDate;
+            if (!esDeEsteJefe) return;
+
+            let jobDateStr = Array.isArray(job.jobDate) ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}` : job.jobDate;
             if ((jobDateStr === strHoy || jobDateStr === strManana) && (job.status === 'PENDING' || job.status === 'IN_PROGRESS')) {
                 if (job.materials && job.materials.length > 0) {
                     job.materials.forEach(mat => {
@@ -171,10 +171,10 @@ window.verBodegaHoy = async () => {
         });
 
         let htmlContent = '<ul style="text-align: left; font-size: 14px; color: #444; background: #f8faff; padding: 15px 30px; border-radius: 8px;">';
-        if(Object.keys(materialesRequeridos).length === 0) {
+        if (Object.keys(materialesRequeridos).length === 0) {
             htmlContent += '<li>No tienes materiales agendados para obras de hoy o mañana.</li>';
         } else {
-            for(let mat in materialesRequeridos) {
+            for (let mat in materialesRequeridos) {
                 htmlContent += `<li style="margin-bottom: 5px;"><strong>${mat}</strong> (Requerido en ${materialesRequeridos[mat]} de tus obras)</li>`;
             }
         }
@@ -195,10 +195,10 @@ window.verBodegaHoy = async () => {
 // =================================================================================
 let nominasJobsCache = null;
 let nominasUsersCache = null;
-let semanaOffset = 0; 
+let semanaOffset = 0;
 
 window.verNominaSemanal = async () => {
-    Swal.fire({ title: 'Obteniendo registros...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Obteniendo registros...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
     try {
         const token = localStorage.getItem('jwt_token');
 
@@ -227,7 +227,7 @@ window.verNominaSemanal = async () => {
 
     } catch (e) {
         console.error(e);
-        Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo calcular la nómina. Revisa tu conexión.', confirmButtonColor: '#12CFF4'});
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo calcular la nómina. Revisa tu conexión.', confirmButtonColor: '#12CFF4' });
     }
 };
 
@@ -241,16 +241,16 @@ window.cambiarSemana = (delta) => {
 // Función que inyecta el HTML en la caja sin recargar el Modal
 function renderizarNomina(offset) {
     const hoy = new Date();
-    hoy.setDate(hoy.getDate() + (offset * 7)); 
+    hoy.setDate(hoy.getDate() + (offset * 7));
 
-    const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1; 
+    const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
     const inicioSemana = new Date(hoy);
     inicioSemana.setDate(hoy.getDate() - diaSemana);
-    inicioSemana.setHours(0,0,0,0);
+    inicioSemana.setHours(0, 0, 0, 0);
 
     const finSemana = new Date(inicioSemana);
     finSemana.setDate(inicioSemana.getDate() + 6);
-    finSemana.setHours(23,59,59,999);
+    finSemana.setHours(23, 59, 59, 999);
 
     const jefeNombreCompleto = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase();
     let nominas = {};
@@ -261,11 +261,11 @@ function renderizarNomina(offset) {
 
         if (esDeEsteJefe && job.status === 'COMPLETED' && job.employeeId) {
             let jobDateStr = Array.isArray(job.jobDate)
-                ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2,'0')}-${String(job.jobDate[2]).padStart(2,'0')}`
+                ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
                 : job.jobDate;
 
             const jobDate = new Date(jobDateStr);
-            jobDate.setHours(12,0,0,0);
+            jobDate.setHours(12, 0, 0, 0);
 
             if (jobDate >= inicioSemana && jobDate <= finSemana) {
                 if (!nominas[job.employeeId]) nominas[job.employeeId] = 0;
@@ -274,7 +274,7 @@ function renderizarNomina(offset) {
         }
     });
 
-    const formatD = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth() + 1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+    const formatD = (d) => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
     const strInicio = formatD(inicioSemana);
     const strFin = formatD(finSemana);
 
@@ -323,7 +323,7 @@ function renderizarNomina(offset) {
         </tr>`;
     }
 
-    if(!hayDatos) {
+    if (!hayDatos) {
         htmlContent += '<tr><td colspan="2" style="padding: 15px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por tu personal en esta semana.</td></tr>';
     } else {
         htmlContent += `<tr style="background-color: #f8faff;">
@@ -339,18 +339,20 @@ function renderizarNomina(offset) {
         contenedor.innerHTML = htmlContent;
     }
 
-    window.exportarNominaSemanalAPdf = async () => {
-    const lblRango = document.getElementById('lblRangoSemanas');
-    const textoRango = lblRango ? lblRango.textContent.trim() : "Reporte_Nomina";
+    window.exportarNominaJefePdf = async () => {
+    const lblRango = document.getElementById('lblRangoNomina');
+    const textoRango = lblRango ? lblRango.textContent.trim() : 'Reporte_Nomina';
     const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
 
-    const tablaElemento = document.getElementById('tabla-exportar-pdf-container');
+    const tablaElemento = document.getElementById('tabla-nomina-jefe');
     if (!tablaElemento) {
-        return Swal.fire('Error', 'No se encontraron registros renderizados para procesar el archivo.', 'error');
+        return Swal.fire('Error', 'No se encontraron registros para exportar.', 'error');
     }
 
+    const nombreJefe = miUsuarioActual ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}` : 'Jefe';
+
     const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.id = 'contenedor-nomina-admin-pdf';
+    contenedorImpresion.id = 'contenedor-nomina-jefe-pdf';
     contenedorImpresion.style.cssText = `
         padding: 30px 40px;
         background: #ffffff;
@@ -366,24 +368,22 @@ function renderizarNomina(offset) {
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="../logo.jpeg" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;" onerror="this.src='../../logo.jpeg'">
+                <img src="../img/logo.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;">
                 <div>
-                    <h1 style="color: #0B0B0D; margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase;">REPORTE DE NÓMINA GENERAL</h1>
-                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Plataforma RemoMN — Área de Administración</p>
+                    <h1 style="color: #0B0B0D; margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">NÓMINA SEMANAL</h1>
+                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Jefe: ${nombreJefe}</p>
                 </div>
             </div>
             <div style="text-align: right; color: #2E3238;">
-                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período Reportado:</p>
+                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período:</p>
                 <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango}</p>
             </div>
         </div>
-        <div style="margin-top: 20px;">
-            <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
-                ${tablaElemento.innerHTML}
-            </div>
+        <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
+            ${tablaElemento.innerHTML}
         </div>
         <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
-            Este documento es un reporte financiero confidencial generado automáticamente por el Panel de Administración de RemoMN.
+            Reporte generado automáticamente por el Portal RemoMN.
         </div>
     `;
 
@@ -391,15 +391,14 @@ function renderizarNomina(offset) {
     await new Promise(r => setTimeout(r, 300));
 
     Swal.fire({
-        title: 'Generando archivo PDF...',
-        text: 'Preparando desglose financiero de la semana.',
+        title: 'Generando PDF...',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
 
-    const opcionesConfiguracion = {
+    const opt = {
         margin: [12, 12, 12, 12],
-        filename: `Nomina_Semanal_${nombreArchivoClean}.pdf`,
+        filename: `Nomina_${nombreArchivoClean}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
             scale: 2,
@@ -409,7 +408,7 @@ function renderizarNomina(offset) {
             scrollX: 0,
             scrollY: 0,
             onclone: (doc) => {
-                const el = doc.getElementById('contenedor-nomina-admin-pdf');
+                const el = doc.getElementById('contenedor-nomina-jefe-pdf');
                 if (el) {
                     el.style.visibility = 'visible';
                     el.style.top = '0';
@@ -423,20 +422,18 @@ function renderizarNomina(offset) {
     };
 
     try {
-        const pdfBlob = await html2pdf().set(opcionesConfiguracion).from(contenedorImpresion).output('blob');
+        const pdfBlob = await html2pdf().set(opt).from(contenedorImpresion).output('blob');
         const esIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
         const reader = new FileReader();
         reader.onloadend = () => {
             if (esIOS) {
-                // En iOS abrimos en nueva pestaña
                 Swal.close();
                 window.open(reader.result, '_blank');
             } else {
-                // En Android y PC descargamos normalmente
                 const link = document.createElement('a');
                 link.href = reader.result;
-                link.download = `Nomina_Semanal_${nombreArchivoClean}.pdf`;
+                link.download = `Nomina_${nombreArchivoClean}.pdf`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -446,8 +443,8 @@ function renderizarNomina(offset) {
         reader.readAsDataURL(pdfBlob);
 
     } catch (err) {
-        console.error("Fallo al exportar reporte PDF:", err);
-        Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
+        console.error('Error exportando PDF:', err);
+        Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
     } finally {
         document.body.removeChild(contenedorImpresion);
     }
