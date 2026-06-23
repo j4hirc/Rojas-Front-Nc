@@ -376,7 +376,13 @@ function renderizarTrabajos(trabajos) {
             <td>${statusBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
-                <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                ${job.status !== 'COMPLETED' && job.status !== 'CANCELLED' ? `
+    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+` : `
+    <button title="Trabajo finalizado" disabled style="background: #f0f0f0; color: #bbb; border: none; padding: 6px 10px; border-radius: 6px; cursor: not-allowed; font-size: 13px;">
+        <i class="fa-solid fa-lock"></i>
+    </button>
+`}
                 <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
             </td>
         `;
@@ -415,7 +421,15 @@ function renderizarTrabajos(trabajos) {
                     <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border-radius: 8px; background: #E8F5E9; color: #198754; border: none; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; font-size: 13px;">
                         <i class="fa-solid fa-map-location-dot"></i> Ruta
                     </a>
-                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;"><i class="fa-solid fa-pen"></i> Editar</button>
+                    ${job.status !== 'COMPLETED' && job.status !== 'CANCELLED' ? `
+    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;">
+        <i class="fa-solid fa-pen"></i> Editar
+    </button>
+` : `
+    <button disabled style="flex: 1; padding: 8px; border-radius: 8px; background: #f0f0f0; color: #bbb; border: none; font-weight: bold; cursor: not-allowed; font-size: 13px;">
+        <i class="fa-solid fa-lock"></i> Bloqueado
+    </button>
+`}
                     <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer; font-size: 13px;"><i class="fa-solid fa-trash"></i> Eliminar</button>
                 </div>
             `;
