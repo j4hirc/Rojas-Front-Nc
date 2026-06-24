@@ -617,16 +617,44 @@ window.guardarReporteYPdf = async () => {
 
     // Simplificamos la configuración y quitamos el onclone que daba fallos
     const opt = {
-        margin: [10, 10, 10, 10], // Un margen más seguro para que no se corte
+        margin: [5, 8, 5, 8],
         filename: pdfFileName,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
             scale: 2,
             useCORS: true,
             logging: false,
-            letterRendering: true
+            windowWidth: 750, 
+            width: 750, // <--- NUEVO: Obliga a capturar 750px sin importar el tamaño del celular
+            scrollX: 0,
+            scrollY: 0,
+            onclone: (doc) => {
+                const wrapper = doc.getElementById('pdfWrapper');
+                const tmpl = doc.getElementById('pdfTemplate');
+                if (wrapper) {
+                    wrapper.style.display = 'block';
+                    wrapper.style.position = 'static';
+                    wrapper.style.top = 'auto';
+                    wrapper.style.left = 'auto';
+                    wrapper.style.width = '750px';
+                    wrapper.style.zIndex = 'auto';
+                    wrapper.style.visibility = 'visible';
+                    wrapper.style.overflow = 'visible';
+                    wrapper.style.height = 'auto';
+                    wrapper.style.margin = '0';
+                    wrapper.style.padding = '0';
+                }
+                if (tmpl) {
+                    tmpl.style.marginTop = '0';
+                    tmpl.style.paddingTop = '10px';
+                    tmpl.style.width = '750px';
+                    tmpl.style.height = 'auto';
+                    tmpl.style.overflow = 'visible';
+                }
+            }
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: 'avoid-all' }
     };
 
     let pdfBlob;
