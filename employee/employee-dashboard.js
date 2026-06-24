@@ -148,6 +148,49 @@ async function cargarCalendarioEmpleado(emailActual) {
                        </div>`
                     : ``;
 
+                // --- DISEÑO LIMPIO PARA NOTAS Y MATERIALES ---
+                let notasHtml = '';
+                const descCompleta = p.description || '';
+
+                if (descCompleta.includes('[MATERIALES PRE-ASIGNADOS]:')) {
+                    const partes = descCompleta.split('[MATERIALES PRE-ASIGNADOS]:');
+                    const notasBase = partes[0].trim();
+                    const materialesTexto = partes[1].trim();
+
+                    const listaMateriales = materialesTexto.split('\n')
+                        .filter(linea => linea.trim() !== '')
+                        .map(linea => `
+                            <li style="margin-bottom: 8px; font-size: 13px; color: #2B3674; list-style: none; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-circle-check" style="color:#00B8A9; font-size: 14px;"></i> 
+                                <span>${linea.replace('•', '').trim()}</span>
+                            </li>
+                        `).join('');
+
+                    notasHtml = `
+                        <div style="margin-top: 20px; text-align: left;">
+                            <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #111C44; border-bottom: 2px solid #F4F7FE; padding-bottom: 5px;">
+                                <i class="fa-regular fa-comments" style="color:#00B8A9; margin-right: 5px;"></i> Instrucciones
+                            </h4>
+                            <p style="margin: 0 0 15px 0; font-size: 13px; color: #4A5568; white-space: pre-wrap; padding-left: 5px;">${notasBase || 'Sin notas especiales.'}</p>
+
+                            <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #111C44; border-bottom: 2px solid #F4F7FE; padding-bottom: 5px;">
+                                <i class="fa-solid fa-boxes-packing" style="color:#00B8A9; margin-right: 5px;"></i> Materiales a llevar
+                            </h4>
+                            <ul style="margin: 0; padding: 0 0 0 5px;">
+                                ${listaMateriales}
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    notasHtml = `
+                        <div style="margin-top: 15px; padding: 12px; background: #F8FAFC; border-radius: 8px; border-left: 3px solid #00B8A9; text-align: left;">
+                            <strong style="font-size: 13px; color: #111C44;">Notas de Trabajo:</strong>
+                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #A3AED0; font-style: italic; white-space: pre-wrap;">"${descCompleta || 'Sin notas especiales'}"</p>
+                        </div>
+                    `;
+                }
+                // ---------------------------------------------
+
                 Swal.fire({
                     title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
                     html: `
@@ -178,14 +221,11 @@ async function cargarCalendarioEmpleado(emailActual) {
                                 <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${parseFloat(p.pay || 0).toFixed(2)}
                             </p>
 
-                            <div style="margin-top: 15px; padding: 12px; background: #F8FAFC; border-radius: 8px; border-left: 3px solid #00B8A9;">
-                                <strong style="font-size: 13px; color: #111C44;">Notas de Trabajo:</strong>
-                                <p style="margin: 5px 0 0 0; font-size: 13px; color: #A3AED0; font-style: italic;">"${p.description || 'Sin notas especiales'}"</p>
-                            </div>
+                            ${notasHtml}
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://maps.google.com/?q=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;" onmouseover="this.style.background='#00B8A9'" onmouseout="this.style.background='#111C44'">
+                                <a href="https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;" onmouseover="this.style.background='#00B8A9'" onmouseout="this.style.background='#111C44'">
                                     <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
                                 </a>
                             </div>

@@ -303,13 +303,20 @@ async function cargarUsuariosYMateriales(emailActual) {
                 containerMat.innerHTML = '<span style="color:#666;">No hay materiales en inventario.</span>';
             } else {
                 materials.forEach(mat => {
-                    containerMat.innerHTML += `
-                        <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2b3674; font-size: 14px;">
-                            <input type="checkbox" name="jobMaterials" value="${mat.materialId}"> 
-                            ${mat.name} 
-                        </label>
-                    `;
-                });
+    containerMat.innerHTML += `
+        <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
+                <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" onchange="document.getElementById('opts_${mat.materialId}').style.display = this.checked ? 'flex' : 'none'">
+                ${mat.name}
+            </label>
+            
+            <div id="opts_${mat.materialId}" style="display: none; gap: 10px; margin-top: 8px; margin-left: 24px;">
+                <input type="number" id="qty_${mat.materialId}" placeholder="Cant." class="input-field" style="width: 75px; padding: 5px; border: 1px solid #198754; border-radius: 5px; font-size: 12px; height: auto;">
+                <input type="text" id="unit_${mat.materialId}" placeholder="Unidad (box, ltr, etc)" class="input-field" style="flex: 1; padding: 5px; border: 1px solid #198754; border-radius: 5px; font-size: 12px; height: auto;">
+            </div>
+        </div>
+    `;
+});
             }
         }
     } catch (e) { console.error("Error cargando dependencias", e); }
@@ -502,10 +509,29 @@ window.guardarTrabajo = async () => {
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
 
+    // --- LÓGICA DE CANTIDADES PARA EL JEFE ---
+    let resumenMateriales = '';
+    matCheckboxes.forEach(cb => {
+        const matId = cb.value;
+        const nombreMat = cb.getAttribute('data-name');
+        const cantidad = document.getElementById(`qty_${matId}`).value.trim();
+        const unidad = document.getElementById(`unit_${matId}`).value.trim();
+        
+        const textoCantidad = cantidad ? `${cantidad} ${unidad}`.trim() : 'Asignado';
+        resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
+    });
+
+    let descripcionBase = document.getElementById('jobDesc').value.trim();
+    let descripcionFinal = descripcionBase;
+    
+    if (resumenMateriales !== '') {
+        descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
+    }
+
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
-        description: document.getElementById('jobDesc').value.trim(),
+        description: descripcionFinal, // <--- Descripción con materiales inyectados
         jobDate: document.getElementById('jobDate').value,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
@@ -514,7 +540,7 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: myManagerId, // <--- MAGIA: ASIGNAMOS EL ID DEL JEFE AUTOMÁTICAMENTE
+        managerId: myManagerId, // <--- Mantenemos la lógica de Jefe intacta
         materialIds: selectedMaterials
     };
 
