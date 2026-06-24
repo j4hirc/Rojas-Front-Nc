@@ -438,7 +438,7 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: isEditing ? parseInt(document.getElementById('jobManager').value) : myManagerId, 
+        managerId: parseInt(document.getElementById('jobManager').value), 
         materialIds: selectedMaterials // <--- El backend se encarga de no duplicarlos
     };
 
