@@ -171,7 +171,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                                 <strong><i class="fa-solid fa-location-dot" style="color:#00B8A9; width:20px;"></i> Dirección:</strong> ${p.address}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-key" style="color:#00B8A9; width:20px;"></i> Caja Fuerte:</strong> ${p.safeDepositBoxCodes || 'No requiere'}
+                                <strong><i class="fa-solid fa-key" style="color:#00B8A9; width:20px;"></i> Caja Fuerte:</strong> ${p.safeDepositBoxCodes && p.safeDepositBoxCodes.trim() ? p.safeDepositBoxCodes : 'No requiere'}
                             </p>
                             
                             <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F59E0B; font-weight: bold; background: #111C44; padding: 10px; border-radius: 8px; text-align: center;">
@@ -577,14 +577,14 @@ window.guardarReporteYPdf = async () => {
     // pero lo escondemos fuera de la pantalla (top: -10000px) para que el usuario no lo vea parpadear.
     pdfWrapper.style.display = 'block';
     pdfWrapper.style.position = 'absolute';
-    pdfWrapper.style.top = '-10000px'; 
+    pdfWrapper.style.top = '-10000px';
     pdfWrapper.style.left = '0';
     pdfWrapper.style.width = '750px';
     pdfWrapper.style.zIndex = '-9999';
-    pdfWrapper.style.visibility = 'visible'; 
+    pdfWrapper.style.visibility = 'visible';
 
     // Damos un poco más de tiempo (400ms) para asegurar que las firmas en Base64 carguen en el DOM
-    await new Promise(r => setTimeout(r, 400)); 
+    await new Promise(r => setTimeout(r, 400));
 
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
@@ -609,7 +609,7 @@ window.guardarReporteYPdf = async () => {
         console.error("Error al generar PDF:", e);
         // Reseteamos las propiedades si falla
         pdfWrapper.style.display = 'none';
-        pdfWrapper.style.visibility = 'hidden'; 
+        pdfWrapper.style.visibility = 'hidden';
         return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF.', confirmButtonColor: '#00B8A9' });
     }
 
