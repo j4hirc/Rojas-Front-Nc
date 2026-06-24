@@ -14,8 +14,8 @@ let imagenesBase64Data = [];
 let matQuantityInfo = ''
 
 // Variables para la doble firma
-let canvasSub, ctxSub, canvasCli, ctxCli;
-let drawingSub = false, drawingCli = false;
+let canvasSub, ctxSub;
+let drawingSub = false;
 
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
@@ -295,16 +295,11 @@ window.inicializarCanvasFirma = () => {
     canvasSub = document.getElementById('signaturePadSub');
     if (canvasSub) ctxSub = canvasSub.getContext('2d');
 
-    canvasCli = document.getElementById('signaturePadCli');
-    if (canvasCli) ctxCli = canvasCli.getContext('2d');
-
     setTimeout(() => {
         if (canvasSub) { canvasSub.width = canvasSub.offsetWidth; canvasSub.height = canvasSub.offsetHeight; }
-        if (canvasCli) { canvasCli.width = canvasCli.offsetWidth; canvasCli.height = canvasCli.offsetHeight; }
     }, 200);
 
     if (canvasSub) setupCanvasEvents(canvasSub, ctxSub, (val) => drawingSub = val, '#0F2D4A');
-    if (canvasCli) setupCanvasEvents(canvasCli, ctxCli, (val) => drawingCli = val, '#0F2D4A');
 };
 
 function setupCanvasEvents(canvasObj, ctxObj, setDrawing, colorStroke) {
@@ -334,7 +329,6 @@ function setupCanvasEvents(canvasObj, ctxObj, setDrawing, colorStroke) {
 }
 
 window.limpiarFirmaSub = () => { if (ctxSub) ctxSub.clearRect(0, 0, canvasSub.width, canvasSub.height); };
-window.limpiarFirmaCli = () => { if (ctxCli) ctxCli.clearRect(0, 0, canvasCli.width, canvasCli.height); };
 // ------------------------------------------------
 
 window.mostrarPreview = (event) => {
@@ -399,7 +393,6 @@ window.abrirModalEvidence = (jobId) => {
 
     // Limpiamos los DOS canvas
     limpiarFirmaSub();
-    limpiarFirmaCli();
 
     document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
         cb.checked = false;
@@ -426,7 +419,6 @@ window.abrirModalEvidence = (jobId) => {
     // Redimensionamos ambos canvas al abrir el modal
     setTimeout(() => {
         if (canvasSub) { canvasSub.width = canvasSub.offsetWidth; canvasSub.height = canvasSub.offsetHeight; }
-        if (canvasCli) { canvasCli.width = canvasCli.offsetWidth; canvasCli.height = canvasCli.offsetHeight; }
     }, 100);
 };
 
@@ -505,10 +497,6 @@ window.guardarReporteYPdf = async () => {
     if (isCanvasBlank(canvasSub)) {
         return Swal.fire({ icon: 'warning', title: 'Falta tu Firma', text: 'Debes firmar el reporte como subcontratista.', confirmButtonColor: '#12CFF4' });
     }
-    if (isCanvasBlank(canvasCli)) {
-        return Swal.fire({ icon: 'warning', title: 'Falta Firma del Cliente', text: 'Por favor, solicita la firma de conformidad del cliente.', confirmButtonColor: '#F4A300' });
-    }
-
     if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#00B8A9' });
     if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
 
@@ -607,7 +595,6 @@ window.guardarReporteYPdf = async () => {
 
     // Inyectamos las DOS firmas en el PDF oculto de forma nativa
     document.getElementById('pdfSignatureSubImg').src = canvasSub.toDataURL("image/png");
-    document.getElementById('pdfSignatureCliImg').src = canvasCli.toDataURL("image/png");
 
 
     const pdfWrapper = document.getElementById('pdfWrapper');
