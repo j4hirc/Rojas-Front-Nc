@@ -155,7 +155,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                 if (descCompleta.includes('[MATERIALES PRE-ASIGNADOS]:')) {
                     const partes = descCompleta.split('[MATERIALES PRE-ASIGNADOS]:');
                     const notasBase = partes[0].trim();
-                    const materialesTexto = partes[1].trim();
+                    const materialesTexto = partes[partes.length - 1].trim();
 
                     const listaMateriales = materialesTexto.split('\n')
                         .filter(linea => linea.trim() !== '')

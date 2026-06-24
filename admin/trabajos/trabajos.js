@@ -413,8 +413,14 @@ window.guardarTrabajo = async () => {
     });
 
     let descripcionBase = document.getElementById('jobDesc').value.trim();
-    let descripcionFinal = descripcionBase;
+    
+    // NUEVO: Limpiamos la descripción vieja para que no se duplique la etiqueta al editar
+    if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
+        descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+    }
 
+    let descripcionFinal = descripcionBase;
+    
     if (resumenMateriales !== '') {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
