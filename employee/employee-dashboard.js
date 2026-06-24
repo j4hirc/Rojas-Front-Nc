@@ -598,64 +598,34 @@ window.guardarReporteYPdf = async () => {
 
 
     const pdfWrapper = document.getElementById('pdfWrapper');
-    const element = document.getElementById('pdfTemplate');
+    const pdfTemplate = document.getElementById('pdfTemplate');
 
-    // LA SOLUCIÓN: Lo hacemos "visible" para que html2canvas pueda renderizar las fotos y firmas, 
-    // pero lo escondemos fuera de la pantalla (top: -10000px) para que el usuario no lo vea parpadear.
+    // Hacemos visible el template sacándolo de la pantalla para que html2canvas lo calcule perfecto
     pdfWrapper.style.display = 'block';
     pdfWrapper.style.position = 'absolute';
-    pdfWrapper.style.top = '-10000px';
+    pdfWrapper.style.top = '-10000px'; 
     pdfWrapper.style.left = '0';
     pdfWrapper.style.width = '750px';
     pdfWrapper.style.zIndex = '-9999';
-    pdfWrapper.style.visibility = 'visible';
+    pdfWrapper.style.visibility = 'visible'; 
 
-    // Damos un poco más de tiempo (400ms) para asegurar que las firmas en Base64 carguen en el DOM
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise(r => setTimeout(r, 400)); // 400ms para asegurar que las fotos carguen
 
+    const element = document.getElementById('pdfTemplate');
     const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
 
-    // Simplificamos la configuración y quitamos el onclone que daba fallos
+    // Configuración limpia y directa: Escala 2 para alta definición en PC, sin forzar anchos artificiales
     const opt = {
         margin: [5, 8, 5, 8],
         filename: pdfFileName,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
-            scale: 2,          // <--- Esto le da la alta resolución en PC
-            useCORS: true,
+            scale: 2, 
+            useCORS: true, 
             logging: false,
-            windowWidth: 750,  // <--- Mantenemos este para engañar al celular
-            
-            
-            scrollX: 0,
-            scrollY: 0,
-            onclone: (doc) => {
-                const wrapper = doc.getElementById('pdfWrapper');
-                const tmpl = doc.getElementById('pdfTemplate');
-                if (wrapper) {
-                    wrapper.style.display = 'block';
-                    wrapper.style.position = 'static';
-                    wrapper.style.top = 'auto';
-                    wrapper.style.left = 'auto';
-                    wrapper.style.width = '750px';
-                    wrapper.style.zIndex = 'auto';
-                    wrapper.style.visibility = 'visible';
-                    wrapper.style.overflow = 'visible';
-                    wrapper.style.height = 'auto';
-                    wrapper.style.margin = '0';
-                    wrapper.style.padding = '0';
-                }
-                if (tmpl) {
-                    tmpl.style.marginTop = '0';
-                    tmpl.style.paddingTop = '10px';
-                    tmpl.style.width = '750px';
-                    tmpl.style.height = 'auto';
-                    tmpl.style.overflow = 'visible';
-                }
-            }
+            letterRendering: true
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     let pdfBlob;
@@ -663,13 +633,12 @@ window.guardarReporteYPdf = async () => {
         pdfBlob = await html2pdf().set(opt).from(element).output('blob');
     } catch (e) {
         console.error("Error al generar PDF:", e);
-        // Reseteamos las propiedades si falla
         pdfWrapper.style.display = 'none';
-        pdfWrapper.style.visibility = 'hidden';
+        pdfWrapper.style.visibility = 'hidden'; // Aseguramos que se oculte si falla
         return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF.', confirmButtonColor: '#00B8A9' });
     }
 
-    // Reseteamos las propiedades al terminar
+    // Volvemos a ocultar el wrapper
     pdfWrapper.style.display = 'none';
     pdfWrapper.style.visibility = 'hidden';
 
