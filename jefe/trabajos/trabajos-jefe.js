@@ -506,10 +506,11 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
+    // 1. Obtenemos TODOS los materiales seleccionados
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
 
-    // --- LÓGICA DE CANTIDADES PARA EL JEFE ---
+    // 2. Armamos el texto de las cantidades
     let resumenMateriales = '';
     matCheckboxes.forEach(cb => {
         const matId = cb.value;
@@ -521,23 +522,23 @@ window.guardarTrabajo = async () => {
         resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
     });
 
+    // 3. Limpiamos la descripción vieja para que no se duplique
     let descripcionBase = document.getElementById('jobDesc').value.trim();
-    
-    // NUEVO: Limpiamos la descripción vieja para que no se duplique la etiqueta al editar
     if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
         descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
     }
-
-    let descripcionFinal = descripcionBase;
     
+    // 4. Juntamos todo
+    let descripcionFinal = descripcionBase;
     if (resumenMateriales !== '') {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
+    // 5. Armamos el payload enviando TODOS los materiales seleccionados
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
-        description: descripcionFinal, // <--- Descripción con materiales inyectados
+        description: descripcionFinal, 
         jobDate: document.getElementById('jobDate').value,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
@@ -546,8 +547,8 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: myManagerId, // <--- Mantenemos la lógica de Jefe intacta
-        materialIds: selectedMaterials
+        managerId: myManagerId, // <--- Única diferencia con el admin
+        materialIds: selectedMaterials 
     };
 
     // Eliminamos managerId de la validación porque ya lo estamos asignando arriba

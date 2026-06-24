@@ -397,38 +397,39 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
+    // 1. Obtenemos TODOS los materiales seleccionados
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
 
-    // --- NUEVA LÓGICA: Procesar cantidades para la descripción ---
+    // 2. Armamos el texto de las cantidades
     let resumenMateriales = '';
     matCheckboxes.forEach(cb => {
         const matId = cb.value;
         const nombreMat = cb.getAttribute('data-name');
         const cantidad = document.getElementById(`qty_${matId}`).value.trim();
         const unidad = document.getElementById(`unit_${matId}`).value.trim();
-
+        
         const textoCantidad = cantidad ? `${cantidad} ${unidad}`.trim() : 'Asignado';
         resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
     });
 
+    // 3. Limpiamos la descripción vieja para que no se duplique
     let descripcionBase = document.getElementById('jobDesc').value.trim();
-    
-    // NUEVO: Limpiamos la descripción vieja para que no se duplique la etiqueta al editar
     if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
         descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
     }
-
-    let descripcionFinal = descripcionBase;
     
+    // 4. Juntamos todo
+    let descripcionFinal = descripcionBase;
     if (resumenMateriales !== '') {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
+    // 5. Armamos el payload enviando TODOS los materiales seleccionados
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
-        description: descripcionFinal, // <--- Aquí viaja la descripción con los materiales inyectados
+        description: descripcionFinal, 
         jobDate: document.getElementById('jobDate').value,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
@@ -437,8 +438,8 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: isEditing ? parseInt(document.getElementById('jobManager').value) : myManagerId,
-        materialIds: selectedMaterials
+        managerId: isEditing ? parseInt(document.getElementById('jobManager').value) : myManagerId, 
+        materialIds: selectedMaterials // <--- El backend se encarga de no duplicarlos
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
