@@ -19,11 +19,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-    Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+    Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-    await cargarUsuariosYMateriales(); 
-    await cargarTrabajos(); 
-    
+    await cargarUsuariosYMateriales();
+    await cargarTrabajos();
+
     const inputLat = document.getElementById('jobLat');
     const inputLng = document.getElementById('jobLng');
     if (inputLat && inputLng) {
@@ -156,7 +156,7 @@ window.obtenerMiUbicacion = () => {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
                 if (mapa && marcador) {
-                    mapa.setView([lat, lng], 16); 
+                    mapa.setView([lat, lng], 16);
                     marcador.setLatLng([lat, lng]);
                 } else {
                     inicializarMapa(lat, lng);
@@ -175,14 +175,14 @@ window.obtenerMiUbicacion = () => {
 
 async function cargarUsuariosYMateriales() {
     try {
-        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resUsers.ok) {
             const users = await resUsers.json();
             const selectEmp = document.getElementById('jobEmployee');
             const selectMan = document.getElementById('jobManager');
             selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
             selectMan.innerHTML = '<option value="">-- Seleccione Manager --</option>';
-            
+
             const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
             const jefes = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_JEFE'));
 
@@ -190,22 +190,29 @@ async function cargarUsuariosYMateriales() {
             jefes.forEach(u => selectMan.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
         }
 
-        const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resMat.ok) {
             const materials = await resMat.json();
             const containerMat = document.getElementById('materialsContainer');
             containerMat.innerHTML = '';
-            
+
             if (materials.length === 0) {
                 containerMat.innerHTML = '<span style="color:#666;">No hay materiales en inventario.</span>';
             } else {
                 materials.forEach(mat => {
                     containerMat.innerHTML += `
-                        <label style="display: block; margin-bottom: 5px; cursor: pointer; color: #2b3674; font-size: 14px;">
-                            <input type="checkbox" name="jobMaterials" value="${mat.materialId}"> 
-                            ${mat.name} 
-                        </label>
-                    `;
+        <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
+                <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" onchange="document.getElementById('opts_${mat.materialId}').style.display = this.checked ? 'flex' : 'none'">
+                ${mat.name}
+            </label>
+            
+            <div id="opts_${mat.materialId}" style="display: none; gap: 10px; margin-top: 8px; margin-left: 24px;">
+                <input type="number" id="qty_${mat.materialId}" placeholder="Cant." class="input-field" style="width: 75px; padding: 5px; border: 1px solid #e65100; border-radius: 5px; font-size: 12px; height: auto;">
+                <input type="text" id="unit_${mat.materialId}" placeholder="Unidad (box, ltr, etc)" class="input-field" style="flex: 1; padding: 5px; border: 1px solid #e65100; border-radius: 5px; font-size: 12px; height: auto;">
+            </div>
+        </div>
+    `;
                 });
             }
         }
@@ -225,21 +232,21 @@ async function cargarTrabajos() {
 function renderizarTrabajos(trabajos) {
     const tbody = document.getElementById('jobTableBody');
     const mobileContainer = document.getElementById('mobileCardsContainer');
-    
-    tbody.innerHTML = ''; 
-    if(mobileContainer) mobileContainer.innerHTML = '';
-    
-    if(trabajos.length === 0) {
+
+    tbody.innerHTML = '';
+    if (mobileContainer) mobileContainer.innerHTML = '';
+
+    if (trabajos.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
-        if(mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No hay trabajos registrados.</div>`;
+        if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No hay trabajos registrados.</div>`;
         return;
     }
 
     trabajos.forEach(job => {
         let statusBadge = '';
-        if(job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
-        else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
-        else if(job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
+        if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
+        else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
+        else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
         const empName = job.nameEmployee || 'Sin asignar';
@@ -281,13 +288,13 @@ function renderizarTrabajos(trabajos) {
         `;
         tbody.appendChild(tr);
 
-        if(mobileContainer) {
+        if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
             card.style.flexDirection = 'column';
             card.style.alignItems = 'flex-start';
             card.style.padding = '20px';
-            
+
             card.innerHTML = `
                 <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px;">
                     <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>
@@ -333,7 +340,7 @@ window.abrirModalCrearJob = () => {
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
-    inicializarMapa(-2.900128, -79.005896); 
+    inicializarMapa(-2.900128, -79.005896);
 };
 
 window.abrirModalEditarJob = async (id) => {
@@ -341,15 +348,15 @@ window.abrirModalEditarJob = async (id) => {
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
-    
+
     try {
-        Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
         const response = await fetch(`${API_URL}/find-id/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` } });
 
-        if(response.ok) {
+        if (response.ok) {
             const data = await response.json();
-            
+
             document.getElementById('jobClientName').value = data.clientName;
             document.getElementById('jobClientPhone').value = data.clientPhone;
             document.getElementById('jobDesc').value = data.description;
@@ -360,12 +367,12 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobSafeBox').value = data.safeDepositBoxCodes || '';
             document.getElementById('jobPay').value = data.pay;
             document.getElementById('jobStatus').value = data.status || 'PENDING';
-            
+
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
             // Marcar checkboxes de materiales si ya los tenía guardados
-            if(data.materials && data.materials.length > 0) {
+            if (data.materials && data.materials.length > 0) {
                 const checkboxes = document.querySelectorAll('input[name="jobMaterials"]');
                 checkboxes.forEach(cb => {
                     cb.checked = data.materials.some(m => m.materialId == cb.value);
@@ -376,9 +383,9 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('modalJob').style.display = 'flex';
             inicializarMapa(data.latitude, data.longitude);
         }
-    } catch(error) { 
+    } catch (error) {
         Swal.close();
-        console.error("Error al obtener trabajo:", error); 
+        console.error("Error al obtener trabajo:", error);
     }
 };
 
@@ -389,15 +396,33 @@ window.cerrarModalJob = () => {
 window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
-    
-    // Captura los materiales, pero NO lanza error si está vacío
+
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
+
+    // --- NUEVA LÓGICA: Procesar cantidades para la descripción ---
+    let resumenMateriales = '';
+    matCheckboxes.forEach(cb => {
+        const matId = cb.value;
+        const nombreMat = cb.getAttribute('data-name');
+        const cantidad = document.getElementById(`qty_${matId}`).value.trim();
+        const unidad = document.getElementById(`unit_${matId}`).value.trim();
+
+        const textoCantidad = cantidad ? `${cantidad} ${unidad}`.trim() : 'Asignado';
+        resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
+    });
+
+    let descripcionBase = document.getElementById('jobDesc').value.trim();
+    let descripcionFinal = descripcionBase;
+
+    if (resumenMateriales !== '') {
+        descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
+    }
 
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
-        description: document.getElementById('jobDesc').value.trim(),
+        description: descripcionFinal, // <--- Aquí viaja la descripción con los materiales inyectados
         jobDate: document.getElementById('jobDate').value,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
@@ -406,16 +431,16 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: parseInt(document.getElementById('jobManager').value),
+        managerId: isEditing ? parseInt(document.getElementById('jobManager').value) : myManagerId,
         materialIds: selectedMaterials
     };
-    
-    if(!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
+
+    if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire('Error', 'Por favor llena todos los campos obligatorios.', 'error');
     }
 
-    Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-    
+    Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -429,7 +454,7 @@ window.guardarTrabajo = async () => {
         if (response.ok) {
             Swal.fire('¡Éxito!', isEditing ? 'Trabajo actualizado.' : 'Trabajo asignado correctamente.', 'success');
             cerrarModalJob();
-            await cargarTrabajos(); 
+            await cargarTrabajos();
         } else {
             const errorData = await response.json();
             let errorMsg = 'No se pudo guardar el trabajo.';
@@ -460,22 +485,22 @@ window.eliminarTrabajo = async (id) => {
         cancelButtonText: 'Cancelar'
     }).then(async (result) => {
         if (result.isConfirmed) {
-            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+            Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
             try {
                 const res = await fetch(`${API_URL}/delete-job/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${userToken}` }
                 });
-                
-                if(res.ok) {
+
+                if (res.ok) {
                     Swal.fire('¡Eliminado!', 'El trabajo fue eliminado.', 'success');
                     await cargarTrabajos();
                 } else {
                     Swal.fire('Error', 'No se pudo eliminar el trabajo.', 'error');
                 }
-            } catch(e) { 
-                console.error(e); 
+            } catch (e) {
+                console.error(e);
                 Swal.fire('Error', 'Fallo de red', 'error');
             }
         }
