@@ -359,7 +359,7 @@ function renderizarNomina(offset) {
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="../img/logo.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;">
+                <img src="../img/logonegro.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;">
                 <div>
                     <h1 style="color: #0B0B0D; margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">NÓMINA SEMANAL</h1>
                     <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Jefe: ${nombreJefe}</p>
