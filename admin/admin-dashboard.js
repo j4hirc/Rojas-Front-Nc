@@ -187,11 +187,11 @@ async function guardarPerfil() {
 }
 
 // =================================================================================
-// --- ESTADO GLOBAL DE NÓMINA SEMANAL ---
+// --- ESTADO GLOBAL DE NÓMINA QUINCENAL ---
 // =================================================================================
 window.nominasJobsCache = null;
 window.nominasUsersCache = null;
-window.semanaOffset = 0; 
+window.quincenaOffset = 0; 
 
 // 1. CARGA INICIAL AUTOMÁTICA DEL VALOR DE LA TARJETA EN HOME
 async function inicializarNominaAdmin() {
@@ -218,18 +218,16 @@ async function inicializarNominaAdmin() {
     }
 }
 
-// Ejecutar al cargar la página para pintar la tarjeta verde exterior
 document.addEventListener('DOMContentLoaded', () => {
     inicializarNominaAdmin();
 });
 
-// 2. FUNCIÓN PRINCIPAL PARA REVENTAR EL POP-UP (ESTILO JEFE)
+// 2. FUNCIÓN PRINCIPAL PARA REVENTAR EL POP-UP
 window.verNominaSemanalGlobal = async () => {
     Swal.fire({ title: 'Obteniendo registros globales...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
     try {
         const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
 
-        // Peticiones paralelas a los endpoints productivos en Render
         const [resJobs, resUsers] = await Promise.all([
             fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
             fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
@@ -237,11 +235,10 @@ window.verNominaSemanalGlobal = async () => {
         window.nominasJobsCache = await resJobs.json();
         window.nominasUsersCache = await resUsers.json();
 
-        window.semanaOffset = 0; // Reiniciar vista a la semana actual
+        window.quincenaOffset = 0; // Reiniciar vista a la quincena actual
 
-        // Lanzamos el SweetAlert inicial con la caja vacía idéntica a la de jefe
         Swal.fire({
-            title: '<h2 style="color: #0F2D4A; font-weight: 800; margin: 0; display: flex; align-items: center; justify-content: center;"><span style="background: #12CFF4; color: #FFFFFF; padding: 4px 10px; border-radius: 8px; font-size: 0.7em; margin-right: 12px;"><i class="fa-solid fa-money-check-dollar"></i></span>Nómina Semanal Global</h2>',
+            title: '<h2 style="color: #0F2D4A; font-weight: 800; margin: 0; display: flex; align-items: center; justify-content: center;"><span style="background: #12CFF4; color: #FFFFFF; padding: 4px 10px; border-radius: 8px; font-size: 0.7em; margin-right: 12px;"><i class="fa-solid fa-money-check-dollar"></i></span>Nómina Quincenal Global</h2>',
             html: '<div id="nomina-contenedor-admin">Generando reporte...</div>',
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
@@ -249,8 +246,7 @@ window.verNominaSemanalGlobal = async () => {
             background: '#FFFFFF'
         });
 
-        // Inyectamos la información calculada en la caja
-        renderizarNominaAdmin(window.semanaOffset);
+        renderizarNominaAdmin(window.quincenaOffset);
 
     } catch (e) {
         console.error(e);
@@ -258,25 +254,37 @@ window.verNominaSemanalGlobal = async () => {
     }
 };
 
-// Vinculación de los botones Anterior y Siguiente
 window.cambiarSemanaAdmin = (delta) => {
-    window.semanaOffset += delta;
-    renderizarNominaAdmin(window.semanaOffset);
+    window.quincenaOffset += delta;
+    renderizarNominaAdmin(window.quincenaOffset);
 };
 
-// Renderizado dinámico por semanas sin recargar ni romper el Pop-up
+// Renderizado dinámico por QUINCENAS (Cálculo automático de meses)
 function renderizarNominaAdmin(offset) {
-    const hoy = new Date();
-    hoy.setDate(hoy.getDate() + (offset * 7)); 
+    let year = new Date().getFullYear();
+    let month = new Date().getMonth();
+    let part = new Date().getDate() <= 15 ? 1 : 2;
 
-    const diaSemana = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1; 
-    const inicioSemana = new Date(hoy);
-    inicioSemana.setDate(hoy.getDate() - diaSemana);
-    inicioSemana.setHours(0,0,0,0);
+    if (offset > 0) {
+        for (let i = 0; i < offset; i++) {
+            if (part === 1) part = 2;
+            else { part = 1; month++; if (month > 11) { month = 0; year++; } }
+        }
+    } else if (offset < 0) {
+        for (let i = 0; i > offset; i--) {
+            if (part === 2) part = 1;
+            else { part = 2; month--; if (month < 0) { month = 11; year--; } }
+        }
+    }
 
-    const finSemana = new Date(inicioSemana);
-    finSemana.setDate(inicioSemana.getDate() + 6);
-    finSemana.setHours(23,59,59,999);
+    let inicioSemana, finSemana;
+    if (part === 1) {
+        inicioSemana = new Date(year, month, 1, 0, 0, 0, 0);
+        finSemana = new Date(year, month, 15, 23, 59, 59, 999);
+    } else {
+        inicioSemana = new Date(year, month, 16, 0, 0, 0, 0);
+        finSemana = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    }
 
     let nominas = {};
 
@@ -302,20 +310,16 @@ function renderizarNominaAdmin(offset) {
 
     let htmlContent = `
         <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
-            
             <button onclick="cambiarSemanaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
                 <i class="fa-solid fa-chevron-left"></i> Anterior
             </button>
-
             <div style="text-align: center; font-family: 'Poppins', sans-serif;">
-                <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Semana del</span>
+                <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Quincena del</span>
                 <span id="lblRangoSemanas" style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
             </div>
-
-            <button type="button" onclick="exportarNominaSemanalAPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar esta semana a PDF">
+            <button type="button" onclick="exportarNominaSemanalAPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar a PDF">
                 <i class="fa-solid fa-file-pdf"></i> PDF
             </button>
-
             <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
                 Siguiente <i class="fa-solid fa-chevron-right"></i>
             </button>
@@ -346,7 +350,7 @@ function renderizarNominaAdmin(offset) {
     }
 
     if(!hayDatos) {
-        htmlContent += '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por ningún personal en esta semana.</td></tr>';
+        htmlContent += '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por ningún personal en esta quincena.</td></tr>';
     } else {
         htmlContent += `<tr style="background-color: #f8faff;">
             <td style="padding: 12px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase; font-size: 12px;">Total Nómina Global:</td>
@@ -361,7 +365,7 @@ function renderizarNominaAdmin(offset) {
     }
 }
 
-// 3. FUNCIÓN CORREGIDA DE DESCARGA PDF SIN DEPENDE DE ENTORNO EN CLONDADO
+// 3. FUNCIÓN CORREGIDA DE DESCARGA PDF
 window.exportarNominaSemanalAPdf = () => {
     const lblRango = document.getElementById('lblRangoSemanas');
     const textoRango = lblRango ? lblRango.textContent.trim() : "Reporte_Nomina";
@@ -380,7 +384,7 @@ window.exportarNominaSemanalAPdf = () => {
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="../logohexa.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;" onerror="this.src='../../logo.jpeg'">
+                <img src="../logo.jpeg" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;" onerror="this.src='../../logo.jpeg'">
                 <div>
                     <h1 style="color: #0B0B0D; margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase;">REPORTE DE NÓMINA GENERAL</h1>
                     <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Plataforma RemoMN — Área de Administración</p>
@@ -403,7 +407,7 @@ window.exportarNominaSemanalAPdf = () => {
 
     const opcionesConfiguracion = {
         margin:       [12, 12, 12, 12],
-        filename:     `Nomina_Semanal_${nombreArchivoClean}.pdf`,
+        filename:     `Nomina_Quincenal_${nombreArchivoClean}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2.5, useCORS: true, logging: false },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -411,7 +415,7 @@ window.exportarNominaSemanalAPdf = () => {
 
     Swal.fire({
         title: 'Generando archivo PDF...',
-        text: 'Preparando desglose financiero de la semana.',
+        text: 'Preparando desglose financiero de la quincena.',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
