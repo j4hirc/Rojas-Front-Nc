@@ -594,7 +594,10 @@ window.guardarReporteYPdf = async () => {
     `).join('');
 
     // Inyectamos las DOS firmas en el PDF oculto de forma nativa
-    document.getElementById('pdfSignatureSubImg').src = canvasSub.toDataURL("image/png");
+    const imgFirma = document.getElementById('pdfSignatureSubImg');
+    imgFirma.src = canvasSub.toDataURL("image/png");
+    imgFirma.style.width = "250px";  // Forzamos el ancho exacto para que el celular no lo colapse
+    imgFirma.style.height = "75px";
 
 
     const pdfWrapper = document.getElementById('pdfWrapper');
