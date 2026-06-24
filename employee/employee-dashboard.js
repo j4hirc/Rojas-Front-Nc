@@ -129,6 +129,55 @@ async function cargarCalendarioEmpleado(emailActual) {
             headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
             events: eventosFormateados,
 
+            // --- LA MAGIA VISUAL: Diseño interno de los eventos ---
+            eventContent: function(arg) {
+                let p = arg.event.extendedProps;
+                let icon = '';
+                
+                if(p.status === 'PENDING') icon = '<i class="fa-solid fa-clock"></i>';
+                if(p.status === 'IN_PROGRESS') icon = '<i class="fa-solid fa-gear fa-spin"></i>';
+                if(p.status === 'COMPLETED') icon = '<i class="fa-solid fa-check-double"></i>';
+                if(p.status === 'CANCELLED') icon = '<i class="fa-solid fa-ban"></i>';
+
+                let viewType = arg.view.type;
+
+                // SI ESTAMOS EN VISTA AGENDA (LISTA)
+                if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
+                    let customHtml = `
+                        <div style="display: flex; flex-direction: column; gap: 6px; padding: 5px; width: 100%;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-weight: 700; font-size: 1.15em; color: #111C44;">
+                                    <span style="color: ${arg.event.backgroundColor}; margin-right: 5px;">${icon}</span> 
+                                    ${arg.event.title}
+                                </div>
+                                <div style="font-weight: bold; color: #F59E0B; font-size: 1.1em;">
+                                    $${parseFloat(p.pay || 0).toFixed(2)}
+                                </div>
+                            </div>
+                            <div style="font-size: 0.9em; color: #555; display: flex; gap: 15px; flex-wrap: wrap;">
+                                <span><strong><i class="fa-solid fa-location-dot" style="color: #00B8A9;"></i> Dir:</strong> ${p.address || 'Sin dirección'}</span>
+                                <span><strong><i class="fa-solid fa-phone" style="color: #00B8A9;"></i> Tel:</strong> ${p.clientPhone || 'N/A'}</span>
+                            </div>
+                        </div>
+                    `;
+                    return { html: customHtml };
+                } 
+                // SI ESTAMOS EN VISTA MES (CUADRITOS)
+                else {
+                    let customHtml = `
+                        <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden; text-align: center;" title="${p.address}">
+                            <div style="font-weight: 700; font-size: 0.85em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 3px;">
+                                ${icon} ${arg.event.title}
+                            </div>
+                            <div style="font-size: 0.75em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
+                                <i class="fa-solid fa-location-dot"></i> ${p.address || 'Sin dir'}
+                            </div>
+                        </div>
+                    `;
+                    return { html: customHtml };
+                }
+            },
+
             eventClick: function (info) {
                 const p = info.event.extendedProps;
                 currentJobInfo = p;
