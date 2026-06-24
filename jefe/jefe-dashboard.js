@@ -191,80 +191,49 @@ window.verBodegaHoy = async () => {
 };
 
 // =================================================================================
-// --- ESTADO GLOBAL DE NÓMINA QUINCENAL ---
+// --- NÓMINA QUINCENAL CON VIAJE EN EL TIEMPO SIN BUGS ---
 // =================================================================================
-window.nominasJobsCache = null;
-window.nominasUsersCache = null;
-window.quincenaOffset = 0; 
+let nominasJobsCache = null;
+let nominasUsersCache = null;
+let quincenaOffset = 0;
 
-// 1. CARGA INICIAL AUTOMÁTICA DEL VALOR DE LA TARJETA EN HOME
-async function inicializarNominaAdmin() {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
-    if (!token) return;
-
+window.verNominaSemanal = async () => {
+    Swal.fire({ title: 'Obteniendo registros...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
     try {
-        const res = await fetch('https://api-remomn.onrender.com/api/v1/jobs/all', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (res.ok) {
-            const trabajos = await res.json();
-            let sumaTotal = 0;
-            trabajos.forEach(j => {
-                if(j.pay && j.status !== 'CANCELLED') sumaTotal += j.pay;
-            });
-            
-            const txtCard = document.getElementById('txtNominaGlobal');
-            if(txtCard) txtCard.textContent = `$${sumaTotal.toFixed(2)}`;
-        }
-    } catch (e) {
-        console.error("Error al sincronizar nómina:", e);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    inicializarNominaAdmin();
-});
-
-// 2. FUNCIÓN PRINCIPAL PARA REVENTAR EL POP-UP
-window.verNominaSemanalGlobal = async () => {
-    Swal.fire({ title: 'Obteniendo registros globales...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-    try {
-        const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+        const token = localStorage.getItem('jwt_token');
 
         const [resJobs, resUsers] = await Promise.all([
             fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
             fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
-        window.nominasJobsCache = await resJobs.json();
-        window.nominasUsersCache = await resUsers.json();
+        nominasJobsCache = await resJobs.json();
+        nominasUsersCache = await resUsers.json();
 
-        window.quincenaOffset = 0; // Reiniciar vista a la quincena actual
+        quincenaOffset = 0; // Reiniciamos a la quincena actual
 
         Swal.fire({
-            title: '<h2 style="color: #0F2D4A; font-weight: 800; margin: 0; display: flex; align-items: center; justify-content: center;"><span style="background: #12CFF4; color: #FFFFFF; padding: 4px 10px; border-radius: 8px; font-size: 0.7em; margin-right: 12px;"><i class="fa-solid fa-money-check-dollar"></i></span>Nómina Quincenal Global</h2>',
-            html: '<div id="nomina-contenedor-admin">Generando reporte...</div>',
+            title: '<h2 style="color: #0F2D4A; font-weight: 800; margin: 0; display: flex; align-items: center; justify-content: center;"><span style="background: #12CFF4; color: #FFFFFF; padding: 4px 10px; border-radius: 8px; font-size: 0.7em; margin-right: 12px;"><i class="fa-solid fa-money-check-dollar"></i></span>Tu Nómina Quincenal</h2>',
+            html: '<div id="nomina-contenedor">Generando reporte...</div>',
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
             width: '600px',
             background: '#FFFFFF'
         });
 
-        renderizarNominaAdmin(window.quincenaOffset);
+        renderizarNomina(quincenaOffset);
 
     } catch (e) {
         console.error(e);
-        Swal.fire({icon: 'error', title: 'Error', text: 'No se pudo calcular la nómina global.', confirmButtonColor: '#12CFF4'});
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo calcular la nómina. Revisa tu conexión.', confirmButtonColor: '#12CFF4' });
     }
 };
 
-window.cambiarSemanaAdmin = (delta) => {
-    window.quincenaOffset += delta;
-    renderizarNominaAdmin(window.quincenaOffset);
+window.cambiarSemana = (delta) => {
+    quincenaOffset += delta;
+    renderizarNomina(quincenaOffset);
 };
 
-// Renderizado dinámico por QUINCENAS (Cálculo automático de meses)
-function renderizarNominaAdmin(offset) {
+function renderizarNomina(offset) {
     let year = new Date().getFullYear();
     let month = new Date().getMonth();
     let part = new Date().getDate() <= 15 ? 1 : 2;
@@ -290,16 +259,20 @@ function renderizarNominaAdmin(offset) {
         finSemana = new Date(year, month + 1, 0, 23, 59, 59, 999);
     }
 
+    const jefeNombreCompleto = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase();
     let nominas = {};
 
-    window.nominasJobsCache.forEach(job => {
-        if (job.status === 'COMPLETED' && job.employeeId) {
+    nominasJobsCache.forEach(job => {
+        const jobManagerName = (job.nameManager || "").trim().toLowerCase();
+        const esDeEsteJefe = (jobManagerName === jefeNombreCompleto) || (job.managerId == miUsuarioActual.userId);
+
+        if (esDeEsteJefe && job.status === 'COMPLETED' && job.employeeId) {
             let jobDateStr = Array.isArray(job.jobDate)
-                ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2,'0')}-${String(job.jobDate[2]).padStart(2,'0')}`
+                ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
                 : job.jobDate;
 
             const jobDate = new Date(jobDateStr);
-            jobDate.setHours(12,0,0,0);
+            jobDate.setHours(12, 0, 0, 0);
 
             if (jobDate >= inicioSemana && jobDate <= finSemana) {
                 if (!nominas[job.employeeId]) nominas[job.employeeId] = 0;
@@ -308,148 +281,131 @@ function renderizarNominaAdmin(offset) {
         }
     });
 
-    const formatD = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth() + 1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+    const formatD = (d) => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
     const strInicio = formatD(inicioSemana);
     const strFin = formatD(finSemana);
 
     let htmlContent = `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
-            <button onclick="cambiarSemanaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-chevron-left"></i> Anterior
-            </button>
-            <div style="text-align: center; font-family: 'Poppins', sans-serif;">
-                <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Quincena del</span>
-                <span id="lblRangoSemanas" style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
-            </div>
-            <button type="button" onclick="exportarNominaSemanalAPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar a PDF">
-                <i class="fa-solid fa-file-pdf"></i> PDF
-            </button>
-            <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
-                Siguiente <i class="fa-solid fa-chevron-right"></i>
-            </button>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+        
+        <button onclick="cambiarSemana(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
+            <i class="fa-solid fa-chevron-left"></i> Anterior
+        </button>
+
+        <div style="text-align: center; flex: 1; min-width: 140px;">
+            <span style="display: block; font-size: 10px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Quincena del</span>
+            <span id="lblRangoNomina" style="font-size: 13px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
         </div>
 
-        <div id="tabla-exportar-pdf-container" style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: 'Poppins', sans-serif;">
-                <tr style="background-color: #0F2D4A; color: #FFFFFF; position: sticky; top: 0; z-index: 10;">
-                    <th style="padding: 15px; font-weight: 700;">Personal de la Empresa (Total)</th>
-                    <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
-                </tr>
+        <button type="button" onclick="exportarNominaJefePdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px;">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+        </button>
+
+        <button onclick="cambiarSemana(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
+            Siguiente <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+
+    <div id="tabla-nomina-jefe" style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <tr style="background-color: #0F2D4A; color: #FFFFFF; position: sticky; top: 0; z-index: 10;">
+                <th style="padding: 15px; font-weight: 700;">Subcontratista a tu cargo</th>
+                <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
+            </tr>
     `;
 
-    let totalNominaGlobal = 0;
+    let totalNomina = 0;
     let hayDatos = false;
 
     for (let empId in nominas) {
         hayDatos = true;
-        const emp = window.nominasUsersCache.find(u => u.userId == empId);
+        const emp = nominasUsersCache.find(u => u.userId == empId);
         const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
         const pago = nominas[empId];
-        totalNominaGlobal += pago;
+        totalNomina += pago;
 
         htmlContent += `<tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; color: #2E3238; font-weight: 500; text-transform: capitalize;">${nombre.toLowerCase()}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; color: #2E3238;">${nombre}</td>
             <td style="padding: 10px; border-bottom: 1px solid #eee; color: #F4A300; font-weight: bold; text-align: right;">$${pago.toFixed(2)}</td>
         </tr>`;
     }
 
-    if(!hayDatos) {
-        htmlContent += '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por ningún personal en esta quincena.</td></tr>';
+    if (!hayDatos) {
+        htmlContent += '<tr><td colspan="2" style="padding: 15px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por tu personal en esta quincena.</td></tr>';
     } else {
         htmlContent += `<tr style="background-color: #f8faff;">
-            <td style="padding: 12px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase; font-size: 12px;">Total Nómina Global:</td>
-            <td style="padding: 12px; font-weight: bold; color: #2e7d32; font-size: 16px; text-align: right;">$${totalNominaGlobal.toFixed(2)}</td>
+            <td style="padding: 10px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase;">Total de tu equipo:</td>
+            <td style="padding: 10px; font-weight: bold; color: #2e7d32; font-size: 16px; text-align: right;">$${totalNomina.toFixed(2)}</td>
         </tr>`;
     }
     htmlContent += '</table></div>';
 
-    const contenedor = document.getElementById('nomina-contenedor-admin');
+    const contenedor = document.getElementById('nomina-contenedor');
     if (contenedor) {
         contenedor.innerHTML = htmlContent;
     }
-}
 
-// 3. FUNCIÓN CORREGIDA DE DESCARGA PDF
-window.exportarNominaSemanalAPdf = () => {
-    const lblRango = document.getElementById('lblRangoSemanas');
-    const textoRango = lblRango ? lblRango.textContent.trim() : "Reporte_Nomina";
-    const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
+    window.exportarNominaJefePdf = async () => {
+        const lblRango = document.getElementById('lblRangoNomina');
+        const textoRango = lblRango ? lblRango.textContent.trim() : 'Reporte_Nomina';
+        const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
 
-    const tablaElemento = document.getElementById('tabla-exportar-pdf-container');
-    if (!tablaElemento) {
-        return Swal.fire('Error', 'No se encontraron registros renderizados para procesar el archivo.', 'error');
-    }
+        const tablaElemento = document.getElementById('tabla-nomina-jefe');
+        if (!tablaElemento) {
+            return Swal.fire('Error', 'No se encontraron registros para exportar.', 'error');
+        }
 
-    const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.style.padding = "30px 40px";
-    contenedorImpresion.style.background = "#ffffff";
-    contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
+        const nombreJefe = miUsuarioActual ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}` : 'Jefe';
 
-    contenedorImpresion.innerHTML = `
-        <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="../logo.jpeg" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;" onerror="this.src='../../logo.jpeg'">
-                <div>
-                    <h1 style="color: #0B0B0D; margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase;">REPORTE DE NÓMINA GENERAL</h1>
-                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Plataforma RemoMN — Área de Administración</p>
+        const contenedorImpresion = document.createElement('div');
+        contenedorImpresion.style.padding = "30px 40px";
+        contenedorImpresion.style.background = "#ffffff";
+        contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
+
+        contenedorImpresion.innerHTML = `
+            <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="../img/logo.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;">
+                    <div>
+                        <h1 style="color: #0B0B0D; margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">NÓMINA QUINCENAL</h1>
+                        <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Jefe: ${nombreJefe}</p>
+                    </div>
+                </div>
+                <div style="text-align: right; color: #2E3238;">
+                    <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período:</p>
+                    <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango}</p>
                 </div>
             </div>
-            <div style="text-align: right; color: #2E3238;">
-                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período Reportado:</p>
-                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango}</p>
-            </div>
-        </div>
-        <div style="margin-top: 20px;">
             <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
                 ${tablaElemento.innerHTML}
             </div>
-        </div>
-        <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
-            Este documento es un reporte financiero confidencial generado automáticamente por el Panel de Administración de RemoMN.
-        </div>
-    `;
+            <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
+                Reporte generado automáticamente por el Portal RemoMN.
+            </div>
+        `;
 
-    const opcionesConfiguracion = {
-        margin:       [12, 12, 12, 12],
-        filename:     `Nomina_Quincenal_${nombreArchivoClean}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2.5, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+        const opt = {
+            margin: [12, 12, 12, 12],
+            filename: `Nomina_Quincenal_${nombreArchivoClean}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2.5, useCORS: true, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
 
-    Swal.fire({
-        title: 'Generando archivo PDF...',
-        text: 'Preparando desglose financiero de la quincena.',
-        allowOutsideClick: false,
-        didOpen: () => { Swal.showLoading(); }
-    });
-
-    html2pdf()
-        .set(opcionesConfiguracion)
-        .from(contenedorImpresion)
-        .save()
-        .then(() => { Swal.close(); })
-        .catch(err => {
-            console.error("Fallo al exportar reporte PDF:", err);
-            Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
+        Swal.fire({
+            title: 'Generando PDF...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
         });
-};
 
-// --- LOGOUT NORMAL ---
-function cerrarSesion() {
-    Swal.fire({
-        title: "¿Cerrar sesión?",
-        text: "¿Estás seguro que deseas salir del panel?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#0f4c81",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = "../index.html";
-        }
-    });
+        html2pdf()
+            .set(opt)
+            .from(contenedorImpresion)
+            .save()
+            .then(() => { Swal.close(); })
+            .catch(err => {
+                console.error('Error exportando PDF:', err);
+                Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
+            });
+    };
 }
