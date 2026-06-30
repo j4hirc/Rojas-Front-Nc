@@ -210,60 +210,82 @@
         }
 
         @media (max-width: 768px) {
-            /* 1. Modificar el layout global para que apile verticalmente */
-            .app-layout {
-                display: flex !important;
-                flex-direction: column !important;
-                height: auto !important;
-                overflow: visible !important;
-            }
-
-            .main-content {
-                flex: none !important;
-                width: 100% !important;
-                padding: 10px !important;
-                overflow: visible !important;
+            /* 1. Desactivar el flex horizontal del layout base de administración */
+            body .app-layout {
                 display: block !important;
+                height: auto !important;
+                min-height: 100vh !important;
+                overflow: visible !important;
             }
 
-            /* 2. Forzar al contenedor blanco de la tarjeta a expandirse */
-            .usuarios-container {
-                margin: 5px !important;
+            /* 2. Ocultar el sidebar en móvil si estorba o forzarlo a comportarse como bloque */
+            body .sidebar {
+                width: 100% !important;
+                height: auto !important;
+                position: relative !important;
+                display: block !important;
+                padding: 15px !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 3. Liberar el contenedor principal */
+            body .main-content {
+                margin-left: 0 !important; /* Si admin.css aplica un margen izquierdo fijo */
+                width: 100% !important;
+                max-width: 100% !important;
                 padding: 10px !important;
-                width: calc(100% - 10px) !important;
+                display: block !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 4. Resetear los espacios de la tarjeta blanca */
+            body .usuarios-container {
+                margin: 5px 0 !important;
+                padding: 12px !important;
+                width: 100% !important;
                 max-width: 100% !important;
                 box-sizing: border-box !important;
                 display: block !important;
+                box-shadow: none !important; /* Quita sombras pesadas en móvil */
             }
 
-            /* 3. Ajustes de FullCalendar para tomar consistencia visual */
+            /* 5. Forzar a FullCalendar a renderizar y estirarse sin restricciones */
             #calendar {
-                padding: 12px;
+                padding: 10px !important;
+                border-radius: 12px !important;
                 display: block !important;
                 width: 100% !important;
-                height: auto !important;
-                min-height: 480px !important; /* Previene que la grilla del mes colapse a alto 0 */
+                max-width: 100% !important;
+                min-height: 520px !important; /* Forzar altura mínima para evitar colapso de la grilla */
                 box-sizing: border-box !important;
+                overflow: hidden !important;
             }
 
+            /* 6. Acomodar la barra de botones superior del calendario de forma vertical */
             .fc-toolbar {
-                flex-direction: column;
-                gap: 12px;
-                text-align: center;
-                width: 100%;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 12px !important;
+                align-items: center !important;
+                width: 100% !important;
+            }
+
+            .fc-toolbar-chunk {
+                display: flex !important;
+                justify-content: center !important;
+                gap: 4px !important;
+                flex-wrap: wrap !important;
             }
 
             .fc-toolbar-title {
-                font-size: 1.15rem !important;
-                margin-bottom: 4px;
+                font-size: 1.1rem !important;
+                text-align: center !important;
+                margin: 2px 0 !important;
             }
 
-            /* 4. Asegurar que los botones no se encimen */
-            .fc-toolbar-chunk {
-                display: flex;
-                justify-content: center;
-                gap: 5px;
-                flex-wrap: wrap;
+            .fc .fc-button {
+                padding: 6px 10px !important;
+                font-size: 0.85rem !important;
             }
         }
         
