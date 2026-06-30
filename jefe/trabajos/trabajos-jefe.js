@@ -303,7 +303,7 @@ async function cargarUsuariosYMateriales(emailActual) {
                 containerMat.innerHTML = '<span style="color:#666;">No hay materiales en inventario.</span>';
             } else {
                 materials.forEach(mat => {
-    containerMat.innerHTML += `
+                    containerMat.innerHTML += `
         <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
             <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
                 <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" onchange="document.getElementById('opts_${mat.materialId}').style.display = this.checked ? 'flex' : 'none'">
@@ -316,7 +316,7 @@ async function cargarUsuariosYMateriales(emailActual) {
             </div>
         </div>
     `;
-});
+                });
             }
         }
     } catch (e) { console.error("Error cargando dependencias", e); }
@@ -384,7 +384,9 @@ function renderizarTrabajos(trabajos) {
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
                 ${job.status !== 'COMPLETED' && job.status !== 'CANCELLED' ? `
-    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
+    <i class="fa-solid fa-pen"></i>
+</button>
 ` : `
     <button title="Trabajo finalizado" disabled style="background: #f0f0f0; color: #bbb; border: none; padding: 6px 10px; border-radius: 6px; cursor: not-allowed; font-size: 13px;">
         <i class="fa-solid fa-lock"></i>
@@ -430,8 +432,8 @@ function renderizarTrabajos(trabajos) {
                     </a>
                     ${job.status !== 'COMPLETED' && job.status !== 'CANCELLED' ? `
     <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;">
-        <i class="fa-solid fa-pen"></i> Editar
-    </button>
+    <i class="fa-solid fa-pen"></i> Editar
+</button>
 ` : `
     <button disabled style="flex: 1; padding: 8px; border-radius: 8px; background: #f0f0f0; color: #bbb; border: none; font-weight: bold; cursor: not-allowed; font-size: 13px;">
         <i class="fa-solid fa-lock"></i> Bloqueado
@@ -517,7 +519,7 @@ window.guardarTrabajo = async () => {
         const nombreMat = cb.getAttribute('data-name');
         const cantidad = document.getElementById(`qty_${matId}`).value.trim();
         const unidad = document.getElementById(`unit_${matId}`).value.trim();
-        
+
         const textoCantidad = cantidad ? `${cantidad} ${unidad}`.trim() : 'Asignado';
         resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
     });
@@ -527,7 +529,7 @@ window.guardarTrabajo = async () => {
     if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
         descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
     }
-    
+
     // 4. Juntamos todo
     let descripcionFinal = descripcionBase;
     if (resumenMateriales !== '') {
@@ -538,7 +540,7 @@ window.guardarTrabajo = async () => {
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
-        description: descripcionFinal, 
+        description: descripcionFinal,
         jobDate: document.getElementById('jobDate').value,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
@@ -548,7 +550,7 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: myManagerId, // <--- Única diferencia con el admin
-        materialIds: selectedMaterials 
+        materialIds: selectedMaterials
     };
 
     // Eliminamos managerId de la validación porque ya lo estamos asignando arriba
