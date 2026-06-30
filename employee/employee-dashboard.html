@@ -224,6 +224,65 @@
                 font-size: 1.2rem !important;
             }
         }
+        /* ========================================================
+   FIX CRÍTICO PARA EL CALENDARIO EN DISPOSITIVOS MÓVILES
+   ======================================================== */
+@media (max-width: 768px) {
+    /* 1. Forzar a que la estructura principal sea vertical y libere espacio */
+    .app-layout {
+        display: flex;
+        flex-direction: column;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .main-content {
+        flex: none !important;
+        width: 100% !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+
+    /* 2. Limpiar el contenedor rígido de administración */
+    .usuarios-container {
+        margin: 10px !important;
+        padding: 10px !important;
+        width: calc(100% - 20px) !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        display: block !important;
+    }
+
+    /* 3. Forzar a FullCalendar a ocupar el espacio correcto y ser visible */
+    #calendar {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 450px !important; /* Asegura un alto mínimo para que el mes no colapse */
+        padding: 8px !important;
+        overflow: hidden !important;
+    }
+
+    /* 4. Evitar que la vista de Lista se desborde y se aplaste */
+    .fc-view-harness, .fc-view {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block !important;
+    }
+
+    .fc-list-table {
+        width: 100% !important;
+        display: table !important;
+    }
+
+    .fc-list-event {
+        display: table-row !important;
+    }
+    
+    .fc-list-event-title {
+        white-space: normal !important; /* Permite que el texto largo salte de línea en vez de estirarse */
+    }
+}
     </style>
 </head>
 

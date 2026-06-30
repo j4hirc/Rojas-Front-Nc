@@ -314,6 +314,7 @@ async function cargarCalendarioEmpleado(emailActual) {
         });
 
         calendar.render();
+        calendar.updateSize();
         Swal.close();
     } catch (error) { console.error(error); }
 }
