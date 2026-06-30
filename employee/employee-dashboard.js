@@ -124,10 +124,20 @@ async function cargarCalendarioEmpleado(emailActual) {
 
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
-            locale: 'es', height: 'auto',
-            headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
-            events: eventosFormateados,
+    initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
+    locale: 'es',
+    height: 'auto',
+    headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
+    events: eventosFormateados,
+
+    // Ajusta la vista automáticamente si el usuario cambia el tamaño de la pantalla
+    windowResize: function(arg) {
+        if (window.innerWidth < 768) {
+            calendar.changeView('listWeek');
+        } else {
+            calendar.changeView('dayGridMonth');
+        }
+    },
 
             // --- LA MAGIA VISUAL: Diseño interno de los eventos ---
             eventContent: function(arg) {
@@ -241,46 +251,46 @@ async function cargarCalendarioEmpleado(emailActual) {
                 // ---------------------------------------------
 
                 Swal.fire({
-                    title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
-                    html: `
-                        <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
-                            <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #E2E8F0;">
-                                <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-transform: uppercase;">
-                                    Estado: ${estadoTxt}
-                                </span>
-                            </div>
-                            
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-regular fa-calendar" style="color:#00B8A9; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-house" style="color:#00B8A9; width:20px;"></i> Propiedad / Contacto:</strong> ${p.clientName}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-phone" style="color:#00B8A9; width:20px;"></i> Teléfono:</strong> ${p.clientPhone}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-location-dot" style="color:#00B8A9; width:20px;"></i> Dirección:</strong> ${p.address}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-key" style="color:#00B8A9; width:20px;"></i> Caja Fuerte:</strong> ${p.safeDepositBoxCodes && p.safeDepositBoxCodes.trim() ? p.safeDepositBoxCodes : 'No requiere'}
-                            </p>
-                            
-                            <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F59E0B; font-weight: bold; background: #111C44; padding: 10px; border-radius: 8px; text-align: center;">
-                                <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${parseFloat(p.pay || 0).toFixed(2)}
-                            </p>
+    title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
+    html: `
+        <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
+            <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #E2E8F0;">
+                <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-transform: uppercase;">
+                    Estado: ${estadoTxt}
+                </span>
+            </div>
+            
+            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                <strong><i class="fa-regular fa-calendar" style="color:#00B8A9; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
+            </p>
+            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                <strong><i class="fa-solid fa-house" style="color:#00B8A9; width:20px;"></i> Propiedad / Contacto:</strong> ${p.clientName}
+            </p>
+            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                <strong><i class="fa-solid fa-phone" style="color:#00B8A9; width:20px;"></i> Teléfono:</strong> ${p.clientPhone}
+            </p>
+            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                <strong><i class="fa-solid fa-location-dot" style="color:#00B8A9; width:20px;"></i> Dirección:</strong> ${p.address}
+            </p>
+            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                <strong><i class="fa-solid fa-key" style="color:#00B8A9; width:20px;"></i> Caja Fuerte:</strong> ${p.safeDepositBoxCodes && p.safeDepositBoxCodes.trim() ? p.safeDepositBoxCodes : 'No requiere'}
+            </p>
+            
+            <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F59E0B; font-weight: bold; background: #111C44; padding: 10px; border-radius: 8px; text-align: center;">
+                <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${parseFloat(p.pay || 0).toFixed(2)}
+            </p>
 
-                            ${notasHtml}
-                            
-                            <div style="position: relative; margin-top: 15px;">
-                                <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;" onmouseover="this.style.background='#00B8A9'" onmouseout="this.style.background='#111C44'">
-                                    <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
-                                </a>
-                            </div>
-                            
-                            ${htmlBloqueo}
-                        </div>
+            ${notasHtml}
+            
+            <div style="position: relative; margin-top: 15px;">
+                <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
+                <a href="https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;" onmouseover="this.style.background='#00B8A9'" onmouseout="this.style.background='#111C44'">
+                    <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
+                </a>
+            </div>
+            
+            ${htmlBloqueo}
+        </div>
                     `,
                     showCancelButton: true,
                     showConfirmButton: !estaBloqueado,
