@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="../admin/admin.css"> 
+    <link rel="stylesheet" href="../admin/usuarios/usuarios.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -169,9 +170,16 @@
                 </form>
             </div>
             
-            <div class="modal-footer" style="background: #F9FAFC; border-top: 1px solid #F4F7FE; display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px;">
-                <button id="btnCerrarModalBot" class="btn-secondary" style="padding: 10px 20px; background: white; color: #2E3238; border: 1px solid #E0E5F2; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Cancelar</button>
-                <button id="btnGuardarPerfil" class="btn-primary" style="padding: 10px 20px; background: #12CFF4; color: #0B0B0D; border: none; border-radius: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(18, 207, 244, 0.25);">Guardar Cambios</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; width: 100%;">
+                <!-- Este botón estará oculto por defecto y el JS lo mostrará si hay más de 1 rol -->
+                <button type="button" id="btnCambiarRol" class="btn-secondary" style="background: #F4A300; color: #fff; border: none; display: none;">
+                    <i class="fa-solid fa-users-arrows-right-left"></i> Cambiar Rol
+                </button>
+                
+                <div>
+                    <button type="button" id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
+                    <button type="button" id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar Cambios</button>
+                </div>
             </div>
         </div>
     </div>

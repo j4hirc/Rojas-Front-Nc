@@ -396,9 +396,16 @@
                             placeholder="Déjalo en blanco para mantener la actual"></div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button onclick="cerrarModalPerfil()" class="btn-secondary">Cancelar</button>
-                <button onclick="guardarPerfil()" class="btn-primary">Guardar Cambios</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; width: 100%;">
+                <!-- Este botón estará oculto por defecto y el JS lo mostrará si hay más de 1 rol -->
+                <button type="button" id="btnCambiarRol" class="btn-secondary" style="background: #F4A300; color: #fff; border: none; display: none;">
+                    <i class="fa-solid fa-users-arrows-right-left"></i> Cambiar Rol
+                </button>
+                
+                <div>
+                    <button type="button" id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
+                    <button type="button" id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar Cambios</button>
+                </div>
             </div>
         </div>
     </div>

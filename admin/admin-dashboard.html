@@ -168,12 +168,16 @@
                 </form>
             </div>
 
-            <div class="modal-footer">
-                <button id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
-                <button id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar Cambios</button>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; width: 100%;">
+                <button type="button" id="btnCambiarRol" class="btn-secondary" style="background: #F4A300; color: #fff; border: none; display: none;">
+                    <i class="fa-solid fa-users-arrows-right-left"></i> Cambiar Rol
+                </button>
+                
+                <div>
+                    <button type="button" id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
+                    <button type="button" id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar Cambios</button>
+                </div>
             </div>
-        </div>
-    </div>
 
     <script type="module" src="admin-dashboard.js"></script>
 </body>

@@ -754,3 +754,76 @@ window.cerrarSesion = () => {
         }
     });
 };
+
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Leer los roles del localStorage
+    const rolesString = localStorage.getItem('user_roles');
+    let userRoles = [];
+    
+    if (rolesString) {
+        try { 
+            userRoles = JSON.parse(rolesString); 
+        } catch(e) { 
+            console.error("Error al leer roles"); 
+        }
+    }
+
+    // 2. Si el botón existe y tiene más de 1 rol, lo mostramos
+    const btnCambiarRol = document.getElementById("btnCambiarRol");
+    if (btnCambiarRol) {
+        if (userRoles.length > 1) {
+            btnCambiarRol.style.display = 'inline-block';
+            btnCambiarRol.addEventListener("click", () => mostrarSelectorDeRoles(userRoles));
+        } else {
+            btnCambiarRol.style.display = 'none'; // Se oculta si solo tiene 1 rol
+        }
+    }
+});
+
+function mostrarSelectorDeRoles(roles) {
+    // Cerramos el modal del perfil si existe la función
+    if (typeof cerrarModalPerfil === 'function') {
+        cerrarModalPerfil(); 
+    } else {
+        // Fallback genérico por si la función tiene otro nombre en otra vista
+        const modales = document.querySelectorAll('.modal-overlay');
+        modales.forEach(m => m.style.display = 'none');
+    }
+
+    // Armamos los botones según los roles que tenga
+    let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
+    
+    roles.forEach(rol => {
+        let nombreRol = '';
+        let url = '';
+        
+        // Asignamos las URLs relativas (funcionan porque todos los dashboards están a 1 carpeta de distancia de la raíz)
+        if(rol === 'ROLE_ADMIN') { 
+            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
+            url = '../admin/admin-dashboard.html'; 
+        }
+        if(rol === 'ROLE_JEFE') { 
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Jefe'; 
+            url = '../jefe/jefe-dashboard.html'; 
+        }
+        if(rol === 'ROLE_EMPLOYEE') { 
+            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista'; 
+            url = '../employee/employee-dashboard.html'; 
+        }
+
+        if(nombreRol) {
+            opcionesHTML += `<button class="swal2-confirm swal2-styled" style="width: 100%; margin: 0; background-color: #00B8A9;" onclick="window.location.href='${url}'">${nombreRol}</button>`;
+        }
+    });
+    
+    opcionesHTML += '</div>';
+
+    Swal.fire({
+        title: 'Selecciona tu área de trabajo',
+        html: opcionesHTML,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#111C44'
+    });
+}
