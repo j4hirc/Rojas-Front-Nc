@@ -1,7 +1,7 @@
 const API_URL = 'https://api-remomn.onrender.com/api/v1/materials';
 const CATEGORIES_URL = 'https://api-remomn.onrender.com/api/v1/categories';
 let userToken = '';
-let todosLosMaterialesCache = []; // Caché para que el buscador funcione rápido
+let todosLosMaterialesCache = []; 
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             text: 'No tienes permisos para acceder a esta sección.',
             confirmButtonColor: '#12CFF4'
         }).then(() => {
-            window.location.href = '../../index.html'; 
+            window.location.href = '../../index.html';
         });
         return;
     }
@@ -26,7 +26,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarCategoriasEnSelect();
 });
 
-// 1. CARGAMOS LA TABLA DE MATERIALES Y LOS GUARDAMOS EN CACHÉ
 async function cargarMateriales() {
     try {
         const response = await fetch(`${API_URL}/all`, {
@@ -36,32 +35,27 @@ async function cargarMateriales() {
 
         if (response.ok) {
             const materiales = await response.json();
-            todosLosMaterialesCache = materiales; // Guardamos en memoria para el buscador
+            todosLosMaterialesCache = materiales; 
             renderizarMateriales(materiales);
         }
-    } catch (error) { 
+    } catch (error) {
         console.error('Error de red:', error);
         Swal.fire('Error de conexión', 'No se pudo cargar la lista de materiales.', 'error');
     }
 }
 
-// 2. FUNCIÓN DEL BUSCADOR (Se llama al escribir)
-// 2. FUNCIÓN DEL BUSCADOR (Combina texto y categoría)
 window.buscarMaterial = () => {
-    // Capturamos el texto y la categoría
     const textoBuscado = document.getElementById('buscadorMaterial').value.toLowerCase().trim();
     const categoriaSeleccionada = document.getElementById('filtroCategoria').value;
 
     let materialesFiltrados = todosLosMaterialesCache;
 
-    // Filtro 1: Por Nombre
     if (textoBuscado !== "") {
-        materialesFiltrados = materialesFiltrados.filter(mat => 
+        materialesFiltrados = materialesFiltrados.filter(mat =>
             mat.name && mat.name.toLowerCase().includes(textoBuscado)
         );
     }
 
-    // Filtro 2: Por Categoría (compara los values en minúscula que le dimos al select)
     if (categoriaSeleccionada !== "todos") {
         materialesFiltrados = materialesFiltrados.filter(mat => {
             if (!mat.categoryName) return false;
@@ -69,74 +63,72 @@ window.buscarMaterial = () => {
         });
     }
 
-    // Pintamos en pantalla
     renderizarMateriales(materialesFiltrados);
 };
 
 function renderizarMateriales(materiales) {
     const tableBody = document.getElementById('materialTableBody');
     const mobileContainer = document.getElementById('mobileCardsContainer');
-    
+
     tableBody.innerHTML = '';
     mobileContainer.innerHTML = '';
 
-    if(materiales.length === 0) {
+    if (materiales.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding: 30px; color: #A3AED0;">No se encontraron materiales.</td></tr>`;
         mobileContainer.innerHTML = `<p style="text-align:center; padding: 20px; color: #A3AED0;">No se encontraron materiales.</p>`;
         return;
     }
 
     materiales.forEach(mat => {
-        // Escapamos los nombres para que el botón "Editar" no se rompa
         const safeName = mat.name ? mat.name.replace(/'/g, "\\'") : '';
         const safeCategory = mat.categoryName ? mat.categoryName.replace(/'/g, "\\'") : '';
+        
+        // Asignamos 0 si viene null o indefinido desde la base de datos
+        const safeCount = mat.count || 0;
+        const safePrice = mat.price || 0;
 
-        // --- VISTA DE TABLA (PC) ---
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>#${mat.materialId}</td>
-            <td style="font-weight: 600;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-box"></i></div>
-                    <div>
-                        ${mat.name}<br>
-                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Cat: ${mat.categoryName || 'Sin categoría'}</span>
-                    </div>
-                </div>
-            </td>
-            <td style="text-align: center;">
-                <div class="action-btns">
-                    <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </td>
-        `;
+    <td>#${mat.materialId}</td>
+    <td style="font-weight: 600;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-box"></i></div>
+            <div>
+                ${mat.name} <span style="font-size: 0.8rem; font-weight: normal; color: var(--primary);">($${safePrice} - Disp: ${safeCount})</span><br>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Cat: ${mat.categoryName || 'Sin categoría'}</span>
+            </div>
+        </div>
+    </td>
+    <td style="text-align: center;">
+        <div class="action-btns">
+            <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}', ${safeCount}, ${safePrice})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+        </div>
+    </td>
+`;
         tableBody.appendChild(tr);
 
-        // --- VISTA DE TARJETA (MÓVIL) ---
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-            <div class="card-header">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fa-solid fa-box"></i></div>
-                    <div>
-                        <strong style="color: var(--navy); font-size: 1.1rem; display: block;">${mat.name}</strong> 
-                        <span style="font-size: 0.8rem; color: var(--text-muted);">ID: #${mat.materialId} | Cat: ${mat.categoryName || 'N/A'}</span>
-                    </div>
-                </div>
+    <div class="card-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fa-solid fa-box"></i></div>
+            <div>
+                <strong style="color: var(--navy); font-size: 1.1rem; display: block;">${mat.name}</strong> 
+                <span style="font-size: 0.8rem; color: var(--text-muted);">ID: #${mat.materialId} | Cat: ${mat.categoryName || 'N/A'}</span>
             </div>
-            <div class="card-actions">
-                <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}')"><i class="fa-solid fa-pen"></i></button>
-                <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})"><i class="fa-solid fa-trash"></i></button>
-            </div>
-        `;
+        </div>
+    </div>
+    <div class="card-actions">
+        <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}', ${safeCount}, ${safePrice})"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})"><i class="fa-solid fa-trash"></i></button>
+    </div>
+`;
         mobileContainer.appendChild(card);
     });
 }
 
-// 3. CARGAMOS LAS CATEGORÍAS EN EL DESPLEGABLE (SELECT)
-// 3. CARGAMOS LAS CATEGORÍAS EN LOS SELECTS (Modal y Filtro)
 async function cargarCategoriasEnSelect() {
     try {
         const response = await fetch(`${CATEGORIES_URL}/all`, {
@@ -144,20 +136,15 @@ async function cargarCategoriasEnSelect() {
         });
         if (response.ok) {
             const categorias = await response.json();
-            
-            // Select del formulario de crear/editar
+
             const selectModal = document.getElementById('matCategory');
-            selectModal.innerHTML = '<option value="">-- Selecciona una categoría --</option>'; 
-            
-            // Select del filtro arriba de la tabla
+            selectModal.innerHTML = '<option value="">-- Selecciona una categoría --</option>';
+
             const selectFiltro = document.getElementById('filtroCategoria');
-            selectFiltro.innerHTML = '<option value="todos">Todas las categorías</option>'; 
-            
+            selectFiltro.innerHTML = '<option value="todos">Todas las categorías</option>';
+
             categorias.forEach(cat => {
-                // Al modal le pasamos el ID numérico
                 selectModal.innerHTML += `<option value="${cat.categoryId}">${cat.name}</option>`;
-                
-                // Al filtro le pasamos el nombre en minúscula para poder compararlo
                 selectFiltro.innerHTML += `<option value="${cat.name.toLowerCase()}">${cat.name}</option>`;
             });
         }
@@ -166,22 +153,25 @@ async function cargarCategoriasEnSelect() {
     }
 }
 
-
-// --- LÓGICA DEL MODAL Y CRUD ---
-
 window.abrirModalCrearMat = () => {
     document.getElementById('formMaterial').reset();
     document.getElementById('materialId').value = '';
+    
+    if(document.getElementById('materialCount')) document.getElementById('materialCount').value = '';
+    if(document.getElementById('materialPrice')) document.getElementById('materialPrice').value = '';
+
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-box-open" style="color: var(--primary);"></i> Nuevo Material';
     document.getElementById('modalMaterial').style.display = 'flex';
 };
 
-window.abrirModalEditarMat = (id, name, categoryName) => {
+window.abrirModalEditarMat = (id, name, categoryName, count, price) => {
     document.getElementById('formMaterial').reset();
     document.getElementById('materialId').value = id;
     document.getElementById('materialName').value = name;
     
-    // Auto-seleccionar la categoría en el Dropdown
+    if(document.getElementById('materialCount')) document.getElementById('materialCount').value = count;
+    if(document.getElementById('materialPrice')) document.getElementById('materialPrice').value = price;
+
     const select = document.getElementById('matCategory');
     for (let i = 0; i < select.options.length; i++) {
         if (select.options[i].text === categoryName) {
@@ -189,7 +179,7 @@ window.abrirModalEditarMat = (id, name, categoryName) => {
             break;
         }
     }
-    
+
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen" style="color: var(--primary);"></i> Editar Material';
     document.getElementById('modalMaterial').style.display = 'flex';
 };
@@ -201,19 +191,28 @@ window.cerrarModalMat = () => {
 window.guardarMaterial = async () => {
     const id = document.getElementById('materialId').value;
     const isEditing = id !== '';
-    
+
     const name = document.getElementById('materialName').value.trim();
     const categoryId = document.getElementById('matCategory').value;
     
-    if(!name || !categoryId) {
+    const countInput = document.getElementById('materialCount');
+    const priceInput = document.getElementById('materialPrice');
+    
+    // Si están vacíos, mandamos un 0 por defecto para que el backend no falle
+    const count = (countInput && countInput.value !== '') ? countInput.value : '0';
+    const price = (priceInput && priceInput.value !== '') ? priceInput.value : '0';
+
+    if (!name || !categoryId) {
         return Swal.fire('Atención', 'El Nombre y la Categoría son obligatorios.', 'warning');
     }
 
     const payload = {
         name: name,
+        count: parseInt(count),      
+        price: parseFloat(price),    
         categoryId: parseInt(categoryId)
     };
-    
+
     const url = isEditing ? `${API_URL}/update/${id}` : `${API_URL}/create`;
     const method = isEditing ? 'PUT' : 'POST';
 
@@ -230,7 +229,7 @@ window.guardarMaterial = async () => {
         if (response.ok) {
             Swal.fire({ icon: 'success', title: '¡Éxito!', text: isEditing ? 'Material actualizado.' : 'Material agregado.', confirmButtonColor: '#00B8A9' });
             cerrarModalMat();
-            await cargarMateriales(); 
+            await cargarMateriales();
         } else {
             const errorData = await response.json();
             Swal.fire({ icon: 'error', title: 'Error', text: errorData.message || 'No se pudo guardar el material.', confirmButtonColor: '#00B8A9' });
@@ -258,14 +257,14 @@ window.eliminarMaterial = async (id) => {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${userToken}` }
                 });
-                
-                if(res.ok) {
+
+                if (res.ok) {
                     Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El material fue borrado.', confirmButtonColor: '#00B8A9' });
                     await cargarMateriales();
                 } else {
                     Swal.fire('Error', 'No se pudo eliminar el material.', 'error');
                 }
-            } catch(e) { 
+            } catch (e) {
                 console.error(e);
             }
         }

@@ -44,7 +44,7 @@
                 <a href="materiales.html" class="active">
                     <i class="fa-solid fa-boxes-stacked"></i> Materiales
                 </a>
-                
+
             </nav>
 
             <div class="sidebar-footer">
@@ -82,7 +82,9 @@
                             </div>
 
                             <div style="width: 100%; max-width: 200px;">
-                                <select id="filtroCategoria" class="input-field" style="padding-top: 10px; padding-bottom: 10px; cursor: pointer;" onchange="buscarMaterial()">
+                                <select id="filtroCategoria" class="input-field"
+                                    style="padding-top: 10px; padding-bottom: 10px; cursor: pointer;"
+                                    onchange="buscarMaterial()">
                                     <option value="todos">Todas las categorías</option>
                                 </select>
                             </div>
@@ -133,6 +135,17 @@
                             placeholder="Ej: Cemento Portland">
                     </div>
 
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Cantidad</label>
+                        <input type="number" id="materialCount" class="input-field" required placeholder="Ej: 10"
+                            min="0">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Precio ($)</label>
+                        <input type="number" id="materialPrice" class="input-field" required placeholder="Ej: 25.50"
+                            step="0.01" min="0">
+                    </div>
                     <div class="form-group" style="margin-top: 15px;">
                         <label>Categoría</label>
                         <select id="matCategory" class="input-field" required>
