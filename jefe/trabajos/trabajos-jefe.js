@@ -86,15 +86,12 @@ function inicializarMapa(lat, lng) {
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapa);
         marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
 
-        const geocoder = L.Control.Geocoder.nominatim();
-
         function obtenerDireccion(latlng) {
             fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&accept-language=es&addressdetails=1`)
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.address) {
                         const a = data.address;
-                        // Armamos una dirección legible con los componentes disponibles
                         const partes = [
                             a.road || a.pedestrian || a.footway || '',
                             a.house_number || '',
@@ -125,12 +122,10 @@ function inicializarMapa(lat, lng) {
         // ── Dirección → Mapa ──────────────────────────────────────────
         const inputDireccion = document.getElementById('jobAddress');
 
-        // Busca en el mapa lo que el usuario escribió
         function buscarDireccionEnMapa() {
             const texto = inputDireccion.value.trim();
             if (!texto) return;
 
-            // Si escribió coordenadas tipo "-2.900, -79.005"
             const regexCoords = /^[-+]?\d+(\.\d+)?,\s*[-+]?\d+(\.\d+)?$/;
             if (regexCoords.test(texto)) {
                 const partes = texto.split(',');
@@ -145,7 +140,6 @@ function inicializarMapa(lat, lng) {
                 return;
             }
 
-            // Si escribió texto, buscamos con Nominatim directamente
             fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(texto)}&accept-language=es&limit=1`)
                 .then(res => res.json())
                 .then(results => {
@@ -170,10 +164,7 @@ function inicializarMapa(lat, lng) {
                 .catch(err => console.error('Error geocoding:', err));
         }
 
-        // Dispara al salir del campo
         inputDireccion.addEventListener('blur', buscarDireccionEnMapa);
-
-        // Dispara al presionar Enter sin enviar el form
         inputDireccion.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -193,26 +184,22 @@ function inicializarMapa(lat, lng) {
     setTimeout(() => { mapa.invalidateSize(); }, 300);
 }
 
-// Función global que lee los inputs de coordenadas y mueve el mapa en tiempo real
 window.actualizarMapaDesdeInputs = () => {
     const latVal = parseFloat(document.getElementById('jobLat').value);
     const lngVal = parseFloat(document.getElementById('jobLng').value);
 
-    // Verifica que el usuario haya escrito valores numéricos válidos en el rango de coordenadas
     if (!isNaN(latVal) && !isNaN(lngVal) && latVal >= -90 && latVal <= 90 && lngVal >= -180 && lngVal <= 180) {
         if (mapa && marcador) {
             marcador.setLatLng([latVal, lngVal]);
-            mapa.panTo([latVal, lngVal]); // Desplaza suavemente el mapa hacia la ubicación copiada/escrita
+            mapa.panTo([latVal, lngVal]); 
         }
     }
 };
 
-// Función para buscar en el mapa la dirección o coordenadas escritas a mano
 window.actualizarMapaDesdeDireccion = () => {
     const direccionEscrita = document.getElementById('jobAddress').value.trim();
     if (!direccionEscrita) return;
 
-    // 1. Validar si lo que escribió son coordenadas directamente (ej: "-2.900, -79.005")
     const regexCoordenadas = /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/;
     if (regexCoordenadas.test(direccionEscrita)) {
         const partes = direccionEscrita.split(',');
@@ -228,18 +215,15 @@ window.actualizarMapaDesdeDireccion = () => {
         return;
     }
 
-    // 2. Si es texto normal, usamos el buscador (Forward Geocoding)
     const geocoder = L.Control.Geocoder.nominatim();
     geocoder.geocode(direccionEscrita, results => {
         if (results && results.length > 0) {
             const match = results[0];
             const latlng = match.center;
 
-            // Actualizamos inputs de lat y lng numéricos
             document.getElementById('jobLat').value = latlng.lat.toFixed(6);
             document.getElementById('jobLng').value = latlng.lng.toFixed(6);
 
-            // Movemos el mapa y el marcador al lugar encontrado
             if (mapa && marcador) {
                 marcador.setLatLng(latlng);
                 mapa.setView(latlng, 16);
@@ -273,24 +257,23 @@ window.obtenerMiUbicacion = () => {
     }
 };
 
-// Modificado para que NO cargue Jefes, solo Empleados
 async function cargarUsuariosYMateriales(emailActual) {
     try {
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resUsers.ok) {
             const users = await resUsers.json();
 
-            // Buscar el ID del jefe logueado
             const jefeActual = users.find(u => u.email === emailActual);
             if (jefeActual) {
                 myManagerId = jefeActual.userId;
             }
 
             const selectEmp = document.getElementById('jobEmployee');
-            selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
-
-            const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
-            empleados.forEach(u => selectEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
+            if (selectEmp) {
+                selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
+                const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
+                empleados.forEach(u => selectEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
+            }
         }
 
         const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
@@ -303,20 +286,34 @@ async function cargarUsuariosYMateriales(emailActual) {
                 containerMat.innerHTML = '<span style="color:#666;">No hay materiales en inventario.</span>';
             } else {
                 materials.forEach(mat => {
+                    const precioMat = mat.price || 0; 
                     containerMat.innerHTML += `
-        <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
-                <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" onchange="document.getElementById('opts_${mat.materialId}').style.display = this.checked ? 'flex' : 'none'">
-                ${mat.name}
-            </label>
-            
-            <div id="opts_${mat.materialId}" style="display: none; gap: 10px; margin-top: 8px; margin-left: 24px;">
-                <input type="number" id="qty_${mat.materialId}" placeholder="Cant." class="input-field" style="width: 75px; padding: 5px; border: 1px solid #198754; border-radius: 5px; font-size: 12px; height: auto;">
-                <input type="text" id="unit_${mat.materialId}" placeholder="Unidad (box, ltr, etc)" class="input-field" style="flex: 1; padding: 5px; border: 1px solid #198754; border-radius: 5px; font-size: 12px; height: auto;">
-            </div>
-        </div>
-    `;
+                    <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                        <label style="display: flex; align-items: center; justify-content: space-between; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" onchange="toggleMaterialOpciones(${mat.materialId})">
+                                ${mat.name}
+                            </div>
+                            <span style="color: #198754; font-size: 12px; background: #e8f5e9; padding: 2px 6px; border-radius: 4px;">$${precioMat.toFixed(2)} c/u</span>
+                        </label>
+                        
+                        <div id="opts_${mat.materialId}" style="display: none; align-items: center; gap: 10px; margin-top: 8px; margin-left: 24px;">
+                            <input type="number" id="qty_${mat.materialId}" placeholder="Cant." class="input-field" oninput="calcularCostoMateriales()" min="1" style="width: 70px; padding: 5px; border: 1px solid #198754; border-radius: 5px; font-size: 12px; height: auto;">
+                            <input type="text" id="unit_${mat.materialId}" placeholder="Unidad" class="input-field" style="flex: 1; padding: 5px; border: 1px solid #198754; border-radius: 5px; font-size: 12px; height: auto;">
+                            
+                            <div style="font-size: 13px; color: #d32f2f; font-weight: bold; min-width: 60px; text-align: right;">
+                                $<span id="subtotal_${mat.materialId}">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
                 });
+
+                containerMat.innerHTML += `
+                    <div style="margin-top: 15px; padding: 12px; background: #FFF3E0; border-radius: 8px; text-align: right; font-weight: bold; color: #ff9800; font-size: 16px; border: 1px dashed #ffb74d;">
+                        Costo Total Materiales: $<span id="granTotalMateriales">0.00</span>
+                    </div>
+                `;
             }
         }
     } catch (e) { console.error("Error cargando dependencias", e); }
@@ -327,7 +324,6 @@ async function cargarTrabajos() {
         const response = await fetch(`${API_URL}/all`, { method: 'GET', headers: { 'Authorization': `Bearer ${userToken}` } });
         if (response.ok) {
             const todosLosTrabajos = await response.json();
-            // Filtramos solo los trabajos que le pertenecen al Jefe actual
             const misTrabajos = todosLosTrabajos.filter(job => job.managerId === myManagerId);
             renderizarTrabajos(misTrabajos);
         }
@@ -357,7 +353,7 @@ function renderizarTrabajos(trabajos) {
         const empName = job.nameEmployee || 'Sin asignar';
         const fechaTxt = formatearFecha(job.jobDate);
         const safeDesc = job.description ? job.description : 'Sin descripción';
-        const mapsLink = `https://www.google.com/maps/dir/?api=1&destination=${job.latitude},${job.longitude}`;
+        const mapsLink = `http://googleusercontent.com/maps.google.com/?q=${job.latitude},${job.longitude}`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -383,14 +379,14 @@ function renderizarTrabajos(trabajos) {
             <td>${statusBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
-    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
-        <i class="fa-solid fa-pen"></i>
-    </button>
+                <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
 
-    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
-        <i class="fa-solid fa-trash"></i>
-    </button>
-</td>
+                <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
         `;
         tbody.appendChild(tr);
 
@@ -429,8 +425,8 @@ function renderizarTrabajos(trabajos) {
                     </a>
 
                     <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;">
-    <i class="fa-solid fa-pen"></i> Editar
-</button>
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
 
                     <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer; font-size: 13px;"><i class="fa-solid fa-trash"></i> Eliminar</button>
                 </div>
@@ -443,7 +439,20 @@ function renderizarTrabajos(trabajos) {
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
-    document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
+    
+    // Limpiar todos los campos de materiales
+    document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
+        cb.checked = false;
+        const divOpts = document.getElementById(`opts_${cb.value}`);
+        if (divOpts) divOpts.style.display = 'none';
+        
+        const qtyInput = document.getElementById(`qty_${cb.value}`);
+        const unitInput = document.getElementById(`unit_${cb.value}`);
+        if(qtyInput) qtyInput.value = '';
+        if(unitInput) unitInput.value = '';
+    });
+    if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
+
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
     inicializarMapa(-2.900128, -79.005896);
@@ -451,9 +460,20 @@ window.abrirModalCrearJob = () => {
 
 window.abrirModalEditarJob = async (id) => {
     document.getElementById('formJob').reset();
-    document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => cb.checked = false);
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
+
+    // Limpiar materiales antes de cargar
+    document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
+        cb.checked = false;
+        const divOpts = document.getElementById(`opts_${cb.value}`);
+        if (divOpts) divOpts.style.display = 'none';
+        const qtyInput = document.getElementById(`qty_${cb.value}`);
+        const unitInput = document.getElementById(`unit_${cb.value}`);
+        if(qtyInput) qtyInput.value = '';
+        if(unitInput) unitInput.value = '';
+    });
+    if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
 
     try {
         Swal.fire({ title: 'Cargando datos...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
@@ -463,9 +483,18 @@ window.abrirModalEditarJob = async (id) => {
         if (response.ok) {
             const data = await response.json();
 
+            // Extraer datos de materiales si existen en la descripción
+            const datosMaterialesGuardados = data.description ? extraerDatosMateriales(data.description) : {};
+
+            // Limpiar la descripción para el textarea
+            let descripcionLimpia = data.description || '';
+            if (descripcionLimpia.includes('[MATERIALES PRE-ASIGNADOS]:')) {
+                descripcionLimpia = descripcionLimpia.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+            }
+
             document.getElementById('jobClientName').value = data.clientName;
             document.getElementById('jobClientPhone').value = data.clientPhone;
-            document.getElementById('jobDesc').value = data.description;
+            document.getElementById('jobDesc').value = descripcionLimpia;
             document.getElementById('jobDate').value = fechaParaInput(data.jobDate);
             document.getElementById('jobAddress').value = data.address;
             document.getElementById('jobLat').value = data.latitude;
@@ -473,14 +502,27 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobSafeBox').value = data.safeDepositBoxCodes || '';
             document.getElementById('jobPay').value = data.pay;
             document.getElementById('jobStatus').value = data.status || 'PENDING';
-
             document.getElementById('jobEmployee').value = data.employeeId;
 
-            if (data.materials && data.materials.length > 0) {
+            // Marcar materiales y rellenar inputs
+            if (data.materials) {
                 const checkboxes = document.querySelectorAll('input[name="jobMaterials"]');
                 checkboxes.forEach(cb => {
-                    cb.checked = data.materials.some(m => m.materialId == cb.value);
+                    const nombreMat = cb.getAttribute('data-name');
+                    if (data.materials.some(m => m.materialId == cb.value)) {
+                        cb.checked = true;
+                        const divOpts = document.getElementById(`opts_${cb.value}`);
+                        if (divOpts) divOpts.style.display = 'flex';
+                        
+                        if (datosMaterialesGuardados[nombreMat]) {
+                            document.getElementById(`qty_${cb.value}`).value = datosMaterialesGuardados[nombreMat].qty;
+                            document.getElementById(`unit_${cb.value}`).value = datosMaterialesGuardados[nombreMat].unit;
+                        } else {
+                            document.getElementById(`qty_${cb.value}`).value = 1;
+                        }
+                    }
                 });
+                window.calcularCostoMateriales();
             }
 
             Swal.close();
@@ -501,11 +543,11 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
-    // 1. Obtenemos TODOS los materiales seleccionados
+    // Obtenemos TODOS los materiales seleccionados
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
 
-    // 2. Armamos el texto de las cantidades
+    // Armamos el texto de las cantidades
     let resumenMateriales = '';
     matCheckboxes.forEach(cb => {
         const matId = cb.value;
@@ -517,19 +559,19 @@ window.guardarTrabajo = async () => {
         resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
     });
 
-    // 3. Limpiamos la descripción vieja para que no se duplique
+    // Limpiamos la descripción vieja para que no se duplique
     let descripcionBase = document.getElementById('jobDesc').value.trim();
     if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
         descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
     }
 
-    // 4. Juntamos todo
+    // Juntamos todo
     let descripcionFinal = descripcionBase;
     if (resumenMateriales !== '') {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
-    // 5. Armamos el payload enviando TODOS los materiales seleccionados
+    // Armamos el payload
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
@@ -542,11 +584,10 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: myManagerId, // <--- Única diferencia con el admin
+        managerId: myManagerId, 
         materialIds: selectedMaterials
     };
 
-    // Eliminamos managerId de la validación porque ya lo estamos asignando arriba
     if (!payload.clientName || !payload.employeeId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire('Error', 'Por favor llena todos los campos obligatorios, incluyendo la fecha.', 'error');
     }
@@ -636,3 +677,59 @@ window.cerrarSesion = () => {
         }
     });
 };
+
+// =========================================================
+// UTILIDADES PARA EL CÁLCULO DE MATERIALES
+// =========================================================
+
+window.toggleMaterialOpciones = (matId) => {
+    const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
+    const divOpts = document.getElementById(`opts_${matId}`);
+    const inputQty = document.getElementById(`qty_${matId}`);
+
+    if (checkbox.checked) {
+        divOpts.style.display = 'flex';
+        if (!inputQty.value) inputQty.value = 1; 
+    } else {
+        divOpts.style.display = 'none';
+        inputQty.value = ''; 
+    }
+    window.calcularCostoMateriales();
+};
+
+window.calcularCostoMateriales = () => {
+    let granTotal = 0;
+    const checkboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
+
+    checkboxes.forEach(cb => {
+        const matId = cb.value;
+        const price = parseFloat(cb.getAttribute('data-price')) || 0;
+        const qty = parseFloat(document.getElementById(`qty_${matId}`).value) || 0;
+
+        const subtotal = price * qty;
+        document.getElementById(`subtotal_${matId}`).textContent = subtotal.toFixed(2);
+        granTotal += subtotal;
+    });
+
+    const txtGranTotal = document.getElementById('granTotalMateriales');
+    if (txtGranTotal) {
+        txtGranTotal.textContent = granTotal.toFixed(2);
+    }
+};
+
+function extraerDatosMateriales(texto) {
+    const datos = {};
+    const lineas = texto.split('\n');
+    const regex = /•\s*(.*?):\s*(\d+)\s*(.*)/;
+    
+    lineas.forEach(linea => {
+        const match = linea.match(regex);
+        if (match) {
+            const nombreMat = match[1].trim();
+            const cantidad = match[2].trim();
+            const unidad = match[3].trim();
+            datos[nombreMat] = { qty: cantidad, unit: unidad };
+        }
+    });
+    return datos;
+}
