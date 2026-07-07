@@ -279,7 +279,12 @@ function renderizarTrabajos(trabajos) {
         const empName = job.nameEmployee || 'Sin asignar';
         const manName = job.nameManager || 'Sin asignar';
         const fechaTxt = formatearFecha(job.jobDate);
-        const safeDesc = job.description ? job.description : 'Sin descripción';
+        
+        // Limpiamos notas previas si existían
+        let safeDesc = job.description ? job.description : 'Sin descripción';
+        if (safeDesc.includes('[MATERIALES PRE-ASIGNADOS]:')) {
+            safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+        }
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -304,14 +309,13 @@ function renderizarTrabajos(trabajos) {
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
                 <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
-    <i class="fa-solid fa-pen"></i>
-</button>
-
-<button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
-    <i class="fa-solid fa-trash"></i>
-</button>
-</td>
-`;
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </td>
+        `;
         tbody.appendChild(tr);
 
         if (mobileContainer) {
@@ -343,15 +347,14 @@ function renderizarTrabajos(trabajos) {
                 <p style="margin: 10px 0 0 0; font-size: 15px; color:#2e7d32; font-weight: bold;">Pago: $${job.pay.toFixed(2)}</p>
                 
                 <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 10px;">
-                <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;">
-    <i class="fa-solid fa-pen"></i> Editar
-</button>
-
-<button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer;">
-    <i class="fa-solid fa-trash"></i> Eliminar
-</button>
-</div>
-`;
+                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer;">
+                        <i class="fa-solid fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            `;
             mobileContainer.appendChild(card);
         }
     });
@@ -365,7 +368,6 @@ window.abrirModalCrearJob = () => {
         const divOpts = document.getElementById(`opts_${cb.value}`);
         if (divOpts) divOpts.style.display = 'none';
         
-        // Limpiamos los inputs de cantidad y unidad al crear uno nuevo
         const qtyInput = document.getElementById(`qty_${cb.value}`);
         const unitInput = document.getElementById(`unit_${cb.value}`);
         if(qtyInput) qtyInput.value = '';
@@ -402,10 +404,7 @@ window.abrirModalEditarJob = async (id) => {
         if (response.ok) {
             const data = await response.json();
 
-            // 2. Extraer datos de materiales si existen en la descripción
-            const datosMaterialesGuardados = data.description ? extraerDatosMateriales(data.description) : {};
-
-            // 3. Limpiar la descripción para el textarea
+            // Limpiamos la descripción por si tiene basura
             let descripcionLimpia = data.description || '';
             if (descripcionLimpia.includes('[MATERIALES PRE-ASIGNADOS]:')) {
                 descripcionLimpia = descripcionLimpia.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
@@ -424,24 +423,21 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
-            // 4. Marcar materiales y rellenar inputs
-            if (data.materials) {
-                const checkboxes = document.querySelectorAll('input[name="jobMaterials"]');
-                checkboxes.forEach(cb => {
-                    const nombreMat = cb.getAttribute('data-name');
-                    if (data.materials.some(m => m.materialId == cb.value)) {
+            // 🔥 4. AHORA LEEMOS LA CANTIDAD Y UNIDAD DESDE EL JSON REAL
+            if (data.materials && data.materials.length > 0) {
+                document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
+                    const matGuardado = data.materials.find(m => m.materialId == cb.value);
+
+                    if (matGuardado) {
                         cb.checked = true;
                         const divOpts = document.getElementById(`opts_${cb.value}`);
                         if (divOpts) divOpts.style.display = 'flex';
                         
-                        // Si encontramos datos guardados en la descripción, los ponemos en los inputs
-                        if (datosMaterialesGuardados[nombreMat]) {
-                            document.getElementById(`qty_${cb.value}`).value = datosMaterialesGuardados[nombreMat].qty;
-                            document.getElementById(`unit_${cb.value}`).value = datosMaterialesGuardados[nombreMat].unit;
-                        } else {
-                            // Si no había datos (antiguo), ponemos 1 por defecto
-                            document.getElementById(`qty_${cb.value}`).value = 1;
-                        }
+                        const qtyInput = document.getElementById(`qty_${cb.value}`);
+                        const unitInput = document.getElementById(`unit_${cb.value}`);
+                        
+                        if(qtyInput && matGuardado.quantity !== null) qtyInput.value = matGuardado.quantity;
+                        if(unitInput && matGuardado.unit !== null) unitInput.value = matGuardado.unit;
                     }
                 });
                 window.calcularCostoMateriales();
@@ -465,35 +461,42 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
-    // 1. Obtenemos TODOS los materiales seleccionados
+    // 🔥 1. ARMAMOS EL ARRAY EXACTO QUE JAVA ESPERA
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
-    const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
+    const selectedMaterials = [];
 
-    // 2. Armamos el texto de las cantidades
+    // Validamos qué estamos recogiendo (Y el texto para el PDF / descripción vieja)
     let resumenMateriales = '';
     matCheckboxes.forEach(cb => {
-        const matId = cb.value;
+        const matId = parseInt(cb.value);
         const nombreMat = cb.getAttribute('data-name');
-        const cantidad = document.getElementById(`qty_${matId}`).value.trim();
+        const cantidadStr = document.getElementById(`qty_${matId}`).value.trim();
         const unidad = document.getElementById(`unit_${matId}`).value.trim();
 
-        const textoCantidad = cantidad ? `${cantidad} ${unidad}`.trim() : 'Asignado';
+        const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
+
+        // Objeto que va a la base de datos
+        selectedMaterials.push({
+            materialId: matId,
+            quantity: cantidadNum,
+            unit: unidad || 'N/A'
+        });
+
+        const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
         resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
     });
 
-    // 3. Limpiamos la descripción vieja para que no se duplique
     let descripcionBase = document.getElementById('jobDesc').value.trim();
     if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
         descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
     }
 
-    // 4. Juntamos todo
     let descripcionFinal = descripcionBase;
     if (resumenMateriales !== '') {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
-    // 5. Armamos el payload enviando TODOS los materiales seleccionados
+    // 🔥 5. MANDAMOS "materials" AL BACKEND
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
@@ -507,7 +510,7 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: parseInt(document.getElementById('jobManager').value),
-        materialIds: selectedMaterials // <--- El backend se encarga de no duplicarlos
+        materials: selectedMaterials // ¡Debe decir "materials"!
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
@@ -600,8 +603,6 @@ window.cerrarSesion = () => {
     });
 };
 
-
-
 window.toggleMaterialOpciones = (matId) => {
     const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
     const divOpts = document.getElementById(`opts_${matId}`);
@@ -609,10 +610,10 @@ window.toggleMaterialOpciones = (matId) => {
 
     if (checkbox.checked) {
         divOpts.style.display = 'flex';
-        if (!inputQty.value) inputQty.value = 1; // Si lo marcan, la cantidad por defecto es 1
+        if (!inputQty.value) inputQty.value = 1; 
     } else {
         divOpts.style.display = 'none';
-        inputQty.value = ''; // Si lo desmarcan, borramos la cantidad
+        inputQty.value = ''; 
     }
     window.calcularCostoMateriales();
 };
@@ -637,18 +638,17 @@ window.calcularCostoMateriales = () => {
     }
 };
 
-
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
     if (Array.isArray(fecha)) {
         const dia = String(fecha[2]).padStart(2, '0');
         const mes = String(fecha[1]).padStart(2, '0');
         const anio = fecha[0];
-        return `${mes}-${dia}-${anio}`; // Mes-Día-Año
+        return `${mes}-${dia}-${anio}`; 
     } else if (typeof fecha === 'string') {
         const partes = fecha.split('-');
         if (partes.length === 3) {
-            return `${partes[1]}-${partes[2]}-${partes[0]}`; // Mes-Día-Año
+            return `${partes[1]}-${partes[2]}-${partes[0]}`; 
         }
     }
     return fecha;
@@ -663,22 +663,4 @@ function fechaParaInput(fecha) {
         return `${anio}-${mes}-${dia}`;
     }
     return fecha;
-}
-
-function extraerDatosMateriales(texto) {
-    const datos = {};
-    const lineas = texto.split('\n');
-    // Regex para buscar: • Nombre: Cantidad Unidad
-    const regex = /•\s*(.*?):\s*(\d+)\s*(.*)/;
-    
-    lineas.forEach(linea => {
-        const match = linea.match(regex);
-        if (match) {
-            const nombreMat = match[1].trim();
-            const cantidad = match[2].trim();
-            const unidad = match[3].trim();
-            datos[nombreMat] = { qty: cantidad, unit: unidad };
-        }
-    });
-    return datos;
 }

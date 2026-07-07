@@ -547,10 +547,10 @@ window.guardarReporteYPdf = async () => {
         document.getElementById('pdfNewPriceRow').style.display = 'none';
     }
 
+    // 🔥 ARMAMOS LA LISTA LIMPIA PARA JAVA
     const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
     const selectedMaterials = []; 
-    let selectedMaterialNames = '';
-    let resumenMaterialesBD = '';
+    let selectedMaterialNames = ''; // Solo para el PDF visual
 
     selectedMatNodes.forEach(cb => {
         const matId = parseInt(cb.value);
@@ -568,17 +568,13 @@ window.guardarReporteYPdf = async () => {
 
         const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
         selectedMaterialNames += `<li style="margin-bottom: 6px; color: #2E3238;"><strong>${nombreMat}</strong>: <span style="color: #12CFF4; font-weight: bold;">${textoCantidad}</span></li>`;
-        resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
     });
-
-    if (resumenMaterialesBD !== '') {
-        comment = `${comment}\n\n[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}`;
-    }
 
     Swal.fire({ title: 'Procesando...', text: 'Generando archivo PDF y guardando avance...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay).toFixed(2) : '0.00';
 
+    // Generamos el PDF visualmente
     document.getElementById('pdfJobName').textContent = currentJobInfo.clientName || 'Sin asignar';
     document.getElementById('pdfAddress').textContent = currentJobInfo.address || 'Sin dirección';
     document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
@@ -636,8 +632,6 @@ window.guardarReporteYPdf = async () => {
     let pdfBlob;
     try {
         pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
-        html2pdf().set(opt).from(pdfTemplate).save(); 
-
     } catch (e) {
         console.error("Error al hacer el PDF:", e);
         pdfWrapper.style.display = 'none';
@@ -647,13 +641,14 @@ window.guardarReporteYPdf = async () => {
     pdfWrapper.style.display = 'none';
     pdfWrapper.style.visibility = 'hidden';
 
+    // 🔥 DTO PERFECTAMENTE ALINEADO A TU JAVA
     const dtoObject = {
-        comment: comment,
+        comment: comment, // Mandamos el comentario limpio
         jobId: parseInt(currentJobInfo.jobId),
         employeeId: myEmployeeId,
         status: status,
-        materials: selectedMaterials, 
-        newPrice: 0 
+        materials: selectedMaterials, // Mandamos la lista de objetos MaterialSelectionDto
+        newPrice: null // Lo mandamos explícitamente en null para que Java no lo toque
     };
 
     const formData = new FormData();
