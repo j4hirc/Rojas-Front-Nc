@@ -6,7 +6,9 @@ let userToken = '';
 let myManagerId = null;
 let mapa, marcador;
 
-// FUNCIÓN PARA ARREGLAR LA FECHA "VIRADITA" EN LA TABLA
+// ==================================================
+// FUNCIONES DE APOYO (FECHAS)
+// ==================================================
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
     if (Array.isArray(fecha)) {
@@ -23,7 +25,6 @@ function formatearFecha(fecha) {
     return fecha;
 }
 
-// PARA EL INPUT DE FECHA DEL MODAL
 function fechaParaInput(fecha) {
     if (!fecha) return '';
     if (Array.isArray(fecha)) {
@@ -42,7 +43,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_JEFE')) {
         Swal.fire({
-            icon: 'error', title: 'Acceso Denegado', text: 'Solo los Jefes pueden acceder a esta sección.', confirmButtonColor: '#12CFF4'
+            icon: 'error', title: 'Acceso Denegado', text: 'Solo los Jefes pueden acceder a esta sección.', confirmButtonColor: '#198754'
         }).then(() => { window.location.href = '../../index.html'; });
         return;
     }
@@ -54,12 +55,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarUsuariosYMateriales(userEmail);
     await cargarTrabajos();
 
-    // ==================================================
-    // ESCUCHAR CAMBIOS MANUALES DE COORDENADAS
-    // ==================================================
     const inputLat = document.getElementById('jobLat');
     const inputLng = document.getElementById('jobLng');
-    const inputDireccion = document.getElementById('jobAddress'); // Campo de texto libre
+    const inputDireccion = document.getElementById('jobAddress');
 
     if (inputLat && inputLng) {
         inputLat.addEventListener('input', window.actualizarMapaDesdeInputs);
@@ -75,7 +73,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
     }
-    // ==================================================
 
     Swal.close();
 });
@@ -119,7 +116,6 @@ function inicializarMapa(lat, lng) {
             obtenerDireccion(e.latlng);
         });
 
-        // ── Dirección → Mapa ──────────────────────────────────────────
         const inputDireccion = document.getElementById('jobAddress');
 
         function buscarDireccionEnMapa() {
@@ -171,7 +167,6 @@ function inicializarMapa(lat, lng) {
                 buscarDireccionEnMapa();
             }
         });
-        // ─────────────────────────────────────────────────────────────
 
     } else {
         mapa.setView([lat, lng], 14);
@@ -352,7 +347,13 @@ function renderizarTrabajos(trabajos) {
 
         const empName = job.nameEmployee || 'Sin asignar';
         const fechaTxt = formatearFecha(job.jobDate);
-        const safeDesc = job.description ? job.description : 'Sin descripción';
+        
+        // Limpiamos la descripción si trae datos viejos pegados
+        let safeDesc = job.description ? job.description : 'Sin descripción';
+        if (safeDesc.includes('[MATERIALES PRE-ASIGNADOS]:')) {
+            safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+        }
+        
         const mapsLink = `http://googleusercontent.com/maps.google.com/?q=${job.latitude},${job.longitude}`;
 
         const tr = document.createElement('tr');
@@ -369,7 +370,7 @@ function renderizarTrabajos(trabajos) {
                 </a>
             </td>
             <td>
-                <div style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555; background: #f8faff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #198754;" title="${safeDesc.replace(/"/g, '"')}">
+                <div style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555; background: #f8faff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #198754;" title="${safeDesc.replace(/"/g, '&quot;')}">
                     ${safeDesc}
                 </div>
             </td>
@@ -382,7 +383,6 @@ function renderizarTrabajos(trabajos) {
                 <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
                     <i class="fa-solid fa-pen"></i>
                 </button>
-
                 <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
                     <i class="fa-solid fa-trash"></i>
                 </button>
@@ -423,11 +423,9 @@ function renderizarTrabajos(trabajos) {
                     <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border-radius: 8px; background: #E8F5E9; color: #198754; border: none; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; font-size: 13px;">
                         <i class="fa-solid fa-map-location-dot"></i> Ruta
                     </a>
-
                     <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;">
                         <i class="fa-solid fa-pen"></i> Editar
                     </button>
-
                     <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer; font-size: 13px;"><i class="fa-solid fa-trash"></i> Eliminar</button>
                 </div>
             `;
@@ -440,7 +438,6 @@ window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
     
-    // Limpiar todos los campos de materiales
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
@@ -463,7 +460,7 @@ window.abrirModalEditarJob = async (id) => {
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
 
-    // Limpiar materiales antes de cargar
+    // Limpiar todos los checkboxes y cajas
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
@@ -483,10 +480,7 @@ window.abrirModalEditarJob = async (id) => {
         if (response.ok) {
             const data = await response.json();
 
-            // Extraer datos de materiales si existen en la descripción
-            const datosMaterialesGuardados = data.description ? extraerDatosMateriales(data.description) : {};
-
-            // Limpiar la descripción para el textarea
+            // Limpiamos la descripción de los datos viejos
             let descripcionLimpia = data.description || '';
             if (descripcionLimpia.includes('[MATERIALES PRE-ASIGNADOS]:')) {
                 descripcionLimpia = descripcionLimpia.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
@@ -504,22 +498,22 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobStatus').value = data.status || 'PENDING';
             document.getElementById('jobEmployee').value = data.employeeId;
 
-            // Marcar materiales y rellenar inputs
-            if (data.materials) {
-                const checkboxes = document.querySelectorAll('input[name="jobMaterials"]');
-                checkboxes.forEach(cb => {
-                    const nombreMat = cb.getAttribute('data-name');
-                    if (data.materials.some(m => m.materialId == cb.value)) {
+            // 🔥 AHORA LEEMOS LOS DATOS DIRECTO DE LA BASE DE DATOS (DEL JSON)
+            if (data.materials && data.materials.length > 0) {
+                document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
+                    const matGuardado = data.materials.find(m => m.materialId == cb.value);
+
+                    if (matGuardado) {
                         cb.checked = true;
                         const divOpts = document.getElementById(`opts_${cb.value}`);
                         if (divOpts) divOpts.style.display = 'flex';
                         
-                        if (datosMaterialesGuardados[nombreMat]) {
-                            document.getElementById(`qty_${cb.value}`).value = datosMaterialesGuardados[nombreMat].qty;
-                            document.getElementById(`unit_${cb.value}`).value = datosMaterialesGuardados[nombreMat].unit;
-                        } else {
-                            document.getElementById(`qty_${cb.value}`).value = 1;
-                        }
+                        const qtyInput = document.getElementById(`qty_${cb.value}`);
+                        const unitInput = document.getElementById(`unit_${cb.value}`);
+                        
+                        // Traemos los números reales de Java
+                        if(qtyInput && matGuardado.quantity !== null) qtyInput.value = matGuardado.quantity;
+                        if(unitInput && matGuardado.unit !== null) unitInput.value = matGuardado.unit;
                     }
                 });
                 window.calcularCostoMateriales();
@@ -543,35 +537,27 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
-    // Obtenemos TODOS los materiales seleccionados
+    // 🔥 ARMAMOS LA LISTA DE MATERIALES PARA JAVA DIRECTAMENTE
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
-    const selectedMaterials = Array.from(matCheckboxes).map(cb => parseInt(cb.value));
+    const selectedMaterials = [];
 
-    // Armamos el texto de las cantidades
-    let resumenMateriales = '';
     matCheckboxes.forEach(cb => {
-        const matId = cb.value;
-        const nombreMat = cb.getAttribute('data-name');
-        const cantidad = document.getElementById(`qty_${matId}`).value.trim();
+        const matId = parseInt(cb.value);
+        const cantidadStr = document.getElementById(`qty_${matId}`).value.trim();
         const unidad = document.getElementById(`unit_${matId}`).value.trim();
 
-        const textoCantidad = cantidad ? `${cantidad} ${unidad}`.trim() : 'Asignado';
-        resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
+        const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
+
+        selectedMaterials.push({
+            materialId: matId,
+            quantity: cantidadNum,
+            unit: unidad || 'N/A'
+        });
     });
 
-    // Limpiamos la descripción vieja para que no se duplique
-    let descripcionBase = document.getElementById('jobDesc').value.trim();
-    if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
-        descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
-    }
+    const descripcionFinal = document.getElementById('jobDesc').value.trim();
 
-    // Juntamos todo
-    let descripcionFinal = descripcionBase;
-    if (resumenMateriales !== '') {
-        descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
-    }
-
-    // Armamos el payload
+    // 🔥 ENVIAMOS "materials" EN LUGAR DE "materialIds"
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
@@ -585,7 +571,7 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: myManagerId, 
-        materialIds: selectedMaterials
+        materials: selectedMaterials 
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
@@ -716,20 +702,3 @@ window.calcularCostoMateriales = () => {
         txtGranTotal.textContent = granTotal.toFixed(2);
     }
 };
-
-function extraerDatosMateriales(texto) {
-    const datos = {};
-    const lineas = texto.split('\n');
-    const regex = /•\s*(.*?):\s*(\d+)\s*(.*)/;
-    
-    lineas.forEach(linea => {
-        const match = linea.match(regex);
-        if (match) {
-            const nombreMat = match[1].trim();
-            const cantidad = match[2].trim();
-            const unidad = match[3].trim();
-            datos[nombreMat] = { qty: cantidad, unit: unidad };
-        }
-    });
-    return datos;
-}

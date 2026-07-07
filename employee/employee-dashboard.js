@@ -17,7 +17,7 @@ let canvasSub, ctxSub;
 let drawingSub = false;
 
 // ==================================================
-// FUNCIONES DE APOYO (FECHAS Y LECTURA)
+// FUNCIONES DE APOYO Y FALLBACK SEGURO
 // ==================================================
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
@@ -44,22 +44,35 @@ function fechaParaCalendario(fecha) {
     return fecha;
 }
 
-function extraerDatosMateriales(texto) {
+// 🔥 FALLBACK: Si es un trabajo viejo y Java no trae los datos, los rescatamos del texto
+function extraerDatosMaterialesFallback(texto) {
     const datos = {};
     if (!texto) return datos;
+    const lineas = texto.split('\n');
     
-    // Es más flexible con los espacios
-    const regex = /•\s*(.*?):\s*(\d+(?:\.\d+)?)\s*(.*)/g;
-    let match;
-    
-    while ((match = regex.exec(texto)) !== null) {
-        const nombreMat = match[1].trim();
-        const cantidad = match[2].trim();
-        const unidad = match[3].trim();
-        datos[nombreMat] = { qty: cantidad, unit: unidad };
-    }
+    lineas.forEach(linea => {
+        if (linea.includes(':') && (linea.includes('•') || linea.includes('📦') || linea.includes('-'))) {
+            const partes = linea.split(':');
+            const nombreMat = partes[0].replace(/[•📦\-*]/g, '').trim().toLowerCase();
+            const valorStr = partes[1].trim(); 
+            
+            let qty = '';
+            let unit = '';
+            
+            const numMatch = valorStr.match(/^(\d+(?:\.\d+)?)\s*(.*)/);
+            if (numMatch) {
+                qty = numMatch[1];
+                unit = numMatch[2];
+            } else if (valorStr.toLowerCase() !== 'asignado' && !valorStr.toLowerCase().includes('no especificada')) {
+                unit = valorStr;
+            }
+            
+            datos[nombreMat] = { qty, unit };
+        }
+    });
     return datos;
 }
+
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
     const rolesString = localStorage.getItem('user_roles');
@@ -90,12 +103,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (e.target.checked) {
             priceContainer.style.display = 'block';
             
-            // 🔥 AQUÍ ESTÁ EL BLOQUEO DEL PRECIO: El empleado no puede modificarlo manualmente
             const inputPrice = document.getElementById('evNewPrice');
             inputPrice.value = 'Requiere autorización del Jefe';
             inputPrice.readOnly = true; 
             inputPrice.style.backgroundColor = '#f3f4f6'; 
-            inputPrice.style.color = '#dc2626'; // Rojo de advertencia
+            inputPrice.style.color = '#dc2626'; 
             inputPrice.style.fontWeight = 'bold';
             
         } else {
@@ -150,7 +162,6 @@ async function cargarCalendarioEmpleado(emailActual) {
             headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
             events: eventosFormateados,
 
-            // --- DISEÑO INTERNO ---
             eventContent: function(arg) {
                 let p = arg.event.extendedProps;
                 let icon = '';
@@ -229,7 +240,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                         .map(linea => `
                             <li style="margin-bottom: 8px; font-size: 13px; color: #2B3674; list-style: none; display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-circle-check" style="color:#00B8A9; font-size: 14px;"></i> 
-                                <span>${linea.replace('•', '').trim()}</span>
+                                <span>${linea.replace(/[•📦\-*]/g, '').trim()}</span>
                             </li>
                         `).join('');
 
@@ -367,11 +378,9 @@ window.abrirModalEvidence = (jobId) => {
 
     limpiarFirmaSub();
 
-    // LEER DATOS ACTUALES
-    const datosMaterialesGuardados = currentJobInfo.description ? extraerDatosMateriales(currentJobInfo.description) : {};
-    let descLimpia = (currentJobInfo.description || '').split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+    // 🔥 USAMOS EL FALLBACK POR SI ES UN TRABAJO VIEJO CREADO ANTES DE LA DB
+    const datosMaterialesGuardadosFallback = currentJobInfo.description ? extraerDatosMaterialesFallback(currentJobInfo.description) : {};
     
-    // Cargar la descripción antigua en el comentario (por si quiere ver lo que el jefe puso)
     document.getElementById('evComment').value = ""; 
 
     document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
@@ -385,17 +394,26 @@ window.abrirModalEvidence = (jobId) => {
         if(unitInput) unitInput.value = '';
 
         if (currentJobInfo && currentJobInfo.materials) {
-            const nombreMat = cb.getAttribute('data-name');
-            
-            if (currentJobInfo.materials.some(m => m.materialId == cb.value)) {
+            // Buscamos si existe en la BD Nueva
+            const matGuardado = currentJobInfo.materials.find(m => m.materialId == cb.value);
+            // Buscamos si existe en el texto Viejo
+            const nombreMat = cb.getAttribute('data-name').toLowerCase().trim();
+            const fallbackInfo = datosMaterialesGuardadosFallback[nombreMat];
+
+            if (matGuardado || fallbackInfo) {
                 cb.checked = true;
                 if (divOpciones) divOpciones.style.display = 'flex';
                 
-                // Rellenar desde la base de datos (leído en extraerDatosMateriales)
-                if (datosMaterialesGuardados[nombreMat]) {
-                    if(qtyInput) qtyInput.value = datosMaterialesGuardados[nombreMat].qty;
-                    if(unitInput) unitInput.value = datosMaterialesGuardados[nombreMat].unit;
-                }
+                // Prioriza DB nueva, si no tiene nada usa el fallback, sino vacío.
+                let finalQty = (matGuardado && matGuardado.quantity != null) ? matGuardado.quantity : (fallbackInfo ? fallbackInfo.qty : '');
+                let finalUnit = (matGuardado && matGuardado.unit != null) ? matGuardado.unit : (fallbackInfo ? fallbackInfo.unit : '');
+
+                // Filtramos bloqueando los "undefined" o N/A para que queden bonitos
+                if(finalUnit === 'N/A' || finalUnit === 'undefined') finalUnit = '';
+                if(finalQty === 'undefined') finalQty = '';
+
+                if(qtyInput) qtyInput.value = finalQty;
+                if(unitInput) unitInput.value = finalUnit;
             }
         }
     });
@@ -409,7 +427,7 @@ window.abrirModalEvidence = (jobId) => {
 
 window.cerrarModalEvidence = () => { document.getElementById('modalEvidence').style.display = 'none'; };
 
-// --- RESTO DE TU CÓDIGO INTACTO DE FIRMAS Y FOTOS ---
+// --- FIRMAS Y FOTOS ---
 window.inicializarCanvasFirma = () => {
     canvasSub = document.getElementById('signaturePadSub');
     if (canvasSub) ctxSub = canvasSub.getContext('2d');
@@ -530,27 +548,33 @@ window.guardarReporteYPdf = async () => {
     }
 
     const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
-    const selectedMaterialIds = [];
+    const selectedMaterials = []; 
     let selectedMaterialNames = '';
     let resumenMaterialesBD = '';
 
     selectedMatNodes.forEach(cb => {
         const matId = parseInt(cb.value);
-        selectedMaterialIds.push(matId);
         const nombreMat = cb.getAttribute('data-name');
-        const cantidad = document.getElementById(`qty_${matId}`).value.trim();
+        const cantidadStr = document.getElementById(`qty_${matId}`).value.trim();
         const unidad = document.getElementById(`unit_${matId}`).value.trim();
 
-        const textoCantidad = cantidad ? `${cantidad} ${unidad}`.trim() : 'Asignado';
+        const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
+
+        selectedMaterials.push({
+            materialId: matId,
+            quantity: cantidadNum,
+            unit: unidad || 'N/A'
+        });
+
+        const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
         selectedMaterialNames += `<li style="margin-bottom: 6px; color: #2E3238;"><strong>${nombreMat}</strong>: <span style="color: #12CFF4; font-weight: bold;">${textoCantidad}</span></li>`;
         resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
     });
 
     if (resumenMaterialesBD !== '') {
-        comment = `${comment}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMaterialesBD}`;
+        comment = `${comment}\n\n[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}`;
     }
 
-    // Modal de carga 
     Swal.fire({ title: 'Procesando...', text: 'Generando archivo PDF y guardando avance...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay).toFixed(2) : '0.00';
@@ -596,9 +620,8 @@ window.guardarReporteYPdf = async () => {
     pdfWrapper.style.zIndex = '-9999';
     pdfWrapper.style.visibility = 'visible'; 
 
-    await new Promise(r => setTimeout(r, 600)); // Espera para dibujar todo el HTML bien
+    await new Promise(r => setTimeout(r, 600)); 
 
-    // 🔥 SOLUCIÓN 1: Limpiar el nombre del archivo para que html2pdf NO explote por emojis o tildes
     const safeName = (currentJobInfo.clientName || 'Trabajo').replace(/[^a-zA-Z0-9]/g, '_');
     const nombreArchivoPDF = `Reporte_${safeName}.pdf`;
 
@@ -612,10 +635,7 @@ window.guardarReporteYPdf = async () => {
 
     let pdfBlob;
     try {
-        // Obtenemos el Blob para el servidor
         pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
-        
-        // ¡NUEVO! Descargamos una copia en el celular de tu empleado automáticamente 
         html2pdf().set(opt).from(pdfTemplate).save(); 
 
     } catch (e) {
@@ -627,22 +647,21 @@ window.guardarReporteYPdf = async () => {
     pdfWrapper.style.display = 'none';
     pdfWrapper.style.visibility = 'hidden';
 
-    // 🔥 SOLUCIÓN 2: Enviamos '0' en vez de 'null' en newPrice para que Java no colapse
     const dtoObject = {
         comment: comment,
         jobId: parseInt(currentJobInfo.jobId),
         employeeId: myEmployeeId,
         status: status,
-        materialIds: selectedMaterialIds,
-        newPrice: hasModifications && newPriceVal ? parseFloat(newPriceVal) : null 
+        materials: selectedMaterials, 
+        newPrice: 0 
     };
 
     const formData = new FormData();
-    // IMPORTANTE: Asegúrate de que el nombre del parámetro sea 'data' 
-    // tal como tu controlador lo espera (Revisa tu JobUpdateController en Java)
     formData.append('data', new Blob([JSON.stringify(dtoObject)], { type: 'application/json' }));
 
-    archivosSeleccionados.forEach(file => formData.append('files', file));
+    for (let i = 0; i < archivosSeleccionados.length; i++) {
+        formData.append('files', archivosSeleccionados[i]);
+    }
     formData.append('files', pdfBlob, nombreArchivoPDF);
 
     try {
@@ -668,11 +687,11 @@ window.guardarReporteYPdf = async () => {
         }
     } catch (error) {
         console.error("Problema de conexión:", error);
-        Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Verifica tu conexión a internet o el estado del servidor en Render.', confirmButtonColor: '#00B8A9' });
+        Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Verifica tu conexión a internet o el estado del servidor.', confirmButtonColor: '#00B8A9' });
     }
 };
 
-window.cerrarSesion = () => {
+window.cerrarSesion = () => { 
     Swal.fire({
         title: "¿Cerrar sesión?",
         text: "¿Estás seguro que deseas salir del portal?",
@@ -690,7 +709,7 @@ window.cerrarSesion = () => {
     });
 };
 
-window.abrirModalPerfil = () => {
+window.abrirModalPerfil = () => { 
     if (!miUsuarioActual) { return Swal.fire('Error', 'Cargando datos...', 'error'); }
     document.getElementById('perfilFirstName').value = miUsuarioActual.firstName || '';
     document.getElementById('perfilLastName').value = miUsuarioActual.lastName || '';
@@ -703,7 +722,7 @@ window.abrirModalPerfil = () => {
 
 window.cerrarModalPerfil = () => { document.getElementById('modalPerfil').style.display = 'none'; };
 
-window.guardarPerfil = async () => {
+window.guardarPerfil = async () => { 
     const payload = {
         firstName: document.getElementById('perfilFirstName').value.trim(),
         middleName: miUsuarioActual.middleName || "",
@@ -740,49 +759,4 @@ window.guardarPerfil = async () => {
             Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo actualizar.', confirmButtonColor: '#00B8A9' });
         }
     } catch (error) { Swal.fire('Error de red', 'Fallo de conexión.', 'error'); }
-};
-
-
-window.abrirModalEvidence = (jobId) => {
-    document.getElementById('evidenceForm').reset();
-    document.getElementById('evJobId').value = jobId;
-    document.getElementById('imagePreviewContainer').innerHTML = '';
-    
-    // Resetear materiales visualmente
-    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
-        cb.checked = false;
-        const divOpciones = document.getElementById('opts_' + cb.value);
-        if (divOpciones) divOpciones.style.display = 'none';
-        
-        const qtyInput = document.getElementById(`qty_${cb.value}`);
-        const unitInput = document.getElementById(`unit_${cb.value}`);
-        if(qtyInput) qtyInput.value = '';
-        if(unitInput) unitInput.value = '';
-    });
-
-    const datosMaterialesGuardados = currentJobInfo.description ? extraerDatosMateriales(currentJobInfo.description) : {};
-    
-    // Marcar los que ya estaban guardados
-    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
-        const nombreMat = cb.getAttribute('data-name');
-        const divOpciones = document.getElementById('opts_' + cb.value);
-        const qtyInput = document.getElementById(`qty_${cb.value}`);
-        const unitInput = document.getElementById(`unit_${cb.value}`);
-
-        // Verificamos si el material está en la lista de materiales del trabajo O en la descripción
-        const estaEnBackend = currentJobInfo.materials && currentJobInfo.materials.some(m => m.materialId == cb.value);
-        const estaEnDescripcion = !!datosMaterialesGuardados[nombreMat];
-
-        if (estaEnBackend || estaEnDescripcion) {
-            cb.checked = true;
-            if (divOpciones) divOpciones.style.display = 'flex';
-            
-            if (datosMaterialesGuardados[nombreMat]) {
-                if(qtyInput) qtyInput.value = datosMaterialesGuardados[nombreMat].qty;
-                if(unitInput) unitInput.value = datosMaterialesGuardados[nombreMat].unit;
-            }
-        }
-    });
-
-    document.getElementById('modalEvidence').style.display = 'flex';
 };
