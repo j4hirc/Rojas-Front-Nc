@@ -44,7 +44,7 @@ function fechaParaCalendario(fecha) {
     return fecha;
 }
 
-// 🔥 FALLBACK: Si es un trabajo viejo y Java no trae los datos, los rescatamos del texto
+// 🔥 FALLBACK (Para seguir leyendo los viejos de ser necesario)
 function extraerDatosMaterialesFallback(texto) {
     const datos = {};
     if (!texto) return datos;
@@ -227,46 +227,46 @@ async function cargarCalendarioEmpleado(emailActual) {
                        </div>`
                     : ``;
 
-                let notasHtml = '';
+                // 🔥 LIMPIAMOS LA DESCRIPCIÓN Y LEEMOS LA DB DIRECTO
                 let descCompleta = p.description || '';
-
                 if (descCompleta.includes('[MATERIALES PRE-ASIGNADOS]:')) {
-                    const partes = descCompleta.split('[MATERIALES PRE-ASIGNADOS]:');
-                    const notasBase = partes[0].trim();
-                    const materialesTexto = partes[partes.length - 1].trim();
-
-                    const listaMateriales = materialesTexto.split('\n')
-                        .filter(linea => linea.trim() !== '')
-                        .map(linea => `
-                            <li style="margin-bottom: 8px; font-size: 13px; color: #2B3674; list-style: none; display: flex; align-items: center; gap: 8px;">
-                                <i class="fa-solid fa-circle-check" style="color:#00B8A9; font-size: 14px;"></i> 
-                                <span>${linea.replace(/[•📦\-*]/g, '').trim()}</span>
-                            </li>
-                        `).join('');
-
-                    notasHtml = `
-                        <div style="margin-top: 20px; text-align: left;">
-                            <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #111C44; border-bottom: 2px solid #F4F7FE; padding-bottom: 5px;">
-                                <i class="fa-regular fa-comments" style="color:#00B8A9; margin-right: 5px;"></i> Instrucciones
-                            </h4>
-                            <p style="margin: 0 0 15px 0; font-size: 13px; color: #4A5568; white-space: pre-wrap; padding-left: 5px;">${notasBase || 'Sin notas especiales.'}</p>
-
-                            <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #111C44; border-bottom: 2px solid #F4F7FE; padding-bottom: 5px;">
-                                <i class="fa-solid fa-boxes-packing" style="color:#00B8A9; margin-right: 5px;"></i> Materiales a llevar
-                            </h4>
-                            <ul style="margin: 0; padding: 0 0 0 5px;">
-                                ${listaMateriales}
-                            </ul>
-                        </div>
-                    `;
-                } else {
-                    notasHtml = `
-                        <div style="margin-top: 15px; padding: 12px; background: #F8FAFC; border-radius: 8px; border-left: 3px solid #00B8A9; text-align: left;">
-                            <strong style="font-size: 13px; color: #111C44;">Notas de Trabajo:</strong>
-                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #A3AED0; font-style: italic; white-space: pre-wrap;">"${descCompleta || 'Sin notas especiales'}"</p>
-                        </div>
-                    `;
+                    descCompleta = descCompleta.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
                 }
+
+                // 🔥 CONSTRUIMOS LA LISTA DESDE LA BASE DE DATOS REAL (p.materials)
+                let listaMaterialesHtml = '';
+                if (p.materials && p.materials.length > 0) {
+                    listaMaterialesHtml = p.materials.map(m => {
+                        let cantidadStr = (m.quantity && m.quantity > 0) ? m.quantity : '';
+                        let unidadStr = (m.unit && m.unit !== 'N/A') ? m.unit : '';
+                        let textMat = cantidadStr || unidadStr ? `${cantidadStr} ${unidadStr}`.trim() : 'Asignado';
+                        
+                        return `
+                        <li style="margin-bottom: 8px; font-size: 13px; color: #2B3674; list-style: none; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-circle-check" style="color:#00B8A9; font-size: 14px;"></i> 
+                            <span>${m.name}: <strong style="color:#12CFF4;">${textMat}</strong></span>
+                        </li>
+                        `;
+                    }).join('');
+                } else {
+                    listaMaterialesHtml = `<li style="font-size: 13px; color: #666; list-style: none;">No hay materiales registrados en la orden.</li>`;
+                }
+
+                let notasHtml = `
+                    <div style="margin-top: 20px; text-align: left;">
+                        <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #111C44; border-bottom: 2px solid #F4F7FE; padding-bottom: 5px;">
+                            <i class="fa-regular fa-comments" style="color:#00B8A9; margin-right: 5px;"></i> Instrucciones
+                        </h4>
+                        <p style="margin: 0 0 15px 0; font-size: 13px; color: #4A5568; white-space: pre-wrap; padding-left: 5px;">${descCompleta || 'Sin notas especiales.'}</p>
+
+                        <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #111C44; border-bottom: 2px solid #F4F7FE; padding-bottom: 5px;">
+                            <i class="fa-solid fa-boxes-packing" style="color:#00B8A9; margin-right: 5px;"></i> Materiales asignados
+                        </h4>
+                        <ul style="margin: 0; padding: 0 0 0 5px;">
+                            ${listaMaterialesHtml}
+                        </ul>
+                    </div>
+                `;
 
                 Swal.fire({
                     title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
@@ -378,7 +378,6 @@ window.abrirModalEvidence = (jobId) => {
 
     limpiarFirmaSub();
 
-    // 🔥 USAMOS EL FALLBACK POR SI ES UN TRABAJO VIEJO CREADO ANTES DE LA DB
     const datosMaterialesGuardadosFallback = currentJobInfo.description ? extraerDatosMaterialesFallback(currentJobInfo.description) : {};
     
     document.getElementById('evComment').value = ""; 
@@ -394,9 +393,7 @@ window.abrirModalEvidence = (jobId) => {
         if(unitInput) unitInput.value = '';
 
         if (currentJobInfo && currentJobInfo.materials) {
-            // Buscamos si existe en la BD Nueva
             const matGuardado = currentJobInfo.materials.find(m => m.materialId == cb.value);
-            // Buscamos si existe en el texto Viejo
             const nombreMat = cb.getAttribute('data-name').toLowerCase().trim();
             const fallbackInfo = datosMaterialesGuardadosFallback[nombreMat];
 
@@ -404,13 +401,11 @@ window.abrirModalEvidence = (jobId) => {
                 cb.checked = true;
                 if (divOpciones) divOpciones.style.display = 'flex';
                 
-                // Prioriza DB nueva, si no tiene nada usa el fallback, sino vacío.
                 let finalQty = (matGuardado && matGuardado.quantity != null) ? matGuardado.quantity : (fallbackInfo ? fallbackInfo.qty : '');
                 let finalUnit = (matGuardado && matGuardado.unit != null) ? matGuardado.unit : (fallbackInfo ? fallbackInfo.unit : '');
 
-                // Filtramos bloqueando los "undefined" o N/A para que queden bonitos
                 if(finalUnit === 'N/A' || finalUnit === 'undefined') finalUnit = '';
-                if(finalQty === 'undefined') finalQty = '';
+                if(finalQty === 'undefined' || finalQty == 0) finalQty = '';
 
                 if(qtyInput) qtyInput.value = finalQty;
                 if(unitInput) unitInput.value = finalUnit;
@@ -427,7 +422,6 @@ window.abrirModalEvidence = (jobId) => {
 
 window.cerrarModalEvidence = () => { document.getElementById('modalEvidence').style.display = 'none'; };
 
-// --- FIRMAS Y FOTOS ---
 window.inicializarCanvasFirma = () => {
     canvasSub = document.getElementById('signaturePadSub');
     if (canvasSub) ctxSub = canvasSub.getContext('2d');
@@ -538,8 +532,15 @@ window.guardarReporteYPdf = async () => {
     if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
 
     const hasModifications = document.getElementById('evModifications').checked;
+    
+    let nuevoPrecioValor = null;
 
     if (hasModifications) {
+        const inputNuevoPrecio = document.getElementById('evNewPrice').value;
+        if (!inputNuevoPrecio || isNaN(parseFloat(inputNuevoPrecio))) {
+            return Swal.fire({ icon: 'warning', title: 'Falta el Precio', text: 'Marcaste la alerta de oficina. Debes ingresar un nuevo precio sugerido.', confirmButtonColor: '#00B8A9' });
+        }
+        nuevoPrecioValor = parseFloat(inputNuevoPrecio); 
         comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones a la orden original que requieren ajuste de precio por parte del Jefe.\n\n` + comment;
         document.getElementById('pdfNewPriceRow').style.display = 'table-row';
         document.getElementById('pdfNewPrice').textContent = `REQUIERE AUTORIZACIÓN DEL JEFE`;
@@ -547,10 +548,11 @@ window.guardarReporteYPdf = async () => {
         document.getElementById('pdfNewPriceRow').style.display = 'none';
     }
 
-    // 🔥 ARMAMOS LA LISTA LIMPIA PARA JAVA
     const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
     const selectedMaterials = []; 
-    let selectedMaterialNames = ''; // Solo para el PDF visual
+    const selectedMaterialIds = []; 
+    let selectedMaterialNames = '';
+    let resumenMaterialesBD = '';
 
     selectedMatNodes.forEach(cb => {
         const matId = parseInt(cb.value);
@@ -565,16 +567,22 @@ window.guardarReporteYPdf = async () => {
             quantity: cantidadNum,
             unit: unidad || 'N/A'
         });
+        
+        selectedMaterialIds.push(matId);
 
         const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
         selectedMaterialNames += `<li style="margin-bottom: 6px; color: #2E3238;"><strong>${nombreMat}</strong>: <span style="color: #12CFF4; font-weight: bold;">${textoCantidad}</span></li>`;
+        resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
     });
+
+    if (resumenMaterialesBD !== '') {
+        comment = `${comment}\n\n[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}`;
+    }
 
     Swal.fire({ title: 'Procesando...', text: 'Generando archivo PDF y guardando avance...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay).toFixed(2) : '0.00';
 
-    // Generamos el PDF visualmente
     document.getElementById('pdfJobName').textContent = currentJobInfo.clientName || 'Sin asignar';
     document.getElementById('pdfAddress').textContent = currentJobInfo.address || 'Sin dirección';
     document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
@@ -632,6 +640,14 @@ window.guardarReporteYPdf = async () => {
     let pdfBlob;
     try {
         pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
+        
+        // 🔥 ESTO DESCARGA EL PDF EN TU COMPUTADORA
+        html2pdf().set(opt).from(pdfTemplate).save(); 
+
+        // 🔥 ESTO ABRE EL PDF EN UNA NUEVA PESTAÑA AUTOMÁTICAMENTE
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+
     } catch (e) {
         console.error("Error al hacer el PDF:", e);
         pdfWrapper.style.display = 'none';
@@ -641,15 +657,18 @@ window.guardarReporteYPdf = async () => {
     pdfWrapper.style.display = 'none';
     pdfWrapper.style.visibility = 'hidden';
 
-    // 🔥 DTO PERFECTAMENTE ALINEADO A TU JAVA
     const dtoObject = {
-        comment: comment, // Mandamos el comentario limpio
+        comment: comment,
         jobId: parseInt(currentJobInfo.jobId),
         employeeId: myEmployeeId,
         status: status,
-        materials: selectedMaterials, // Mandamos la lista de objetos MaterialSelectionDto
-        newPrice: null // Lo mandamos explícitamente en null para que Java no lo toque
+        materials: selectedMaterials,
+        materialIds: selectedMaterialIds
     };
+    
+    if(nuevoPrecioValor !== null) {
+        dtoObject.newPrice = nuevoPrecioValor;
+    }
 
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(dtoObject)], { type: 'application/json' }));
@@ -667,9 +686,16 @@ window.guardarReporteYPdf = async () => {
         });
 
         if (response.ok) {
-            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'El reporte se subió y el PDF fue guardado.', confirmButtonColor: '#00B8A9' });
-            cerrarModalEvidence();
-            await cargarCalendarioEmpleado(document.getElementById('employee-email-display').textContent);
+            Swal.fire({ 
+                icon: 'success', 
+                title: '¡Éxito!', 
+                text: 'El reporte se subió y el PDF fue guardado.', 
+                confirmButtonColor: '#00B8A9' 
+            }).then(() => {
+                cerrarModalEvidence();
+                // 🔥 ESTO RECARGA LA PÁGINA PARA ACTUALIZAR LA VISTA AL INSTANTE
+                window.location.reload();
+            });
         } else {
             let errorText = await response.text();
             try {
