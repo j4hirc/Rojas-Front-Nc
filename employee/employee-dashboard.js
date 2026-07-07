@@ -11,25 +11,24 @@ let miUsuarioActual = null;
 
 let archivosSeleccionados = [];
 let imagenesBase64Data = [];
-let matQuantityInfo = ''
 
 // Variables para la doble firma
 let canvasSub, ctxSub;
 let drawingSub = false;
 
+// ==================================================
+// FUNCIONES DE APOYO (FECHAS Y LECTURA)
+// ==================================================
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
     if (Array.isArray(fecha)) {
         const dia = String(fecha[2]).padStart(2, '0');
         const mes = String(fecha[1]).padStart(2, '0');
         const anio = fecha[0];
-        return `${dia}/${mes}/${anio}`;
-    }
-    else if (typeof fecha === 'string') {
+        return `${mes}-${dia}-${anio}`; 
+    } else if (typeof fecha === 'string') {
         const partes = fecha.split('-');
-        if (partes.length === 3) {
-            return `${partes[2]}/${partes[1]}/${partes[0]}`;
-        }
+        if (partes.length === 3) return `${partes[1]}-${partes[2]}-${partes[0]}`;
     }
     return fecha;
 }
@@ -45,6 +44,22 @@ function fechaParaCalendario(fecha) {
     return fecha;
 }
 
+function extraerDatosMateriales(texto) {
+    const datos = {};
+    if (!texto) return datos;
+    
+    // Es más flexible con los espacios
+    const regex = /•\s*(.*?):\s*(\d+(?:\.\d+)?)\s*(.*)/g;
+    let match;
+    
+    while ((match = regex.exec(texto)) !== null) {
+        const nombreMat = match[1].trim();
+        const cantidad = match[2].trim();
+        const unidad = match[3].trim();
+        datos[nombreMat] = { qty: cantidad, unit: unidad };
+    }
+    return datos;
+}
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
     const rolesString = localStorage.getItem('user_roles');
@@ -74,11 +89,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         const priceContainer = document.getElementById('newPriceContainer');
         if (e.target.checked) {
             priceContainer.style.display = 'block';
-            document.getElementById('evNewPrice').setAttribute('required', 'true');
+            
+            // 🔥 AQUÍ ESTÁ EL BLOQUEO DEL PRECIO: El empleado no puede modificarlo manualmente
+            const inputPrice = document.getElementById('evNewPrice');
+            inputPrice.value = 'Requiere autorización del Jefe';
+            inputPrice.readOnly = true; 
+            inputPrice.style.backgroundColor = '#f3f4f6'; 
+            inputPrice.style.color = '#dc2626'; // Rojo de advertencia
+            inputPrice.style.fontWeight = 'bold';
+            
         } else {
             priceContainer.style.display = 'none';
-            document.getElementById('evNewPrice').removeAttribute('required');
-            document.getElementById('evNewPrice').value = '';
         }
     });
 });
@@ -129,7 +150,7 @@ async function cargarCalendarioEmpleado(emailActual) {
             headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
             events: eventosFormateados,
 
-            // --- LA MAGIA VISUAL: Diseño interno de los eventos ---
+            // --- DISEÑO INTERNO ---
             eventContent: function(arg) {
                 let p = arg.event.extendedProps;
                 let icon = '';
@@ -141,7 +162,6 @@ async function cargarCalendarioEmpleado(emailActual) {
 
                 let viewType = arg.view.type;
 
-                // SI ESTAMOS EN VISTA AGENDA (LISTA)
                 if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
                     let customHtml = `
                         <div style="display: flex; flex-direction: column; gap: 6px; padding: 5px; width: 100%;">
@@ -162,7 +182,6 @@ async function cargarCalendarioEmpleado(emailActual) {
                     `;
                     return { html: customHtml };
                 } 
-                // SI ESTAMOS EN VISTA MES (CUADRITOS)
                 else {
                     let customHtml = `
                         <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden; text-align: center;" title="${p.address}">
@@ -197,9 +216,8 @@ async function cargarCalendarioEmpleado(emailActual) {
                        </div>`
                     : ``;
 
-                // --- DISEÑO LIMPIO PARA NOTAS Y MATERIALES ---
                 let notasHtml = '';
-                const descCompleta = p.description || '';
+                let descCompleta = p.description || '';
 
                 if (descCompleta.includes('[MATERIALES PRE-ASIGNADOS]:')) {
                     const partes = descCompleta.split('[MATERIALES PRE-ASIGNADOS]:');
@@ -238,7 +256,6 @@ async function cargarCalendarioEmpleado(emailActual) {
                         </div>
                     `;
                 }
-                // ---------------------------------------------
 
                 Swal.fire({
                     title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
@@ -254,7 +271,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                                 <strong><i class="fa-regular fa-calendar" style="color:#00B8A9; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-house" style="color:#00B8A9; width:20px;"></i> Propiedad / Contacto:</strong> ${p.clientName}
+                                <strong><i class="fa-solid fa-house" style="color:#00B8A9; width:20px;"></i> Propiedad:</strong> ${p.clientName}
                             </p>
                             <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
                                 <strong><i class="fa-solid fa-phone" style="color:#00B8A9; width:20px;"></i> Teléfono:</strong> ${p.clientPhone}
@@ -267,14 +284,14 @@ async function cargarCalendarioEmpleado(emailActual) {
                             </p>
                             
                             <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F59E0B; font-weight: bold; background: #111C44; padding: 10px; border-radius: 8px; text-align: center;">
-                                <i class="fa-solid fa-money-bill-wave"></i> Pago por este trabajo: $${parseFloat(p.pay || 0).toFixed(2)}
+                                <i class="fa-solid fa-money-bill-wave"></i> Pago asignado: $${parseFloat(p.pay || 0).toFixed(2)}
                             </p>
 
                             ${notasHtml}
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;" onmouseover="this.style.background='#00B8A9'" onmouseout="this.style.background='#111C44'">
+                                <a href="https://www.google.com/maps/search/?api=1&query=$${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;">
                                     <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
                                 </a>
                             </div>
@@ -321,7 +338,6 @@ async function cargarMateriales() {
         }
 
         materials.forEach(mat => {
-            // Usamos mat.materialId para relacionar el checkbox con sus propios inputs
             containerMat.innerHTML += `
                 <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2B3674; font-weight: bold; cursor: pointer;">
@@ -330,8 +346,8 @@ async function cargarMateriales() {
                     </label>
                     
                     <div id="opts_${mat.materialId}" style="display: none; gap: 10px; margin-top: 8px; margin-left: 24px;">
-                        <input type="number" id="qty_${mat.materialId}" placeholder="Nº (Ej: 26)" class="input-field" style="width: 80px; padding: 6px; border: 1px solid #12CFF4; border-radius: 5px;">
-                        <input type="text" id="unit_${mat.materialId}" placeholder="Unidad (box, lámina, pie)" class="input-field" style="flex: 1; padding: 6px; border: 1px solid #12CFF4; border-radius: 5px;">
+                        <input type="number" id="qty_${mat.materialId}" placeholder="Cant." class="input-field" style="width: 80px; padding: 6px; border: 1px solid #12CFF4; border-radius: 5px;">
+                        <input type="text" id="unit_${mat.materialId}" placeholder="Unidad" class="input-field" style="flex: 1; padding: 6px; border: 1px solid #12CFF4; border-radius: 5px;">
                     </div>
                 </div>
             `;
@@ -339,7 +355,61 @@ async function cargarMateriales() {
     } catch (e) { console.error(e); }
 }
 
-// --- NUEVA LÓGICA DE FIRMAS (DOBLE CANVAS) ---
+window.abrirModalEvidence = (jobId) => {
+    document.getElementById('evidenceForm').reset();
+    document.getElementById('evJobId').value = jobId;
+    document.getElementById('imagePreviewContainer').innerHTML = '';
+    document.getElementById('certBox').style.display = 'none';
+    document.getElementById('newPriceContainer').style.display = 'none';
+
+    archivosSeleccionados = [];
+    imagenesBase64Data = [];
+
+    limpiarFirmaSub();
+
+    // LEER DATOS ACTUALES
+    const datosMaterialesGuardados = currentJobInfo.description ? extraerDatosMateriales(currentJobInfo.description) : {};
+    let descLimpia = (currentJobInfo.description || '').split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+    
+    // Cargar la descripción antigua en el comentario (por si quiere ver lo que el jefe puso)
+    document.getElementById('evComment').value = ""; 
+
+    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
+        cb.checked = false;
+        const divOpciones = document.getElementById('opts_' + cb.value);
+        if (divOpciones) divOpciones.style.display = 'none';
+        
+        const qtyInput = document.getElementById(`qty_${cb.value}`);
+        const unitInput = document.getElementById(`unit_${cb.value}`);
+        if(qtyInput) qtyInput.value = '';
+        if(unitInput) unitInput.value = '';
+
+        if (currentJobInfo && currentJobInfo.materials) {
+            const nombreMat = cb.getAttribute('data-name');
+            
+            if (currentJobInfo.materials.some(m => m.materialId == cb.value)) {
+                cb.checked = true;
+                if (divOpciones) divOpciones.style.display = 'flex';
+                
+                // Rellenar desde la base de datos (leído en extraerDatosMateriales)
+                if (datosMaterialesGuardados[nombreMat]) {
+                    if(qtyInput) qtyInput.value = datosMaterialesGuardados[nombreMat].qty;
+                    if(unitInput) unitInput.value = datosMaterialesGuardados[nombreMat].unit;
+                }
+            }
+        }
+    });
+
+    document.getElementById('modalEvidence').style.display = 'flex';
+
+    setTimeout(() => {
+        if (canvasSub) { canvasSub.width = canvasSub.offsetWidth; canvasSub.height = canvasSub.offsetHeight; }
+    }, 100);
+};
+
+window.cerrarModalEvidence = () => { document.getElementById('modalEvidence').style.display = 'none'; };
+
+// --- RESTO DE TU CÓDIGO INTACTO DE FIRMAS Y FOTOS ---
 window.inicializarCanvasFirma = () => {
     canvasSub = document.getElementById('signaturePadSub');
     if (canvasSub) ctxSub = canvasSub.getContext('2d');
@@ -355,7 +425,7 @@ function setupCanvasEvents(canvasObj, ctxObj, setDrawing, colorStroke) {
     const startPos = (e) => { setDrawing(true); draw(e); };
     const endPos = () => { setDrawing(false); ctxObj.beginPath(); };
     const draw = (e) => {
-        if (canvasObj === canvasSub ? !drawingSub : !drawingCli) return;
+        if (!drawingSub) return;
         e.preventDefault();
         ctxObj.lineWidth = 2.5;
         ctxObj.lineCap = "round";
@@ -378,7 +448,6 @@ function setupCanvasEvents(canvasObj, ctxObj, setDrawing, colorStroke) {
 }
 
 window.limpiarFirmaSub = () => { if (ctxSub) ctxSub.clearRect(0, 0, canvasSub.width, canvasSub.height); };
-// ------------------------------------------------
 
 window.mostrarPreview = (event) => {
     const input = event.target;
@@ -429,51 +498,198 @@ window.eliminarFoto = (index) => {
     renderizarGaleriaFotos();
 };
 
-window.abrirModalEvidence = (jobId) => {
-    document.getElementById('evidenceForm').reset();
-    document.getElementById('evJobId').value = jobId;
-    document.getElementById('imagePreviewContainer').innerHTML = '';
-    document.getElementById('certBox').style.display = 'none';
-    document.getElementById('newPriceContainer').style.display = 'none';
+window.guardarReporteYPdf = async () => {
+    const status = document.getElementById('evStatus').value;
+    let comment = document.getElementById('evComment').value.trim();
 
-    archivosSeleccionados = [];
-    imagenesBase64Data = [];
-    matQuantityInfo = ''
+    if (status === 'COMPLETED' && !document.getElementById('evCertification').checked) {
+        return Swal.fire({ icon: 'warning', title: 'Certificación Obligatoria', text: 'Para terminar el proyecto debes marcar la casilla de Certificación.', confirmButtonColor: '#00B8A9' });
+    }
 
-    // Limpiamos los DOS canvas
-    limpiarFirmaSub();
+    const isCanvasBlank = (c) => {
+        if (!c) return true;
+        const blank = document.createElement('canvas');
+        blank.width = c.width; blank.height = c.height;
+        return c.toDataURL() === blank.toDataURL();
+    };
 
-    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
-        cb.checked = false;
+    if (isCanvasBlank(canvasSub)) {
+        return Swal.fire({ icon: 'warning', title: 'Falta tu Firma', text: 'Debes firmar el reporte.', confirmButtonColor: '#12CFF4' });
+    }
+    if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#00B8A9' });
+    if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
 
-        // 1. Ocultamos todos los cuadritos por defecto al abrir el modal limpio
-        const divOpciones = document.getElementById('opts_' + cb.value);
-        if (divOpciones) divOpciones.style.display = 'none';
+    const hasModifications = document.getElementById('evModifications').checked;
 
-        if (currentJobInfo) {
-            let matArray = currentJobInfo.materials || currentJobInfo.jobMaterials || currentJobInfo.jobMaterial || [];
-            const arrIdMateriales = matArray.map(m => m.materialId || (m.material && m.material.materialId) || m.id);
+    if (hasModifications) {
+        comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones a la orden original que requieren ajuste de precio por parte del Jefe.\n\n` + comment;
+        document.getElementById('pdfNewPriceRow').style.display = 'table-row';
+        document.getElementById('pdfNewPrice').textContent = `REQUIERE AUTORIZACIÓN DEL JEFE`;
+    } else {
+        document.getElementById('pdfNewPriceRow').style.display = 'none';
+    }
 
-            if (arrIdMateriales.includes(parseInt(cb.value))) {
-                cb.checked = true;
+    const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
+    const selectedMaterialIds = [];
+    let selectedMaterialNames = '';
+    let resumenMaterialesBD = '';
 
-                // 2. LA MAGIA: Si el jefe ya lo asignó, mostramos los cuadritos automáticamente
-                if (divOpciones) divOpciones.style.display = 'flex';
-            }
-        }
+    selectedMatNodes.forEach(cb => {
+        const matId = parseInt(cb.value);
+        selectedMaterialIds.push(matId);
+        const nombreMat = cb.getAttribute('data-name');
+        const cantidad = document.getElementById(`qty_${matId}`).value.trim();
+        const unidad = document.getElementById(`unit_${matId}`).value.trim();
+
+        const textoCantidad = cantidad ? `${cantidad} ${unidad}`.trim() : 'Asignado';
+        selectedMaterialNames += `<li style="margin-bottom: 6px; color: #2E3238;"><strong>${nombreMat}</strong>: <span style="color: #12CFF4; font-weight: bold;">${textoCantidad}</span></li>`;
+        resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
     });
 
-    document.getElementById('modalEvidence').style.display = 'flex';
+    if (resumenMaterialesBD !== '') {
+        comment = `${comment}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMaterialesBD}`;
+    }
 
-    // Redimensionamos ambos canvas al abrir el modal
-    setTimeout(() => {
-        if (canvasSub) { canvasSub.width = canvasSub.offsetWidth; canvasSub.height = canvasSub.offsetHeight; }
-    }, 100);
+    // Modal de carga 
+    Swal.fire({ title: 'Procesando...', text: 'Generando archivo PDF y guardando avance...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+    const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay).toFixed(2) : '0.00';
+
+    document.getElementById('pdfJobName').textContent = currentJobInfo.clientName || 'Sin asignar';
+    document.getElementById('pdfAddress').textContent = currentJobInfo.address || 'Sin dirección';
+    document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
+    document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
+    document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF}`;
+    document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
+
+    const hoy = new Date();
+    document.getElementById('pdfDate').textContent = `${String(hoy.getDate()).padStart(2, '0')}/${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
+    document.getElementById('pdfComment').textContent = comment;
+
+    if (selectedMaterialNames) {
+        document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames;
+    } else {
+        document.getElementById('pdfMaterials').innerHTML = '<li>No se reportaron materiales.</li>';
+    }
+
+    document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
+
+    document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
+        <div style="display: inline-block; width: 210px; margin: 8px; page-break-inside: avoid; border: 1px solid #E2E8F0; border-radius: 8px; padding: 5px; background: #ffffff; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <img src="${b64}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px;">
+        </div>
+    `).join('');
+
+    const imgFirma = document.getElementById('pdfSignatureSubImg');
+    imgFirma.src = canvasSub.toDataURL("image/png");
+    imgFirma.style.width = "250px"; 
+    imgFirma.style.height = "75px";
+
+    const pdfWrapper = document.getElementById('pdfWrapper');
+    const pdfTemplate = document.getElementById('pdfTemplate');
+
+    pdfWrapper.style.display = 'block';
+    pdfWrapper.style.position = 'absolute';
+    pdfWrapper.style.top = '-10000px'; 
+    pdfWrapper.style.left = '0';
+    pdfWrapper.style.width = '750px';
+    pdfWrapper.style.zIndex = '-9999';
+    pdfWrapper.style.visibility = 'visible'; 
+
+    await new Promise(r => setTimeout(r, 600)); // Espera para dibujar todo el HTML bien
+
+    // 🔥 SOLUCIÓN 1: Limpiar el nombre del archivo para que html2pdf NO explote por emojis o tildes
+    const safeName = (currentJobInfo.clientName || 'Trabajo').replace(/[^a-zA-Z0-9]/g, '_');
+    const nombreArchivoPDF = `Reporte_${safeName}.pdf`;
+
+    const opt = {
+        margin: [10, 10, 10, 10],
+        filename: nombreArchivoPDF,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    let pdfBlob;
+    try {
+        // Obtenemos el Blob para el servidor
+        pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
+        
+        // ¡NUEVO! Descargamos una copia en el celular de tu empleado automáticamente 
+        html2pdf().set(opt).from(pdfTemplate).save(); 
+
+    } catch (e) {
+        console.error("Error al hacer el PDF:", e);
+        pdfWrapper.style.display = 'none';
+        return Swal.fire({ icon: 'error', title: 'Error del PDF', text: 'No se pudo generar el documento PDF.'});
+    }
+
+    pdfWrapper.style.display = 'none';
+    pdfWrapper.style.visibility = 'hidden';
+
+    // 🔥 SOLUCIÓN 2: Enviamos '0' en vez de 'null' en newPrice para que Java no colapse
+    const dtoObject = {
+        comment: comment,
+        jobId: parseInt(currentJobInfo.jobId),
+        employeeId: myEmployeeId,
+        status: status,
+        materialIds: selectedMaterialIds,
+        newPrice: hasModifications && newPriceVal ? parseFloat(newPriceVal) : null 
+    };
+
+    const formData = new FormData();
+    // IMPORTANTE: Asegúrate de que el nombre del parámetro sea 'data' 
+    // tal como tu controlador lo espera (Revisa tu JobUpdateController en Java)
+    formData.append('data', new Blob([JSON.stringify(dtoObject)], { type: 'application/json' }));
+
+    archivosSeleccionados.forEach(file => formData.append('files', file));
+    formData.append('files', pdfBlob, nombreArchivoPDF);
+
+    try {
+        const response = await fetch(UPDATE_URL, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${userToken}` },
+            body: formData
+        });
+
+        if (response.ok) {
+            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'El reporte se subió y el PDF fue guardado.', confirmButtonColor: '#00B8A9' });
+            cerrarModalEvidence();
+            await cargarCalendarioEmpleado(document.getElementById('employee-email-display').textContent);
+        } else {
+            let errorText = await response.text();
+            try {
+                const jsonError = JSON.parse(errorText);
+                errorText = jsonError.message || 'Error del servidor';
+            } catch(e) {}
+            
+            console.error("Error exacto del servidor:", errorText);
+            Swal.fire({ icon: 'error', title: 'Fallo al Guardar', html: `Java respondió: <br> ${errorText}`, confirmButtonColor: '#00B8A9' });
+        }
+    } catch (error) {
+        console.error("Problema de conexión:", error);
+        Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Verifica tu conexión a internet o el estado del servidor en Render.', confirmButtonColor: '#00B8A9' });
+    }
 };
 
-window.cerrarModalEvidence = () => { document.getElementById('modalEvidence').style.display = 'none'; };
+window.cerrarSesion = () => {
+    Swal.fire({
+        title: "¿Cerrar sesión?",
+        text: "¿Estás seguro que deseas salir del portal?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#00B8A9",
+        cancelButtonColor: "#1B254B",
+        confirmButtonText: "Sí, salir",
+        cancelButtonText: "Cancelar"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            localStorage.clear();
+            window.location.href = '../index.html';
+        }
+    });
+};
 
-// --- PERFIL ---
 window.abrirModalPerfil = () => {
     if (!miUsuarioActual) { return Swal.fire('Error', 'Cargando datos...', 'error'); }
     document.getElementById('perfilFirstName').value = miUsuarioActual.firstName || '';
@@ -526,304 +742,47 @@ window.guardarPerfil = async () => {
     } catch (error) { Swal.fire('Error de red', 'Fallo de conexión.', 'error'); }
 };
 
-// --- GUARDAR REPORTE ---
-window.guardarReporteYPdf = async () => {
-    const status = document.getElementById('evStatus').value;
-    let comment = document.getElementById('evComment').value.trim();
 
-    if (status === 'COMPLETED' && !document.getElementById('evCertification').checked) {
-        return Swal.fire({ icon: 'warning', title: 'Certificación Obligatoria', text: 'Para terminar el proyecto debes marcar la casilla de Certificación de Garantía.', confirmButtonColor: '#00B8A9' });
-    }
-
-    // Validación doble firma
-    const isCanvasBlank = (c) => {
-        if (!c) return true;
-        const blank = document.createElement('canvas');
-        blank.width = c.width; blank.height = c.height;
-        return c.toDataURL() === blank.toDataURL();
-    };
-
-    if (isCanvasBlank(canvasSub)) {
-        return Swal.fire({ icon: 'warning', title: 'Falta tu Firma', text: 'Debes firmar el reporte como subcontratista.', confirmButtonColor: '#12CFF4' });
-    }
-    if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#00B8A9' });
-    if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
-
-    const hasModifications = document.getElementById('evModifications').checked;
-    const newPriceVal = document.getElementById('evNewPrice').value;
-
-    if (hasModifications) {
-        if (!newPriceVal) {
-            return Swal.fire({ icon: 'warning', title: 'Falta el precio', text: 'Marcaste la alerta de modificación. Debes ingresar el nuevo precio.', confirmButtonColor: '#00B8A9' });
-        }
-        comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones o cambios a la orden original.\nNUEVO PRECIO SUGERIDO: $${parseFloat(newPriceVal).toFixed(2)}\n\n` + comment;
-
-        document.getElementById('pdfNewPriceRow').style.display = 'table-row';
-        document.getElementById('pdfNewPrice').textContent = `$${parseFloat(newPriceVal).toFixed(2)}`;
-    } else {
-        document.getElementById('pdfNewPriceRow').style.display = 'none';
-    }
-
-    const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
-    const selectedMaterialIds = [];
-    let selectedMaterialNames = '';
-    let resumenMaterialesBD = '';
-
-    selectedMatNodes.forEach(cb => {
-        const matId = parseInt(cb.value);
-        selectedMaterialIds.push(matId); // Guardamos el ID para tu backend
-        const nombreMat = cb.getAttribute('data-name');
-
-        // Capturamos el número y la palabra de la unidad
-        const cantidad = document.getElementById(`qty_${matId}`).value.trim() || '-';
-        const unidad = document.getElementById(`unit_${matId}`).value.trim() || '';
-
-        // Armamos la frase final
-        const cantidadTexto = cantidad !== '-' ? `${cantidad} ${unidad}`.trim() : 'No especificada';
-
-        // 1. Lo que saldrá impreso en el PDF
-        selectedMaterialNames += `<li style="margin-bottom: 6px; color: #2E3238;"><strong>${nombreMat}</strong>: <span style="color: #12CFF4; font-weight: bold;">${cantidadTexto}</span></li>`;
-
-        // 2. Lo que se guardará en texto para tu Base de Datos
-        resumenMaterialesBD += `📦 ${nombreMat}: ${cantidadTexto}\n`;
-    });
-
-    // Unimos los materiales al comentario general que va a tu servidor
-    if (resumenMaterialesBD !== '') {
-        comment = `[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}\n\n[COMENTARIOS]:\n${comment}`;
-    }
-
-    Swal.fire({ title: 'Generando PDF y subiendo reporte...', text: 'No cierres esta ventana', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
-
-    if (!currentJobInfo) {
-        return Swal.fire({ icon: 'error', title: 'Error del sistema', text: 'No se encontraron los datos del trabajo actual.', confirmButtonColor: '#00B8A9' });
-    }
-
-    const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay).toFixed(2) : '0.00';
-
-    document.getElementById('pdfJobName').textContent = currentJobInfo.clientName || 'Sin asignar';
-    document.getElementById('pdfAddress').textContent = currentJobInfo.address || 'Sin dirección';
-    document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
-    document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
-    document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF}`;
-    document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
-
-
-    const hoy = new Date();
-    const fechaActual = `${String(hoy.getDate()).padStart(2, '0')}/${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
-    document.getElementById('pdfDate').textContent = fechaActual;
-
-
-    // Si el empleado puso cantidades, lo agregamos al comentario para que se guarde en la Base de Datos
-    if (matQuantityInfo) {
-        comment = `📦 [CANTIDADES REPORTADAS]: ${matQuantityInfo}\n\n` + comment;
-    }
-
-    document.getElementById('pdfComment').textContent = comment;
-
-    // Juntamos los checks de materiales con el texto de cantidades para el PDF
-    let materialesHTML = selectedMaterialNames;
-    if (matQuantityInfo) {
-        materialesHTML += `<li style="margin-top: 6px; color: #0F2D4A;"><strong>Cantidades / Códigos:</strong> ${matQuantityInfo}</li>`;
-    }
-
-    if (materialesHTML) {
-        document.getElementById('pdfMaterials').innerHTML = materialesHTML;
-    } else {
-        document.getElementById('pdfMaterials').innerHTML = '<li>No se reportaron materiales ni cantidades adicionales.</li>';
-    }
-
-    document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
-
-    // Inyección de fotos usando inline-block seguro y evitando cortes por imagen
-    document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
-        <div style="display: inline-block; width: 210px; margin: 8px; page-break-inside: avoid; border: 1px solid #E2E8F0; border-radius: 8px; padding: 5px; background: #ffffff; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <img src="${b64}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 6px;">
-        </div>
-    `).join('');
-
-    // Inyectamos las DOS firmas en el PDF oculto de forma nativa
-    const imgFirma = document.getElementById('pdfSignatureSubImg');
-    imgFirma.src = canvasSub.toDataURL("image/png");
-    imgFirma.style.width = "250px";  // Forzamos el ancho exacto para que el celular no lo colapse
-    imgFirma.style.height = "75px";
-
-
-    const pdfWrapper = document.getElementById('pdfWrapper');
-    const pdfTemplate = document.getElementById('pdfTemplate');
-
-    // Hacemos visible el template sacándolo de la pantalla para que html2canvas lo calcule perfecto
-    pdfWrapper.style.display = 'block';
-    pdfWrapper.style.position = 'absolute';
-    pdfWrapper.style.top = '-10000px'; 
-    pdfWrapper.style.left = '0';
-    pdfWrapper.style.width = '750px';
-    pdfWrapper.style.zIndex = '-9999';
-    pdfWrapper.style.visibility = 'visible'; 
-
-    await new Promise(r => setTimeout(r, 400)); // 400ms para asegurar que las fotos carguen
-
-    const element = document.getElementById('pdfTemplate');
-    const pdfFileName = `Reporte_${(currentJobInfo.clientName || 'Trabajo').replace(/\s+/g, '_')}.pdf`;
-
-    // Configuración limpia y directa: Escala 2 para alta definición en PC, sin forzar anchos artificiales
-    const opt = {
-        margin: [5, 8, 5, 8],
-        filename: pdfFileName,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-            scale: 2, 
-            useCORS: true, 
-            logging: false,
-            letterRendering: true
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    let pdfBlob;
-    try {
-        pdfBlob = await html2pdf().set(opt).from(element).output('blob');
-    } catch (e) {
-        console.error("Error al generar PDF:", e);
-        pdfWrapper.style.display = 'none';
-        pdfWrapper.style.visibility = 'hidden'; // Aseguramos que se oculte si falla
-        return Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al crear el archivo PDF.', confirmButtonColor: '#00B8A9' });
-    }
-
-    // Volvemos a ocultar el wrapper
-    pdfWrapper.style.display = 'none';
-    pdfWrapper.style.visibility = 'hidden';
-
-
-    const dtoObject = {
-        comment: comment,
-        jobId: parseInt(currentJobInfo.jobId),
-        employeeId: myEmployeeId,
-        status: status,
-        materialIds: selectedMaterialIds,
-        newPrice: hasModifications && newPriceVal ? parseFloat(newPriceVal) : null
-    };
-
-    const formData = new FormData();
-    formData.append('data', new Blob([JSON.stringify(dtoObject)], { type: 'application/json' }));
-
-    for (let i = 0; i < archivosSeleccionados.length; i++) {
-        formData.append('files', archivosSeleccionados[i]);
-    }
-
-    formData.append('files', pdfBlob, pdfFileName);
-
-    try {
-        const response = await fetch(UPDATE_URL, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${userToken}` },
-            body: formData
-        });
-
-        if (response.ok) {
-            Swal.fire({ icon: 'success', title: '¡Éxito!', text: 'El reporte se subió correctamente y el Administrador será notificado.', confirmButtonColor: '#00B8A9' });
-            cerrarModalEvidence();
-            await cargarCalendarioEmpleado(document.getElementById('employee-email-display').textContent);
-        } else {
-            let errorMsg = 'Hubo un fallo al subir las evidencias.';
-            try {
-                const errorData = await response.json();
-                errorMsg = errorData.message || errorMsg;
-            } catch (e) { }
-            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg, confirmButtonColor: '#00B8A9' });
-        }
-    } catch (error) {
-        Swal.fire({ icon: 'error', title: 'Error de Red', text: 'No se pudo conectar con el servidor.', confirmButtonColor: '#00B8A9' });
-    }
-};
-
-window.cerrarSesion = () => {
-    Swal.fire({
-        title: "¿Cerrar sesión?",
-        text: "¿Estás seguro que deseas salir del portal?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#00B8A9",
-        cancelButtonColor: "#1B254B",
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = '../index.html';
-        }
-    });
-};
-
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Leer los roles del localStorage
-    const rolesString = localStorage.getItem('user_roles');
-    let userRoles = [];
+window.abrirModalEvidence = (jobId) => {
+    document.getElementById('evidenceForm').reset();
+    document.getElementById('evJobId').value = jobId;
+    document.getElementById('imagePreviewContainer').innerHTML = '';
     
-    if (rolesString) {
-        try { 
-            userRoles = JSON.parse(rolesString); 
-        } catch(e) { 
-            console.error("Error al leer roles"); 
-        }
-    }
-
-    // 2. Si el botón existe y tiene más de 1 rol, lo mostramos
-    const btnCambiarRol = document.getElementById("btnCambiarRol");
-    if (btnCambiarRol) {
-        if (userRoles.length > 1) {
-            btnCambiarRol.style.display = 'inline-block';
-            btnCambiarRol.addEventListener("click", () => mostrarSelectorDeRoles(userRoles));
-        } else {
-            btnCambiarRol.style.display = 'none'; // Se oculta si solo tiene 1 rol
-        }
-    }
-});
-
-function mostrarSelectorDeRoles(roles) {
-    // Cerramos el modal del perfil si existe la función
-    if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
-    } else {
-        // Fallback genérico por si la función tiene otro nombre en otra vista
-        const modales = document.querySelectorAll('.modal-overlay');
-        modales.forEach(m => m.style.display = 'none');
-    }
-
-    // Armamos los botones según los roles que tenga
-    let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
-    
-    roles.forEach(rol => {
-        let nombreRol = '';
-        let url = '';
+    // Resetear materiales visualmente
+    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
+        cb.checked = false;
+        const divOpciones = document.getElementById('opts_' + cb.value);
+        if (divOpciones) divOpciones.style.display = 'none';
         
-        // Asignamos las URLs relativas (funcionan porque todos los dashboards están a 1 carpeta de distancia de la raíz)
-        if(rol === 'ROLE_ADMIN') { 
-            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
-            url = '../admin/admin-dashboard.html'; 
-        }
-        if(rol === 'ROLE_JEFE') { 
-            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Jefe'; 
-            url = '../jefe/jefe-dashboard.html'; 
-        }
-        if(rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista'; 
-            url = '../employee/employee-dashboard.html'; 
-        }
-
-        if(nombreRol) {
-            opcionesHTML += `<button class="swal2-confirm swal2-styled" style="width: 100%; margin: 0; background-color: #00B8A9;" onclick="window.location.href='${url}'">${nombreRol}</button>`;
-        }
+        const qtyInput = document.getElementById(`qty_${cb.value}`);
+        const unitInput = document.getElementById(`unit_${cb.value}`);
+        if(qtyInput) qtyInput.value = '';
+        if(unitInput) unitInput.value = '';
     });
+
+    const datosMaterialesGuardados = currentJobInfo.description ? extraerDatosMateriales(currentJobInfo.description) : {};
     
-    opcionesHTML += '</div>';
+    // Marcar los que ya estaban guardados
+    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
+        const nombreMat = cb.getAttribute('data-name');
+        const divOpciones = document.getElementById('opts_' + cb.value);
+        const qtyInput = document.getElementById(`qty_${cb.value}`);
+        const unitInput = document.getElementById(`unit_${cb.value}`);
 
-    Swal.fire({
-        title: 'Selecciona tu área de trabajo',
-        html: opcionesHTML,
-        showConfirmButton: false,
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#111C44'
+        // Verificamos si el material está en la lista de materiales del trabajo O en la descripción
+        const estaEnBackend = currentJobInfo.materials && currentJobInfo.materials.some(m => m.materialId == cb.value);
+        const estaEnDescripcion = !!datosMaterialesGuardados[nombreMat];
+
+        if (estaEnBackend || estaEnDescripcion) {
+            cb.checked = true;
+            if (divOpciones) divOpciones.style.display = 'flex';
+            
+            if (datosMaterialesGuardados[nombreMat]) {
+                if(qtyInput) qtyInput.value = datosMaterialesGuardados[nombreMat].qty;
+                if(unitInput) unitInput.value = datosMaterialesGuardados[nombreMat].unit;
+            }
+        }
     });
-}
+
+    document.getElementById('modalEvidence').style.display = 'flex';
+};
