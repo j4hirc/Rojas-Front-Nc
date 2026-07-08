@@ -479,7 +479,7 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
-    // 1. Recopilar materiales seleccionados de forma limpia
+    // 1. Recopilar materiales seleccionados
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = [];
     let resumenMateriales = '';
@@ -489,10 +489,8 @@ window.guardarTrabajo = async () => {
         const nombreMat = cb.getAttribute('data-name');
         const cantidadStr = document.getElementById(`qty_${matId}`).value.trim();
         const unidad = document.getElementById(`unit_${matId}`).value.trim();
-
         const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
 
-        // Estructura exacta que espera el MaterialSelectionDto
         selectedMaterials.push({
             materialId: matId,
             quantity: cantidadNum,
@@ -513,7 +511,7 @@ window.guardarTrabajo = async () => {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
-    // 2. Extraer valores del DOM para validación estricta anti-NaN
+    // 2. Extraer valores para validación
     const empVal = document.getElementById('jobEmployee').value;
     const manVal = document.getElementById('jobManager').value;
     const payVal = document.getElementById('jobPay').value;
@@ -521,23 +519,29 @@ window.guardarTrabajo = async () => {
     const lngVal = document.getElementById('jobLng').value;
     const dateVal = document.getElementById('jobDate').value;
 
-    // 3. Control estricto del lado del cliente: Si falta algo obligatorio no disparamos la petición
-    if (!document.getElementById('jobClientName').value.trim() ||
-        !document.getElementById('jobClientPhone').value.trim() ||
+    if (!document.getElementById('jobClientName').value.trim() || 
+        !document.getElementById('jobClientPhone').value.trim() || 
         !dateVal || !empVal || !manVal || !payVal || !latVal || !lngVal) {
-        return Swal.fire('Campos vacíos', 'Por favor, asegúrate de llenar todos los campos obligatorios del formulario.', 'error');
+        return Swal.fire('Campos vacíos', 'Por favor, llena todos los campos obligatorios.', 'error');
     }
 
-    // 🔥 CAPTURAR PRIORIDAD DE MANERA SEGURA DESDE EL SELECTOR DEL HTML
+    // 🔥 LOG 1: CAPTURA DE PRIORIDAD DESDE EL SELECTOR DEL FORMULARIO HTML
     const prioritySelect = document.getElementById('jobPriority');
     const priorityValue = prioritySelect && prioritySelect.value ? parseInt(prioritySelect.value) : 2;
+    
+    console.log("=================================================");
+    console.log("[FRONTEND LOG] Leyendo el formulario HTML...");
+    console.log("-> Elemento select encontrado:", prioritySelect);
+    console.log("-> Valor string del select:", prioritySelect ? prioritySelect.value : "NO EXISTE EL SELECT");
+    console.log("-> Valor entero convertido de prioridad:", priorityValue);
+    console.log("=================================================");
 
-    // Estructura completa del payload enviado
+    // 3. Estructuración del payload
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
         description: descripcionFinal,
-        jobDate: dateVal,
+        jobDate: dateVal, 
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(latVal),
         longitude: parseFloat(lngVal),
@@ -547,10 +551,14 @@ window.guardarTrabajo = async () => {
         employeeId: parseInt(empVal),
         managerId: parseInt(manVal),
         materials: selectedMaterials,
-        priority: priorityValue // <-- Enviamos la prioridad numérica limpia al Backend
+        priority: priorityValue // Enviamos el campo al backend
     };
 
-    Swal.fire({ title: 'Procesando cambios...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+    // 🔥 LOG 2: VER CUERPO DEL JSON FINAL ANTES DEL FETCH
+    console.log("[FRONTEND LOG] JSON final que se va a enviar por red (Payload):", payload);
+    console.log("=================================================");
+
+    Swal.fire({ title: 'Procesando...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
@@ -558,32 +566,25 @@ window.guardarTrabajo = async () => {
     try {
         const response = await fetch(url, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userToken}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
             body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-            Swal.fire('¡Correcto!', isEditing ? 'El trabajo ha sido actualizado.' : 'El trabajo ha sido asignado.', 'success');
+            const dataResponse = await response.json();
+            // 🔥 LOG 3: VER QUÉ RESPONDIÓ LA BASE DE DATOS
+            console.log("[FRONTEND LOG] ¡Servidor respondió OK! Datos guardados en BD:", dataResponse);
+            console.log("=================================================");
+
+            Swal.fire('¡Éxito!', isEditing ? 'Trabajo actualizado.' : 'Trabajo asignado.', 'success');
             cerrarModalJob();
             await cargarTrabajos();
         } else {
-            const errorData = await response.json();
-            let errorMsg = 'No se ha podido procesar la solicitud.';
-            if (errorData.message) {
-                if (typeof errorData.message === 'object') {
-                    errorMsg = Object.values(errorData.message).join('<br>');
-                } else {
-                    errorMsg = errorData.message;
-                }
-            }
-            Swal.fire({ icon: 'error', title: 'Validación Rechazada por el Backend', html: errorMsg });
+            Swal.fire('Error', 'No se pudo guardar en el servidor remoto.', 'error');
         }
     } catch (error) {
         console.error('Error al guardar:', error);
-        Swal.fire('Error de red', 'No se ha podido sincronizar con el servidor remoto.', 'error');
+        Swal.fire('Error de red', 'Fallo de sincronización.', 'error');
     }
 };
 
