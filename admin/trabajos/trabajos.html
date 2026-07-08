@@ -206,6 +206,15 @@
                             <input type="date" id="jobDate" class="input-field" required>
                         </div>
 
+                        <div class="form-group mb-3">
+                            <label for="jobPriority" class="form-label">Prioridad del Trabajo</label>
+                            <select id="jobPriority" class="form-select" required>
+                                <option value="1">1 - Alta (Urgente)</option>
+                                <option value="2" selected>2 - Media (Normal)</option>
+                                <option value="3">3 - Baja</option>
+                            </select>
+                        </div>
+
                         <div class="form-group">
                             <label>Pago Asignado ($)</label>
                             <input type="number" id="jobPay" class="input-field" step="0.01" min="0" required

@@ -276,11 +276,18 @@ function renderizarTrabajos(trabajos) {
         else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
+        // 🔥 Insignia visual para la prioridad
+        let priorityBadge = '';
+        if (job.priority === 1) {
+            priorityBadge = `<span style="background: #ffebee; color: #d32f2f; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 4px; display: inline-block;">Alta Prioridad</span>`;
+        } else if (job.priority === 3) {
+            priorityBadge = `<span style="background: #eceff1; color: #607d8b; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 4px; display: inline-block;">Baja Prioridad</span>`;
+        } // Si es 2 (Normal), no mostramos etiqueta para no sobrecargar visualmente
+
         const empName = job.nameEmployee || 'Sin asignar';
         const manName = job.nameManager || 'Sin asignar';
         const fechaTxt = formatearFecha(job.jobDate);
         
-        // Limpiamos notas previas si existían
         let safeDesc = job.description ? job.description : 'Sin descripción';
         if (safeDesc.includes('[MATERIALES PRE-ASIGNADOS]:')) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
@@ -289,6 +296,7 @@ function renderizarTrabajos(trabajos) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
+                ${priorityBadge}<br>
                 <strong>${job.clientName}</strong><br>
                 <small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small>
             </td>
@@ -327,7 +335,10 @@ function renderizarTrabajos(trabajos) {
 
             card.innerHTML = `
                 <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px;">
-                    <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>
+                    <div>
+                        ${priorityBadge}
+                        <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>
+                    </div>
                     ${statusBadge}
                 </div>
                 <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
@@ -363,6 +374,11 @@ function renderizarTrabajos(trabajos) {
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
+    
+    // 🔥 Resetear prioridad a Normal (2) por defecto
+    const prioritySelect = document.getElementById('jobPriority');
+    if (prioritySelect) prioritySelect.value = "2";
+
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
@@ -384,7 +400,6 @@ window.abrirModalEditarJob = async (id) => {
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
 
-    // 1. Limpiar todo antes de cargar
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
@@ -404,7 +419,6 @@ window.abrirModalEditarJob = async (id) => {
         if (response.ok) {
             const data = await response.json();
 
-            // Limpiamos la descripción por si tiene basura
             let descripcionLimpia = data.description || '';
             if (descripcionLimpia.includes('[MATERIALES PRE-ASIGNADOS]:')) {
                 descripcionLimpia = descripcionLimpia.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
@@ -423,7 +437,12 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
-            // 🔥 4. AHORA LEEMOS LA CANTIDAD Y UNIDAD DESDE EL JSON REAL
+            // 🔥 Cargar la prioridad desde la base de datos
+            const prioritySelect = document.getElementById('jobPriority');
+            if (prioritySelect) {
+                prioritySelect.value = data.priority || 2; 
+            }
+
             if (data.materials && data.materials.length > 0) {
                 document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
                     const matGuardado = data.materials.find(m => m.materialId == cb.value);
@@ -461,27 +480,18 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
-    // 🔥 1. ARMAMOS EL ARRAY EXACTO QUE JAVA ESPERA
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = [];
-
-    // Validamos qué estamos recogiendo (Y el texto para el PDF / descripción vieja)
     let resumenMateriales = '';
+
     matCheckboxes.forEach(cb => {
         const matId = parseInt(cb.value);
         const nombreMat = cb.getAttribute('data-name');
         const cantidadStr = document.getElementById(`qty_${matId}`).value.trim();
         const unidad = document.getElementById(`unit_${matId}`).value.trim();
-
         const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
 
-        // Objeto que va a la base de datos
-        selectedMaterials.push({
-            materialId: matId,
-            quantity: cantidadNum,
-            unit: unidad || 'N/A'
-        });
-
+        selectedMaterials.push({ materialId: matId, quantity: cantidadNum, unit: unidad || 'N/A' });
         const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
         resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
     });
@@ -490,18 +500,28 @@ window.guardarTrabajo = async () => {
     if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
         descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
     }
-
     let descripcionFinal = descripcionBase;
     if (resumenMateriales !== '') {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
-    // 🔥 5. MANDAMOS "materials" AL BACKEND
+    // 🔥 FORMATEAR FECHA A MM/dd/yyyy
+    const rawDate = document.getElementById('jobDate').value;
+    let formattedDate = rawDate;
+    if (rawDate && rawDate.includes('-')) {
+        const [year, month, day] = rawDate.split('-');
+        formattedDate = `${month}/${day}/${year}`;
+    }
+
+    // 🔥 CAPTURAR PRIORIDAD (Si no existe el campo en el HTML, envía 2 por defecto)
+    const prioritySelect = document.getElementById('jobPriority');
+    const priorityValue = prioritySelect ? parseInt(prioritySelect.value) : 2;
+
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
         description: descripcionFinal,
-        jobDate: document.getElementById('jobDate').value,
+        jobDate: formattedDate, // Enviamos la fecha ya formateada
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
         longitude: parseFloat(document.getElementById('jobLng').value),
@@ -510,7 +530,8 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: parseInt(document.getElementById('jobManager').value),
-        materials: selectedMaterials // ¡Debe decir "materials"!
+        materials: selectedMaterials,
+        priority: priorityValue // Nuevo campo
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
