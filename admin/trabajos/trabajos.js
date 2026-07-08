@@ -480,6 +480,7 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
+    // 1. Recopilar materiales seleccionados de forma limpia
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = [];
     let resumenMateriales = '';
@@ -489,9 +490,16 @@ window.guardarTrabajo = async () => {
         const nombreMat = cb.getAttribute('data-name');
         const cantidadStr = document.getElementById(`qty_${matId}`).value.trim();
         const unidad = document.getElementById(`unit_${matId}`).value.trim();
+
         const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
 
-        selectedMaterials.push({ materialId: matId, quantity: cantidadNum, unit: unidad || 'N/A' });
+        // Estructura exacta que espera el MaterialSelectionDto
+        selectedMaterials.push({
+            materialId: matId,
+            quantity: cantidadNum,
+            unit: unidad || 'N/A'
+        });
+
         const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
         resumenMateriales += `• ${nombreMat}: ${textoCantidad}\n`;
     });
@@ -500,45 +508,50 @@ window.guardarTrabajo = async () => {
     if (descripcionBase.includes('[MATERIALES PRE-ASIGNADOS]:')) {
         descripcionBase = descripcionBase.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
     }
+
     let descripcionFinal = descripcionBase;
     if (resumenMateriales !== '') {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
-    // 🔥 FORMATEAR FECHA A MM/dd/yyyy
-    const rawDate = document.getElementById('jobDate').value;
-    let formattedDate = rawDate;
-    if (rawDate && rawDate.includes('-')) {
-        const [year, month, day] = rawDate.split('-');
-        formattedDate = `${month}/${day}/${year}`;
+    // 2. Extraer valores del DOM para validación estricta anti-NaN
+    const empVal = document.getElementById('jobEmployee').value;
+    const manVal = document.getElementById('jobManager').value;
+    const payVal = document.getElementById('jobPay').value;
+    const latVal = document.getElementById('jobLat').value;
+    const lngVal = document.getElementById('jobLng').value;
+    const dateVal = document.getElementById('jobDate').value;
+
+    // 3. Control estricto del lado del cliente: Si falta algo obligatorio no disparamos la petición
+    if (!document.getElementById('jobClientName').value.trim() || 
+        !document.getElementById('jobClientPhone').value.trim() || 
+        !dateVal || !empVal || !manVal || !payVal || !latVal || !lngVal) {
+        return Swal.fire('Campos vacíos', 'Por favor, asegúrate de llenar todos los campos obligatorios del formulario.', 'error');
     }
 
-    // 🔥 CAPTURAR PRIORIDAD (Si no existe el campo en el HTML, envía 2 por defecto)
+    // 4. Capturar prioridad de manera segura
     const prioritySelect = document.getElementById('jobPriority');
     const priorityValue = prioritySelect ? parseInt(prioritySelect.value) : 2;
 
+    // 5. Construcción impecable del payload JSON
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
         description: descripcionFinal,
-        jobDate: formattedDate, // Enviamos la fecha ya formateada
+        jobDate: dateVal, // Mantiene el formato ISO puro de tu input HTML (YYYY-MM-DD)
         address: document.getElementById('jobAddress').value.trim(),
-        latitude: parseFloat(document.getElementById('jobLat').value),
-        longitude: parseFloat(document.getElementById('jobLng').value),
+        latitude: parseFloat(latVal),
+        longitude: parseFloat(lngVal),
         safeDepositBoxCodes: document.getElementById('jobSafeBox').value.trim(),
         status: document.getElementById('jobStatus').value,
-        pay: parseFloat(document.getElementById('jobPay').value),
-        employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: parseInt(document.getElementById('jobManager').value),
-        materials: selectedMaterials,
-        priority: priorityValue // Nuevo campo
+        pay: parseFloat(payVal),
+        employeeId: parseInt(empVal),
+        managerId: parseInt(manVal),
+        materials: selectedMaterials, // Array limpio sin propiedades basura del DOM
+        priority: priorityValue
     };
 
-    if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
-        return Swal.fire('Error', 'Por favor llena todos los campos obligatorios.', 'error');
-    }
-
-    Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+    Swal.fire({ title: 'Procesando cambios...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
@@ -546,17 +559,20 @@ window.guardarTrabajo = async () => {
     try {
         const response = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${userToken}` 
+            },
             body: JSON.stringify(payload)
         });
 
         if (response.ok) {
-            Swal.fire('¡Éxito!', isEditing ? 'Trabajo actualizado.' : 'Trabajo asignado correctamente.', 'success');
+            Swal.fire('¡Correcto!', isEditing ? 'El trabajo ha sido actualizado.' : 'El trabajo ha sido asignado.', 'success');
             cerrarModalJob();
             await cargarTrabajos();
         } else {
             const errorData = await response.json();
-            let errorMsg = 'No se pudo guardar el trabajo.';
+            let errorMsg = 'No se ha podido procesar la solicitud.';
             if (errorData.message) {
                 if (typeof errorData.message === 'object') {
                     errorMsg = Object.values(errorData.message).join('<br>');
@@ -564,11 +580,11 @@ window.guardarTrabajo = async () => {
                     errorMsg = errorData.message;
                 }
             }
-            Swal.fire({ icon: 'error', title: 'Error del servidor', html: errorMsg });
+            Swal.fire({ icon: 'error', title: 'Validación Rechazada por el Backend', html: errorMsg });
         }
     } catch (error) {
         console.error('Error al guardar:', error);
-        Swal.fire('Fallo de conexión', 'No se pudo contactar con el servidor.', 'error');
+        Swal.fire('Error de red', 'No se ha podido sincronizar con el servidor remoto.', 'error');
     }
 };
 
