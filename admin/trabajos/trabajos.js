@@ -363,6 +363,12 @@ function renderizarTrabajos(trabajos) {
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
+
+    // 🔥 Resetear prioridad por defecto al crear un nuevo registro
+    if (document.getElementById('jobPriority')) {
+        document.getElementById('jobPriority').value = '2'; 
+    }
+
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
@@ -373,6 +379,7 @@ window.abrirModalCrearJob = () => {
         if(qtyInput) qtyInput.value = '';
         if(unitInput) unitInput.value = '';
     });
+
     if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
@@ -423,7 +430,10 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
-            // 🔥 4. AHORA LEEMOS LA CANTIDAD Y UNIDAD DESDE EL JSON REAL
+            // 🔥 Cargar la prioridad numérica del Spinner desde la base de datos (por defecto 2 si es nulo)
+            document.getElementById('jobPriority').value = data.priority !== null && data.priority !== undefined ? data.priority : '2';
+
+            // 4. AHORA LEEMOS LA CANTIDAD Y UNIDAD DESDE EL JSON REAL
             if (data.materials && data.materials.length > 0) {
                 document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
                     const matGuardado = data.materials.find(m => m.materialId == cb.value);
@@ -465,7 +475,7 @@ window.guardarTrabajo = async () => {
     const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
     const selectedMaterials = [];
 
-    // Validamos qué estamos recogiendo (Y el texto para el PDF / descripción vieja)
+    // Validamos qué estamos recogiendo
     let resumenMateriales = '';
     matCheckboxes.forEach(cb => {
         const matId = parseInt(cb.value);
@@ -496,7 +506,10 @@ window.guardarTrabajo = async () => {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
-    // 🔥 5. MANDAMOS "materials" AL BACKEND
+    // 🔥 CAPTURAMOS LA PRIORIDAD SELECCIONADA EN EL SPINNER COMO ENTERO
+    const prioridadSeleccionada = parseInt(document.getElementById('jobPriority').value) || 2;
+
+    // 🔥 MANDAMOS TODOS LOS CAMPOS AL BACKEND
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
@@ -510,7 +523,8 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: parseInt(document.getElementById('jobManager').value),
-        materials: selectedMaterials // ¡Debe decir "materials"!
+        materials: selectedMaterials,
+        priority: prioridadSeleccionada // 🔥 Enviamos "priority" a la propiedad de JobRequestDto
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
