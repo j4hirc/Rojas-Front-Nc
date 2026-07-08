@@ -374,8 +374,8 @@ function renderizarTrabajos(trabajos) {
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
-
-    // 🔥 Resetear prioridad a Normal (2) por defecto
+    
+    // 🔥 Forzar que empiece en 2 al crear uno nuevo
     const prioritySelect = document.getElementById('jobPriority');
     if (prioritySelect) prioritySelect.value = "2";
 
@@ -383,11 +383,10 @@ window.abrirModalCrearJob = () => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
         if (divOpts) divOpts.style.display = 'none';
-
         const qtyInput = document.getElementById(`qty_${cb.value}`);
         const unitInput = document.getElementById(`unit_${cb.value}`);
-        if (qtyInput) qtyInput.value = '';
-        if (unitInput) unitInput.value = '';
+        if(qtyInput) qtyInput.value = '';
+        if(unitInput) unitInput.value = '';
     });
     if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
@@ -400,15 +399,15 @@ window.abrirModalEditarJob = async (id) => {
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
 
-    // Limpiar materiales previos
+    // Limpiar checkboxes de materiales
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
         if (divOpts) divOpts.style.display = 'none';
         const qtyInput = document.getElementById(`qty_${cb.value}`);
         const unitInput = document.getElementById(`unit_${cb.value}`);
-        if (qtyInput) qtyInput.value = '';
-        if (unitInput) unitInput.value = '';
+        if(qtyInput) qtyInput.value = '';
+        if(unitInput) unitInput.value = '';
     });
     if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
 
@@ -438,11 +437,14 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
-            // 🔥 CARGAR LA PRIORIDAD DESDE LA API AL SELECTOR DEL HTML
+            // 🔥 CORRECCIÓN FRONTEND: Forzar la preselección de la prioridad que viene de la BD
             const prioritySelect = document.getElementById('jobPriority');
             if (prioritySelect) {
-                // Si viene nula o indefinida de la base de datos, ponemos 2 (Media) por defecto
-                prioritySelect.value = data.priority !== undefined && data.priority !== null ? data.priority.toString() : "2";
+                if (data.priority !== undefined && data.priority !== null) {
+                    prioritySelect.value = data.priority.toString();
+                } else {
+                    prioritySelect.value = "2"; // Por si es un registro viejo sin prioridad
+                }
             }
 
             if (data.materials && data.materials.length > 0) {
@@ -454,8 +456,8 @@ window.abrirModalEditarJob = async (id) => {
                         if (divOpts) divOpts.style.display = 'flex';
                         const qtyInput = document.getElementById(`qty_${cb.value}`);
                         const unitInput = document.getElementById(`unit_${cb.value}`);
-                        if (qtyInput && matGuardado.quantity !== null) qtyInput.value = matGuardado.quantity;
-                        if (unitInput && matGuardado.unit !== null) unitInput.value = matGuardado.unit;
+                        if(qtyInput && matGuardado.quantity !== null) qtyInput.value = matGuardado.quantity;
+                        if(unitInput && matGuardado.unit !== null) unitInput.value = matGuardado.unit;
                     }
                 });
                 window.calcularCostoMateriales();
