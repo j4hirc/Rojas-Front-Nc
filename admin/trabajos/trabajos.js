@@ -213,7 +213,7 @@ async function cargarUsuariosYMateriales(emailActual) {
                 containerMat.innerHTML = '<span style="color:#666;">No hay materiales en inventario.</span>';
             } else {
                 materials.forEach(mat => {
-                    const precioMat = mat.price || 0; 
+                    const precioMat = mat.price || 0;
                     containerMat.innerHTML += `
                     <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
                         <label style="display: flex; align-items: center; justify-content: space-between; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
@@ -287,7 +287,7 @@ function renderizarTrabajos(trabajos) {
         const empName = job.nameEmployee || 'Sin asignar';
         const manName = job.nameManager || 'Sin asignar';
         const fechaTxt = formatearFecha(job.jobDate);
-        
+
         let safeDesc = job.description ? job.description : 'Sin descripción';
         if (safeDesc.includes('[MATERIALES PRE-ASIGNADOS]:')) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
@@ -374,7 +374,7 @@ function renderizarTrabajos(trabajos) {
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
-    
+
     // 🔥 Resetear prioridad a Normal (2) por defecto
     const prioritySelect = document.getElementById('jobPriority');
     if (prioritySelect) prioritySelect.value = "2";
@@ -383,11 +383,11 @@ window.abrirModalCrearJob = () => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
         if (divOpts) divOpts.style.display = 'none';
-        
+
         const qtyInput = document.getElementById(`qty_${cb.value}`);
         const unitInput = document.getElementById(`unit_${cb.value}`);
-        if(qtyInput) qtyInput.value = '';
-        if(unitInput) unitInput.value = '';
+        if (qtyInput) qtyInput.value = '';
+        if (unitInput) unitInput.value = '';
     });
     if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
@@ -400,14 +400,15 @@ window.abrirModalEditarJob = async (id) => {
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
 
+    // Limpiar materiales previos
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
         if (divOpts) divOpts.style.display = 'none';
         const qtyInput = document.getElementById(`qty_${cb.value}`);
         const unitInput = document.getElementById(`unit_${cb.value}`);
-        if(qtyInput) qtyInput.value = '';
-        if(unitInput) unitInput.value = '';
+        if (qtyInput) qtyInput.value = '';
+        if (unitInput) unitInput.value = '';
     });
     if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
 
@@ -437,26 +438,24 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
-            // 🔥 Cargar la prioridad desde la base de datos
+            // 🔥 CARGAR LA PRIORIDAD DESDE LA API AL SELECTOR DEL HTML
             const prioritySelect = document.getElementById('jobPriority');
             if (prioritySelect) {
-                prioritySelect.value = data.priority || 2; 
+                // Si viene nula o indefinida de la base de datos, ponemos 2 (Media) por defecto
+                prioritySelect.value = data.priority !== undefined && data.priority !== null ? data.priority.toString() : "2";
             }
 
             if (data.materials && data.materials.length > 0) {
                 document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
                     const matGuardado = data.materials.find(m => m.materialId == cb.value);
-
                     if (matGuardado) {
                         cb.checked = true;
                         const divOpts = document.getElementById(`opts_${cb.value}`);
                         if (divOpts) divOpts.style.display = 'flex';
-                        
                         const qtyInput = document.getElementById(`qty_${cb.value}`);
                         const unitInput = document.getElementById(`unit_${cb.value}`);
-                        
-                        if(qtyInput && matGuardado.quantity !== null) qtyInput.value = matGuardado.quantity;
-                        if(unitInput && matGuardado.unit !== null) unitInput.value = matGuardado.unit;
+                        if (qtyInput && matGuardado.quantity !== null) qtyInput.value = matGuardado.quantity;
+                        if (unitInput && matGuardado.unit !== null) unitInput.value = matGuardado.unit;
                     }
                 });
                 window.calcularCostoMateriales();
@@ -523,22 +522,22 @@ window.guardarTrabajo = async () => {
     const dateVal = document.getElementById('jobDate').value;
 
     // 3. Control estricto del lado del cliente: Si falta algo obligatorio no disparamos la petición
-    if (!document.getElementById('jobClientName').value.trim() || 
-        !document.getElementById('jobClientPhone').value.trim() || 
+    if (!document.getElementById('jobClientName').value.trim() ||
+        !document.getElementById('jobClientPhone').value.trim() ||
         !dateVal || !empVal || !manVal || !payVal || !latVal || !lngVal) {
         return Swal.fire('Campos vacíos', 'Por favor, asegúrate de llenar todos los campos obligatorios del formulario.', 'error');
     }
 
-    // 4. Capturar prioridad de manera segura
+    // 🔥 CAPTURAR PRIORIDAD DE MANERA SEGURA DESDE EL SELECTOR DEL HTML
     const prioritySelect = document.getElementById('jobPriority');
-    const priorityValue = prioritySelect ? parseInt(prioritySelect.value) : 2;
+    const priorityValue = prioritySelect && prioritySelect.value ? parseInt(prioritySelect.value) : 2;
 
-    // 5. Construcción impecable del payload JSON
+    // Estructura completa del payload enviado
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
         description: descripcionFinal,
-        jobDate: dateVal, // Mantiene el formato ISO puro de tu input HTML (YYYY-MM-DD)
+        jobDate: dateVal,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(latVal),
         longitude: parseFloat(lngVal),
@@ -547,8 +546,8 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(payVal),
         employeeId: parseInt(empVal),
         managerId: parseInt(manVal),
-        materials: selectedMaterials, // Array limpio sin propiedades basura del DOM
-        priority: priorityValue
+        materials: selectedMaterials,
+        priority: priorityValue // <-- Enviamos la prioridad numérica limpia al Backend
     };
 
     Swal.fire({ title: 'Procesando cambios...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
@@ -559,9 +558,9 @@ window.guardarTrabajo = async () => {
     try {
         const response = await fetch(url, {
             method: method,
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${userToken}` 
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}`
             },
             body: JSON.stringify(payload)
         });
@@ -647,10 +646,10 @@ window.toggleMaterialOpciones = (matId) => {
 
     if (checkbox.checked) {
         divOpts.style.display = 'flex';
-        if (!inputQty.value) inputQty.value = 1; 
+        if (!inputQty.value) inputQty.value = 1;
     } else {
         divOpts.style.display = 'none';
-        inputQty.value = ''; 
+        inputQty.value = '';
     }
     window.calcularCostoMateriales();
 };
@@ -681,11 +680,11 @@ function formatearFecha(fecha) {
         const dia = String(fecha[2]).padStart(2, '0');
         const mes = String(fecha[1]).padStart(2, '0');
         const anio = fecha[0];
-        return `${mes}-${dia}-${anio}`; 
+        return `${mes}-${dia}-${anio}`;
     } else if (typeof fecha === 'string') {
         const partes = fecha.split('-');
         if (partes.length === 3) {
-            return `${partes[1]}-${partes[2]}-${partes[0]}`; 
+            return `${partes[1]}-${partes[2]}-${partes[0]}`;
         }
     }
     return fecha;
