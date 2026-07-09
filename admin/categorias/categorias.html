@@ -20,7 +20,6 @@
             <div class="sidebar-logo">
                 <img src="../../img/logo.png" alt="Rojas Remodeling">
             </div>
-
             
             <nav class="sidebar-nav">
                 <a href="../admin-dashboard.html">
@@ -38,14 +37,13 @@
                 <a href="categorias.html" class="active">
                     <i class="fa-solid fa-tags"></i> Categorías
                 </a>
-        
                 <a href="../materiales/materiales.html">
                     <i class="fa-solid fa-boxes-stacked"></i> Materiales
                 </a>
             </nav>
 
             <div class="sidebar-footer">
-                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
+                <button class="btn-logout-sidebar" id="btnSalir">
                     <i class="fa-solid fa-right-from-bracket"></i> Salir
                 </button>
             </div>
@@ -55,15 +53,15 @@
             
             <header class="top-navbar">
                 <div class="page-title">Gestión de Categorías</div>
-                <div class="user-profile">
+                <div id="btnPerfilAdmin" class="user-profile" style="cursor: pointer; padding: 5px 10px; border-radius: 8px;" title="Haz clic para cambiar de rol">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="admin-email-display">Cargando...</span>
+                    <i class="fa-solid fa-users-arrows-right-left" style="font-size: 12px; margin-left: 5px; color: #12CFF4;"></i>
                 </div>
             </header>
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-                    
                     <div class="header-section">
                         <h2 style="margin: 0; color: #2B3674;">Lista de Categorías</h2>
                         <button class="btn-add" onclick="abrirModalCrearCat()" style="background: #2e7d32;">
@@ -83,12 +81,13 @@
                             <tbody id="catTableBody"></tbody>
                         </table>
                     </div>
-
                     <div class="mobile-cards" id="mobileCardsContainer"></div>
                 </div>
             </div>
         </main>
     </div>
+
+    <button id="btnCambiarRol" style="display: none;"></button>
 
     <div class="modal-overlay" id="modalCat">
         <div class="modal-container" style="max-width: 450px;">
@@ -96,7 +95,6 @@
                 <span id="modalTitulo"><i class="fa-solid fa-tag"></i> Categoría</span>
                 <button onclick="cerrarModalCat()" class="btn-close-modal">✕</button>
             </div>
-            
             <div class="modal-body">
                 <form id="formCat">
                     <input type="hidden" id="catId"> 
@@ -106,7 +104,6 @@
                     </div>
                 </form>
             </div>
-            
             <div class="modal-footer">
                 <button onclick="cerrarModalCat()" class="btn-secondary">Cancelar</button>
                 <button onclick="guardarCategoria()" class="btn-primary" style="background: #2e7d32;">Guardar</button>
