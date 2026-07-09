@@ -21,7 +21,6 @@
                 <img src="../../img/logo.png" alt="Rojas Remodeling">
             </div>
 
-            
             <nav class="sidebar-nav">
                 <a href="../admin-dashboard.html">
                     <i class="fa-solid fa-house"></i> Inicio
@@ -38,7 +37,6 @@
                 <a href="categorias.html" class="active">
                     <i class="fa-solid fa-tags"></i> Categorías
                 </a>
-        
                 <a href="../materiales/materiales.html">
                     <i class="fa-solid fa-boxes-stacked"></i> Materiales
                 </a>
@@ -55,15 +53,16 @@
             
             <header class="top-navbar">
                 <div class="page-title">Gestión de Categorías</div>
-                <div class="user-profile">
+                <!-- 🔥 MODIFICADO: Añadido id, cursor e icono para cambiar de rol -->
+                <div id="btnPerfilAdmin" class="user-profile" style="cursor: pointer; display: flex; align-items: center; gap: 8px;" title="Cambiar de Rol">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="admin-email-display">Cargando...</span>
+                    <i class="fa-solid fa-right-left" style="font-size: 11px; color: #12CFF4; margin-left: 3px;"></i>
                 </div>
             </header>
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-                    
                     <div class="header-section">
                         <h2 style="margin: 0; color: #2B3674;">Lista de Categorías</h2>
                         <button class="btn-add" onclick="abrirModalCrearCat()" style="background: #2e7d32;">
@@ -89,6 +88,9 @@
             </div>
         </main>
     </div>
+
+    <!-- 🔥 MODIFICADO: Botón oculto para activar el flujo si fuese necesario -->
+    <button id="btnCambiarRol" style="display: none;"></button>
 
     <div class="modal-overlay" id="modalCat">
         <div class="modal-container" style="max-width: 450px;">
