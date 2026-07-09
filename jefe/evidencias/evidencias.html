@@ -35,6 +35,81 @@
         .pdf-btn i { font-size: 24px; margin-bottom: 5px; color: #e65100; }
         .pdf-btn:hover { background: #198754; color: white; border-style: solid; }
         .pdf-btn:hover i { color: white; }
+
+        /* =============================================
+   RESPONSIVE PARA EVIDENCIAS (MÓVIL)
+   ============================================= */
+
+@media (max-width: 768px) {
+
+    .usuarios-container {
+        padding: 18px 15px !important;
+        margin-top: 10px !important;
+        border-radius: 16px;
+    }
+
+    .header-section {
+        margin-bottom: 20px;
+    }
+
+    .header-section h2 {
+        font-size: 1.35rem !important;
+        text-align: left;
+    }
+
+    /* Grid de tarjetas - Muy importante para móviles */
+    .grid-cards {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        padding: 5px;
+    }
+
+    /* Ajuste de cada tarjeta en móvil */
+    .card {
+        padding: 18px !important;
+        margin-bottom: 10px;
+    }
+
+    /* Contenido dentro de las tarjetas */
+    .gallery-grid {
+        gap: 8px;
+        justify-content: flex-start;
+    }
+
+    .gallery-img {
+        width: 70px;
+        height: 70px;
+    }
+
+    /* Modal en móvil */
+    .modal-container {
+        width: 95% !important;
+        max-width: none !important;
+        margin: 10px auto;
+    }
+
+    .modal-body {
+        padding: 18px 15px !important;
+        max-height: 70vh;
+    }
+}
+
+/* Para celulares pequeños */
+@media (max-width: 480px) {
+
+    .grid-cards {
+        gap: 14px;
+    }
+
+    .card {
+        padding: 16px !important;
+    }
+
+    .gallery-img {
+        width: 65px;
+        height: 65px;
+    }
+}
     </style>
 </head>
 <body>
