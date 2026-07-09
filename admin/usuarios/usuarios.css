@@ -1,5 +1,5 @@
 /* ========================================================
-   ESTILOS EXCLUSIVOS DEL MÓDULO DE USUARIOS (NUEVOS COLORES)
+   ESTILOS EXCLUSIVOS DEL MÓDULO DE USUARIOS / TRABAJOS
    ======================================================== */
 
 .usuarios-container {
@@ -19,11 +19,23 @@
     margin-bottom: 25px;
     padding-bottom: 15px;
     border-bottom: 1px solid #F4F7FE;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
-/* --- TABLA DE USUARIOS --- */
-.table-container { overflow-x: auto; }
-.user-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+/* --- TABLA DE USUARIOS / TRABAJOS --- */
+.table-container { 
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch;
+}
+
+.user-table { 
+    width: 100%; 
+    border-collapse: separate; 
+    border-spacing: 0; 
+    min-width: 900px; /* Para forzar scroll horizontal en móviles si es necesario */
+}
+
 .user-table th {
     background: #F8FAFF;
     color: var(--slate);
@@ -48,11 +60,11 @@
 
 .user-table tr:hover td { background-color: #fcfcfc; }
 
-/* --- MODAL FLOTANTE --- */
+/* --- MODAL --- */
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(11, 11, 13, 0.85); /* Deep black transparente */
+    background: rgba(11, 11, 13, 0.85);
     backdrop-filter: blur(5px);
     z-index: 9999;
     display: none; 
@@ -77,184 +89,125 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.modal-header {
-    padding: 25px 30px;
-    background: var(--white);
-    border-bottom: 1px solid #F4F7FE;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+.modal-header, .modal-body, .modal-footer { /* ya los tienes */ }
 
-.modal-header span {
-    font-weight: 700;
-    font-size: 1.25rem;
-    color: var(--black);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.btn-close-modal {
-    background: #F4F7FE;
-    border: none;
-    color: var(--slate);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: 0.2s;
-}
-
-.btn-close-modal:hover { background: #FBE9E7; color: #d32f2f; }
-
-.modal-body {
-    padding: 30px;
-    overflow-y: auto;
-    max-height: 65vh;
-}
-
-.form-grid { display: flex; flex-direction: column; gap: 20px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-
-.form-group label {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--slate);
-    font-weight: 700;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.input-field {
-    width: 100%;
-    padding: 12px 18px;
-    border: 1.5px solid #E0E5F2;
-    border-radius: 12px;
-    background: #F9FAFC;
-    font-family: inherit;
-    font-size: 0.95rem;
-    color: var(--black);
-    transition: 0.3s;
-}
-
-.input-field:focus {
-    outline: none;
-    border-color: var(--cyan);
-    background: var(--white);
-    box-shadow: 0 0 0 4px rgba(18, 207, 244, 0.15);
-}
-
-select.input-field { cursor: pointer; }
-
-.modal-footer {
-    padding: 20px 30px;
-    background: #F9FAFC;
-    border-top: 1px solid #F4F7FE;
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-}
-
-.btn-secondary {
-    padding: 12px 24px;
-    border: 1px solid #E0E5F2;
-    background: var(--white);
-    color: var(--slate);
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: 700;
-    transition: 0.2s;
-}
-
-.btn-secondary:hover { background: #F4F7FE; }
-
-.btn-primary {
-    padding: 12px 30px;
-    border: none;
-    background: var(--cyan);
-    color: var(--black);
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: 0.2s;
-    box-shadow: 0 4px 10px rgba(18, 207, 244, 0.25);
-}
-
-.btn-primary:hover {
-    background: #2dd8f8;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(18, 207, 244, 0.4);
-}
-
-.mobile-cards { display: none; }
-
+/* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
-    .modal-container { width: 95%; max-height: 90vh; }
-    .modal-body { padding: 15px; }
-    .modal-header { padding: 15px 20px; }
-    .modal-footer { padding: 15px 20px; flex-direction: column; }
-    .btn-secondary, .btn-primary { width: 100%; text-align: center; margin-bottom: 10px; }
-    .table-container { display: none; } 
-    .mobile-cards { display: grid; gap: 15px; margin-top: 20px;}
-    
-    .card { background: var(--white); padding: 20px; border-radius: 16px; border: 1px solid #E0E5F2; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; }
-    .card-header strong { font-size: 1.1rem; color: var(--black); }
-    .card-actions { margin-top: 15px; display: flex; gap: 10px; }
-    .form-row { grid-template-columns: 1fr; gap: 15px;}
+
+    .usuarios-container {
+        padding: 15px;
+        margin-top: -10px;
+    }
+
+    .header-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-section h2 {
+        margin-bottom: 10px;
+    }
+
+    /* Buscador + Filtro + Botón */
+    .header-section > div[style*="display:flex"] {
+        width: 100%;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    #searchJobInput, #filterStatusInput {
+        width: 100% !important;
+    }
+
+    /* Ocultar tabla y mostrar mobile cards */
+    .table-container {
+        display: none !important;
+    }
+
+    .mobile-cards {
+        display: grid !important;
+        gap: 16px;
+        margin-top: 10px;
+    }
+
+    /* Sidebar como menú horizontal en móviles */
+    .sidebar {
+        width: 100% !important;
+        height: auto !important;
+        flex-direction: row !important;
+        overflow-x: auto;
+        padding: 10px 0;
+    }
+
+    .sidebar-nav {
+        flex-direction: row !important;
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    .sidebar-nav a {
+        padding: 10px 15px !important;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+    .content-body {
+        padding: 15px 12px !important;
+    }
+
+    /* Modal más cómodo en celular */
+    .modal-container {
+        width: 96% !important;
+        max-height: 92vh;
+    }
+
+    .modal-body {
+        padding: 20px 15px !important;
+        max-height: 65vh;
+    }
+
+    .modal-header {
+        padding: 18px 20px;
+    }
+
+    .modal-footer {
+        padding: 15px 20px;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn-secondary, .btn-primary {
+        width: 100%;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 15px;
+    }
+
+    #jobMap {
+        height: 250px !important;
+    }
 }
 
-/* ==========================================================================
-   SCROLL HORIZONTAL EXCLUSIVO PARA LA TABLA/LISTA EN MÓVILES
-   ========================================================================== */
+/* Celulares muy pequeños */
+@media (max-width: 480px) {
+    .modal-container {
+        width: 98% !important;
+    }
+    #jobMap {
+        height: 220px !important;
+    }
+}
+
+/* Scroll horizontal seguro */
 @media screen and (max-width: 768px) {
-    
-    /* 1. Asegurar que la pantalla global NO se mueva hacia los lados */
     html, body, .app-layout, .main-content {
         overflow-x: hidden !important;
     }
 
-    /* 2. El contenedor de los usuarios permitirá deslizar de izquierda a derecha */
-    .usuarios-container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 10px 0 !important;
-        padding: 10px !important;
-        box-sizing: border-box !important;
-        
-        /* AQUÍ ACTIVAMOS EL SCROLL HORIZONTAL */
-        overflow-x: auto !important; 
-        -webkit-overflow-scrolling: touch; /* Suavidad en iPhone/Android */
-    }
-
-    /* 3. Forzar a que la lista interna mantenga su tamaño original para que se pueda arrastrar */
-    .usuarios-list, 
-    .usuarios-grid, 
-    .usuarios-container table,
-    div[id*="contenedor"], 
-    form + div {
-        min-width: 650px !important; /* Le damos un ancho mínimo para obligar al scroll horizontal */
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 10px !important;
-    }
-
-    /* 4. Aseguramos que cada tarjeta mantenga una estructura interna fija al deslizar */
-    .usuario-card, 
-    .user-item, 
-    .card-usuario {
-        display: flex !important;
-        flex-direction: row !important; /* Mantenemos el orden horizontal original */
-        justify-content: space-between !important;
-        align-items: center !important;
-        width: 100% !important;
-        min-width: 630px !important; /* Evita que los componentes se aplasten entre sí */
-        padding: 15px !important;
-        white-space: nowrap !important; /* Impide que los textos salten de línea */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }
