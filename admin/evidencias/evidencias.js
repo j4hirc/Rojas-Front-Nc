@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const rolesString = localStorage.getItem('user_roles');
     const userEmail = localStorage.getItem('user_email');
 
+    // Validación de seguridad
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_ADMIN')) {
         Swal.fire({
             icon: 'error',
@@ -20,6 +21,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
+
+    // 🔥 CONFIGURACIÓN DE CAMBIAR ROL
+    let userRoles = [];
+    try { 
+        userRoles = JSON.parse(rolesString); 
+    } catch(e) { 
+        console.error("Error al parsear roles", e); 
+    }
+    
+    const btnPerfilAdmin = document.getElementById("btnPerfilAdmin");
+    if (btnPerfilAdmin) {
+        if (userRoles.length > 1) {
+            btnPerfilAdmin.style.cursor = "pointer";
+            btnPerfilAdmin.addEventListener("click", () => mostrarSelectorDeRoles(userRoles));
+        } else {
+            // Remueve el icono visual si no tiene múltiples roles
+            const iconExchange = btnPerfilAdmin.querySelector(".fa-right-left");
+            if (iconExchange) iconExchange.remove();
+            btnPerfilAdmin.style.cursor = "default";
+        }
+    }
 
     // --- PANTALLA DE CARGA ---
     Swal.fire({ 
@@ -35,6 +57,49 @@ document.addEventListener("DOMContentLoaded", async () => {
     Swal.close();
 });
 
+// 🔥 FUNCIÓN DEL SELECTOR DE ROLES (Adaptada con rutas desde subcarpeta admin/evidencias/)
+function mostrarSelectorDeRoles(roles) {
+    let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
+    
+    roles.forEach(rol => {
+        let nombreRol = '';
+        let url = '';
+        
+        if (rol === 'ROLE_ADMIN') { 
+            nombreRol = '<i class="fa-solid fa-user-tie"></i> Administrador'; 
+            url = '../admin-dashboard.html'; 
+        }
+        if (rol === 'ROLE_JEFE') { 
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Jefe de Trabajo'; 
+            url = '../../jefe/jefe-dashboard.html'; 
+        }
+        if (rol === 'ROLE_EMPLOYEE') { 
+            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Subcontratista / Empleado'; 
+            url = '../../employee/employee-dashboard.html'; 
+        }
+
+        if (nombreRol) {
+            opcionesHTML += `
+                <button class="swal2-confirm swal2-styled" 
+                        style="width: 100%; margin: 0; background-color: #0F2D4A; color: #fff; font-weight: 600; border-radius: 8px;" 
+                        onclick="window.location.href='${url}'">
+                    ${nombreRol}
+                </button>`;
+        }
+    });
+    
+    opcionesHTML += '</div>';
+
+    Swal.fire({
+        title: 'Selecciona tu área de trabajo',
+        html: opcionesHTML,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#ea5455'
+    });
+}
+
 // 1. OBTENEMOS A LOS JEFES PARA EL FILTRO
 async function cargarFiltroJefes() {
     try {
@@ -42,11 +107,15 @@ async function cargarFiltroJefes() {
         if (res.ok) {
             const users = await res.json();
             const selectManager = document.getElementById('filterManager');
+            if (!selectManager) return;
+
+            // Mantener opción base por defecto limpia
+            selectManager.innerHTML = '<option value="ALL">Todos los Jefes</option>';
             
             const jefes = users.filter(u => u.roles.some(r => r.name === 'ROLE_JEFE'));
             
             jefes.forEach(jefe => {
-                selectManager.innerHTML += `<option value="${jefe.userId}">${jefe.name}</option>`;
+                selectManager.innerHTML += `<option value="${jefe.userId}">${jefe.firstName} ${jefe.lastName}</option>`;
             });
         }
     } catch (e) {
@@ -55,15 +124,14 @@ async function cargarFiltroJefes() {
 }
 
 // 2. OBTENEMOS LOS TRABAJOS CON SUS ACTUALIZACIONES
-// 🔥 REEMPLAZA ESTA FUNCIÓN COMPLETA EN TU ARCHIVO EVIDENCIAS.JS
 async function cargarTrabajos() {
     try {
         const res = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (res.ok) {
             allJobsCache = await res.json();
-            
+
             // 1. Primero dibujamos todas las tarjetas en la pantalla de forma normal
-            filtrarTrabajos(); 
+            filtrarTrabajos();
 
             // 2. Detectamos si en la URL viene el ID del proyecto (?jobId=...)
             const urlParams = new URLSearchParams(window.location.search);
@@ -71,16 +139,14 @@ async function cargarTrabajos() {
 
             if (jobIdParam) {
                 const idNumerico = parseInt(jobIdParam);
-                
+
                 // 3. Buscamos el proyecto específico dentro del caché de datos
                 const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
-                
+
                 if (trabajoEncontrado) {
-                    // Si tiene actualizaciones previas, disparamos el modal automáticamente al instante
                     if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
                         window.abrirModalEvidencias(idNumerico);
                     } else {
-                        // Si no tiene registros aún, le avisamos estéticamente al usuario con una alerta limpia
                         Swal.fire({
                             icon: 'info',
                             title: 'Sin evidencias',
@@ -96,7 +162,7 @@ async function cargarTrabajos() {
     }
 }
 
-// 3. FILTRAMOS Y DIBUJAMOS LAS FILAS EN LA TABLA DE EVIDENCIAS (CORREGIDO)
+// 3. FILTRAMOS Y DIBUJAMOS LAS FILAS EN LA TABLA DE EVIDENCIAS
 window.filtrarTrabajos = () => {
     const managerId = document.getElementById('filterManager') ? document.getElementById('filterManager').value : 'ALL';
     const texto = document.getElementById('searchEvidenceText') ? document.getElementById('searchEvidenceText').value.toLowerCase().trim() : '';
@@ -106,19 +172,13 @@ window.filtrarTrabajos = () => {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    // Evaluamos los filtros sobre el respaldo original en memoria
     let trabajosFiltrados = allJobsCache.filter(job => {
-        // Filtro por Manager (Jefe)
         const coincideManager = (managerId === 'ALL') || (job.managerId == managerId);
-
-        // Filtro por Texto (Mapeado con las propiedades reales de la respuesta JSON)
-        const coincideTexto = 
+        const coincideTexto =
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
             (job.nameEmployee || job.employeeName || '').toLowerCase().includes(texto) ||
             (job.nameManager || job.managerName || '').toLowerCase().includes(texto);
-
-        // Filtro por Estado de Obra
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
 
         return coincideManager && coincideTexto && coincideEstado;
@@ -129,47 +189,41 @@ window.filtrarTrabajos = () => {
         return;
     }
 
-    // Dibujamos cada proyecto como una fila de la lista
     trabajosFiltrados.forEach(job => {
         const numUpdates = job.updateJob ? job.updateJob.length : 0;
         let numFotos = 0;
-        if(job.updateJob) {
+        if (job.updateJob) {
             job.updateJob.forEach(update => {
-                if(update.evidences) numFotos += update.evidences.length;
+                if (update.evidences) numFotos += update.evidences.length;
             });
         }
 
-        // Badges estéticos para el Estado de la obra en la lista
         let statusBadge = '';
-        if(job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
-        else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
-        else if(job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
+        if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
+        else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
+        else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
-        // 🔥 CONTROL DE PROPIEDADES ENCADENADAS: Valida ambos nombres posibles para evitar el vacío
         const jefeNombre = job.nameManager || job.managerName || 'Sin asignar';
         const empleadoNombre = job.nameEmployee || job.employeeName || 'Sin asignar';
 
-        // Configuración del botón de acción estilo Admin
-        const btnEvidencias = numUpdates > 0 
+        const btnEvidencias = numUpdates > 0
             ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="padding: 6px 12px; background: #0f4c81; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; font-family: 'Poppins';"><i class="fa-solid fa-folder-open"></i> Ver ${numFotos} Archivos</button>`
             : `<button disabled style="padding: 6px 12px; background: #e9ecef; color: #A3AED0; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; font-family: 'Poppins';">Sin evidencias</button>`;
 
         const tr = document.createElement('tr');
-        // Ejemplo dentro de evidencias.js al generar el TR:
-tr.innerHTML = `
-    <td data-label="Proyecto:"><strong style="color: #2B3674;">${job.clientName}</strong></td>
-    <td data-label="Jefe:">${jefeNombre}</td>
-    <td data-label="Subcontratista:">${empleadoNombre}</td>
-    <td data-label="Estado:">${statusBadge}</td>
-    <td data-label="Acción:">${btnEvidencias}</td>
-`;
+        tr.innerHTML = `
+            <td data-label="Proyecto:"><strong style="color: #2B3674;">${job.clientName}</strong></td>
+            <td data-label="Jefe:">${jefeNombre}</td>
+            <td data-label="Subcontratista:">${empleadoNombre}</td>
+            <td data-label="Estado:">${statusBadge}</td>
+            <td data-label="Acción:">${btnEvidencias}</td>
+        `;
         tbody.appendChild(tr);
     });
 };
 
 // 4. ESCUCHADORES DE EVENTOS EN TIEMPO REAL
-// Añade este bloque al final de tu archivo para que escuche cuando escribes o cambias el estado
 document.addEventListener("DOMContentLoaded", () => {
     const textEv = document.getElementById('searchEvidenceText');
     const statusEv = document.getElementById('filterEvidenceStatus');
@@ -180,31 +234,37 @@ document.addEventListener("DOMContentLoaded", () => {
     if (managerEv) managerEv.addEventListener('change', window.filtrarTrabajos);
 });
 
-// 4. LÓGICA PARA VER EL HISTORIAL (MODAL)
+// 5. LÓGICA PARA VER EL HISTORIAL (MODAL PROTEGIDO)
 window.abrirModalEvidencias = (jobId) => {
     const job = allJobsCache.find(j => j.jobId === jobId);
-    if(!job) return;
+    if (!job) return;
 
-    document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
-    
-    // INYECTAR LA DESCRIPCIÓN EN EL MODAL
-    document.getElementById('jobDescriptionText').innerHTML = `<strong>Descripción de obra:</strong> <br> ${job.description || 'Sin descripción'}`;
-    
+    // Blindaje de elementos opcionales en el HTML
+    const modalTitulo = document.getElementById('modalTitulo');
+    if (modalTitulo) {
+        modalTitulo.innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
+    }
+
+    const jobDescText = document.getElementById('jobDescriptionText');
+    if (jobDescText) {
+        jobDescText.innerHTML = `<strong>Descripción de obra:</strong> <br> ${job.description || 'Sin descripción'}`;
+    }
+
     const timeline = document.getElementById('evidencesTimeline');
+    if (!timeline) return;
     timeline.innerHTML = '';
 
     const updatesOrdenados = job.updateJob.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     updatesOrdenados.forEach(update => {
         const fechaObj = new Date(update.date);
-        const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+        const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
         let galeriaHTML = '';
-        if(update.evidences && update.evidences.length > 0) {
+        if (update.evidences && update.evidences.length > 0) {
             update.evidences.forEach(evi => {
                 const urlLower = evi.imageUri.toLowerCase();
-                
-                // MAGIA: VERIFICAMOS SI LA URL ES UN PDF
+
                 if (urlLower.includes('.pdf')) {
                     galeriaHTML += `
                         <a href="${evi.imageUri}" target="_blank" class="pdf-btn" title="Descargar Reporte PDF">
@@ -213,7 +273,6 @@ window.abrirModalEvidencias = (jobId) => {
                         </a>
                     `;
                 } else {
-                    // SI ES IMAGEN LA MOSTRAMOS NORMAL
                     galeriaHTML += `<img src="${evi.imageUri}" class="gallery-img" alt="Evidencia" onclick="verFotoGrande('${evi.imageUri}')">`;
                 }
             });
@@ -232,11 +291,13 @@ window.abrirModalEvidencias = (jobId) => {
         `;
     });
 
-    document.getElementById('modalEvidencias').style.display = 'flex';
+    const modalEvidencias = document.getElementById('modalEvidencias');
+    if (modalEvidencias) modalEvidencias.style.display = 'flex';
 };
 
 window.cerrarModalEvidencias = () => {
-    document.getElementById('modalEvidencias').style.display = 'none';
+    const modalEvidencias = document.getElementById('modalEvidencias');
+    if (modalEvidencias) modalEvidencias.style.display = 'none';
 };
 
 window.verFotoGrande = (url) => {
@@ -268,4 +329,3 @@ window.cerrarSesion = () => {
         }
     });
 };
-

@@ -78,10 +78,15 @@
         <main class="main-content">
             <header class="top-navbar">
                 <div class="page-title">Evidencias y Progreso de Trabajos</div>
-                <div class="user-profile">
-                    <i class="fa-solid fa-user-tie"></i>
-                    <span id="admin-email-display">Cargando...</span>
-                </div>
+                <div id="btnPerfilAdmin"
+     class="user-profile"
+     style="cursor:pointer;display:flex;align-items:center;gap:8px;"
+     title="Cambiar de Rol">
+    <i class="fa-solid fa-user-tie"></i>
+    <span id="admin-email-display">Cargando...</span>
+    <i class="fa-solid fa-right-left"
+       style="font-size:11px;color:#12CFF4;margin-left:3px;"></i>
+</div>
             </header>
 
             <div class="content-body">
@@ -105,6 +110,7 @@
             </div>
         </main>
     </div>
+    <button id="btnCambiarRol" style="display:none;"></button>
 
     <div class="modal-overlay" id="modalEvidencias">
         <div class="modal-container" style="max-width: 600px;">
