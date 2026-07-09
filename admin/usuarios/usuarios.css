@@ -258,3 +258,79 @@ select.input-field { cursor: pointer; }
         white-space: nowrap !important; /* Impide que los textos salten de línea */
     }
 }
+/* =============================================
+   ARREGLO RESPONSIVE DEL CUADRADO PRINCIPAL
+   ============================================= */
+
+@media (max-width: 768px) {
+
+    .usuarios-container {
+        padding: 20px 15px !important;
+        margin-top: 10px !important;
+        border-radius: 16px;
+        width: 100% !important;
+    }
+
+    /* Header: Título + Buscador + Botón */
+    .header-section {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 18px;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+    }
+
+    .header-section h2 {
+        font-size: 1.35rem !important;
+        margin: 0 !important;
+    }
+
+    /* Contenedor del buscador y filtro */
+    .header-section > div[style*="display:flex"] {
+        width: 100% !important;
+        flex-direction: column !important;
+        gap: 12px;
+    }
+
+    #searchJobInput {
+        height: 48px !important;
+        font-size: 1rem;
+    }
+
+    #filterStatusInput {
+        height: 48px !important;
+    }
+
+    .btn-add {
+        height: 50px !important;
+        font-size: 1rem;
+    }
+
+    /* Espaciado interno de la tabla */
+    .table-container {
+        margin-top: 10px;
+    }
+
+    /* Mobile Cards (las tarjetas de proyectos) */
+    .mobile-cards {
+        display: flex !important;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    /* Ajuste de las tarjetas de proyecto */
+    .job-card, .card {   /* por si tu JS usa cualquiera de estas clases */
+        padding: 18px !important;
+        border-radius: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .usuarios-container {
+        padding: 16px 12px !important;
+    }
+    
+    .header-section {
+        gap: 14px;
+    }
+}
