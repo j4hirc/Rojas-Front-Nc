@@ -33,6 +33,33 @@
         .pdf-btn i { font-size: 24px; margin-bottom: 5px; color: #d32f2f; }
         .pdf-btn:hover { background: #0f4c81; color: white; border-style: solid; }
         .pdf-btn:hover i { color: white; }
+
+        @media (max-width:768px){
+
+    /* Solo para Evidencias */
+    #evidencesTableBody tr{
+        display:block;
+        margin-bottom:15px;
+        border:1px solid #E2E8F0;
+        border-radius:12px;
+        background:#fff;
+        padding:15px;
+    }
+
+    #evidencesTableBody td{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:10px 0;
+        border-bottom:1px solid #eee;
+        white-space:normal;
+    }
+
+    #evidencesTableBody td:last-child{
+        border-bottom:none;
+    }
+
+}
     </style>
 </head>
 <body>
