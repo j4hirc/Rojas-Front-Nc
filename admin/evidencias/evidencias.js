@@ -97,22 +97,39 @@ async function cargarTrabajos() {
 }
 
 // 3. FILTRAMOS Y DIBUJAMOS LAS TARJETAS
+// 3. FILTRAMOS Y DIBUJAMOS LAS FILAS EN LA TABLA DE EVIDENCIAS
 window.filtrarTrabajos = () => {
-    const managerId = document.getElementById('filterManager').value;
-    const grid = document.getElementById('jobsGrid');
-    grid.innerHTML = '';
+    const managerId = document.getElementById('filterManager') ? document.getElementById('filterManager').value : 'ALL';
+    const texto = document.getElementById('searchEvidenceText') ? document.getElementById('searchEvidenceText').value.toLowerCase().trim() : '';
+    const estado = document.getElementById('filterEvidenceStatus') ? document.getElementById('filterEvidenceStatus').value : 'ALL';
 
-    let trabajosFiltrados = allJobsCache;
+    const tbody = document.getElementById('evidencesTableBody');
+    tbody.innerHTML = '';
 
-    if (managerId !== 'ALL') {
-        trabajosFiltrados = allJobsCache.filter(job => job.managerId == managerId);
-    }
+    // Evaluamos los filtros sobre el respaldo original en memoria
+    let trabajosFiltrados = allJobsCache.filter(job => {
+        // Filtro por Manager (Jefe)
+        const coincideManager = (managerId === 'ALL') || (job.managerId == managerId);
+
+        // Filtro por Texto (Cliente, Descripción, Empleado o Jefe)
+        const coincideTexto = 
+            (job.clientName || '').toLowerCase().includes(texto) ||
+            (job.description || '').toLowerCase().includes(texto) ||
+            (job.employeeName || '').toLowerCase().includes(texto) ||
+            (job.managerName || '').toLowerCase().includes(texto);
+
+        // Filtro por Estado de Obra
+        const coincideEstado = (estado === 'ALL') || (job.status === estado);
+
+        return coincideManager && coincideTexto && coincideEstado;
+    });
 
     if (trabajosFiltrados.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1 / -1;" class="empty-state">No hay proyectos asignados a este filtro.</div>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">No se encontraron proyectos asignados a este filtro.</td></tr>';
         return;
     }
 
+    // Dibujamos cada proyecto como una fila de la lista
     trabajosFiltrados.forEach(job => {
         const numUpdates = job.updateJob ? job.updateJob.length : 0;
         let numFotos = 0;
@@ -122,44 +139,41 @@ window.filtrarTrabajos = () => {
             });
         }
 
+        // Badges estéticos para el Estado de la obra en la lista
         let statusBadge = '';
-        if(job.status === 'PENDING') statusBadge = `<span style="color: #ff9800; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-clock"></i> Pendiente</span>`;
-        else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="color: #1e88e5; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-spinner"></i> En Progreso</span>`;
-        else if(job.status === 'COMPLETED') statusBadge = `<span style="color: #2e7d32; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-check-double"></i> Completado</span>`;
-        else statusBadge = `<span style="color: #d32f2f; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-ban"></i> Cancelado</span>`;
+        if(job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
+        else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
+        else if(job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
+        else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
+        // Configuración del botón de acción
         const btnEvidencias = numUpdates > 0 
-            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="width:100%; padding:8px; background:#0f4c81; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Poppins'; font-weight:600;"><i class="fa-solid fa-folder-open"></i> Ver ${numFotos} Archivos</button>`
-            : `<button disabled style="width:100%; padding:8px; background:#e9ecef; color:#A3AED0; border:none; border-radius:8px; font-family:'Poppins'; font-weight:600;">Sin evidencias aún</button>`;
+            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="padding: 6px 12px; background: #0f4c81; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-folder-open"></i> Ver ${numFotos} Archivos</button>`
+            : `<button disabled style="padding: 6px 12px; background: #e9ecef; color: #A3AED0; border: none; border-radius: 6px; font-weight: 600; font-size: 12px;">Sin evidencias</button>`;
 
-        const safeDesc = job.description ? job.description : 'Sin descripción';
-
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.style.flexDirection = 'column';
-        card.style.alignItems = 'flex-start';
-        card.innerHTML = `
-            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid #f0f2f5; padding-bottom: 10px; margin-bottom: 10px;">
-                <h3 style="margin:0; font-size:1.1rem; color:#2B3674;">${job.clientName}</h3>
-                ${statusBadge}
-            </div>
-            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-user-tie"></i> <strong>Jefe:</strong> ${job.nameManager}</p>
-            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-helmet-safety"></i> <strong>Emp:</strong> ${job.nameEmployee}</p>
-            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
-            
-            <div style="margin: 10px 0; padding-left: 10px; border-left: 3px solid #0f4c81; width: 100%;">
-                <p style="margin: 0; font-size: 13px; color: #444; font-style: italic; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                    "${safeDesc}"
-                </p>
-            </div>
-
-            <div style="margin-top: 15px; width: 100%;">
-                ${btnEvidencias}
-            </div>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong style="color: #2B3674;">${job.clientName}</strong></td>
+            <td>${job.managerName || 'Sin asignar'}</td>
+            <td>${job.employeeName || 'Sin asignar'}</td>
+            <td>${statusBadge}</td>
+            <td>${btnEvidencias}</td>
         `;
-        grid.appendChild(card);
+        tbody.appendChild(tr);
     });
 };
+
+// 4. ESCUCHADORES DE EVENTOS EN TIEMPO REAL
+// Añade este bloque al final de tu archivo para que escuche cuando escribes o cambias el estado
+document.addEventListener("DOMContentLoaded", () => {
+    const textEv = document.getElementById('searchEvidenceText');
+    const statusEv = document.getElementById('filterEvidenceStatus');
+    const managerEv = document.getElementById('filterManager');
+
+    if (textEv) textEv.addEventListener('input', window.filtrarTrabajos);
+    if (statusEv) statusEv.addEventListener('change', window.filtrarTrabajos);
+    if (managerEv) managerEv.addEventListener('change', window.filtrarTrabajos);
+});
 
 // 4. LÓGICA PARA VER EL HISTORIAL (MODAL)
 window.abrirModalEvidencias = (jobId) => {

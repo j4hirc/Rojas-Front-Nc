@@ -25,7 +25,6 @@
         .gallery-img:hover { transform: scale(1.05); border-color: #0f4c81; }
         .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
 
-        /* NUEVO: ESTILO PARA EL BOTÓN DEL PDF (Tema Admin - Azul) */
         .pdf-btn {
             display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
             width: 80px; height: 80px; background: #E3F2FD; border: 2px dashed #0f4c81; border-radius: 8px;
@@ -61,11 +60,9 @@
                 <a href="../categorias/categorias.html">
                     <i class="fa-solid fa-tags"></i> Categorías
                 </a>
-                
                 <a href="../materiales/materiales.html">
                     <i class="fa-solid fa-boxes-stacked"></i> Materiales
                 </a>
-                
             </nav>
 
             <div class="sidebar-footer">
@@ -89,17 +86,48 @@
                     
                     <div class="header-section" style="flex-wrap: wrap;">
                         <h2 style="margin: 0; color: #2B3674;">Supervisión de Proyectos</h2>
+                    </div>
+
+                    <div class="filters-bar" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 15px;">
                         
-                        <div style="display: flex; gap: 15px; align-items: center;">
-                            <label style="font-weight: 600; font-size: 0.9rem; color:#2B3674;">Filtrar por Jefe:</label>
-                            <select id="filterManager" class="input-field" style="width: auto; padding: 10px;" onchange="filtrarTrabajos()">
+                        <div style="flex: 2; min-width: 220px;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Buscar Proyecto o Personal</label>
+                            <input type="text" id="searchEvidenceText" class="input-field" placeholder="🔍 Buscar por cliente, jefe o subcontratista..." style="width: 100%; margin: 0;">
+                        </div>
+
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Estado de Obra</label>
+                            <select id="filterEvidenceStatus" class="input-field" style="width: 100%; margin: 0;">
+                                <option value="ALL">Todos los Estados</option>
+                                <option value="PENDING">Pendiente</option>
+                                <option value="IN_PROGRESS">En Progreso</option>
+                                <option value="COMPLETED">Completado</option>
+                                <option value="CANCELLED">Cancelado</option>
+                            </select>
+                        </div>
+
+                        <div style="flex: 1; min-width: 150px;">
+                            <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Filtrar por Jefe</label>
+                            <select id="filterManager" class="input-field" style="width: 100%; margin: 0;">
                                 <option value="ALL">Todos los Jefes</option>
                             </select>
                         </div>
                     </div>
 
-                    <div id="jobsGrid" class="grid-cards" style="margin-top: 20px;">
-                        </div>
+                    <div class="table-container" style="margin-top: 20px;">
+                        <table class="user-table">
+                            <thead>
+                                <tr>
+                                    <th>Título del Proyecto</th>
+                                    <th>Jefe (Manager)</th>
+                                    <th>Subcontratista (Empleado)</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="evidencesTableBody"></tbody>
+                        </table>
+                    </div>
 
                 </div>
             </div>
@@ -115,10 +143,10 @@
             
             <div class="modal-body">
                 <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E3F2FD; border: 1px solid #BBDEFB; border-radius: 8px; color: #0f4c81; font-size: 0.9rem;">
-                    </div>
+                </div>
 
                 <div id="evidencesTimeline">
-                    </div>
+                </div>
             </div>
             
             <div class="modal-footer">
