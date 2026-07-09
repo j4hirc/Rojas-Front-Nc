@@ -336,8 +336,8 @@ function renderizarTrabajos(trabajos) {
         }
 
         // Propiedades corregidas del DTO de Spring Boot
-        const empName = job.employeeName || 'Sin asignar'; 
-        const manName = job.managerName || 'Sin asignar';   
+        const empName = job.nameEmployee || 'Sin asignar'; 
+        const manName = job.nameManager || 'Sin asignar';   
         const fechaTxt = formatearFecha(job.jobDate);
         
         // Limpiamos notas previas de materiales en la descripción
