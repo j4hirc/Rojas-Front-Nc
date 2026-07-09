@@ -212,8 +212,9 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
     /* Hacemos que cada celda ocupe el ancho completo y se alinee verticalmente */
     .user-table td {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
+        gap: 12px;
         padding: 8px 4px !important;
         border-bottom: 1px dashed #edf2f7;
         width: 100% !important;
@@ -234,5 +235,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
         font-weight: bold;
         color: #4a5568;
         font-size: 0.85rem;
+        width: 120px; /* Ancho fijo para alinear los textos */
+        flex-shrink: 0; /* Evita que se reduzca el ancho del label */
     }
 }

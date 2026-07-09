@@ -82,8 +82,7 @@
     background: var(--white);
     border-bottom: 1px solid #F4F7FE;
     display: flex;
-    justify-content: flex-start;
-    gap: 12px;
+    justify-content: space-between;
     align-items: center;
 }
 
