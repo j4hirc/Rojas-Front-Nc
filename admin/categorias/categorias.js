@@ -2,60 +2,27 @@ const API_URL = 'https://api-remomn.onrender.com/api/v1/categories';
 let userToken = '';
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. VALIDACIÓN DE SEGURIDAD
-    const token = localStorage.getItem('jwt_token');
+    userToken = localStorage.getItem('jwt_token');
     const rolesString = localStorage.getItem('user_roles');
     const userEmail = localStorage.getItem('user_email');
 
-    if (!token || !rolesString || !JSON.parse(rolesString).includes('ROLE_ADMIN')) {
+    // Validación de seguridad
+    if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_ADMIN')) {
         Swal.fire({
             icon: 'error',
             title: 'Acceso Denegado',
             text: 'Solo administradores pueden acceder a esta sección.',
-            confirmButtonColor: '#12CFF4',
-            allowOutsideClick: false
-        }).then(() => { window.location.href = '../../index.html'; });
+            confirmButtonColor: '#12CFF4'
+        }).then(() => {
+            window.location.href = '../../index.html'; 
+        });
         return;
     }
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-    // 2. CONFIGURAR INTERCAMBIO DE ROL
-    let userRoles = JSON.parse(rolesString);
-    const btnPerfilAdmin = document.getElementById("btnPerfilAdmin");
-    if (btnPerfilAdmin && userRoles.length > 1) {
-        btnPerfilAdmin.addEventListener("click", () => mostrarSelectorDeRoles(userRoles));
-    }
-
-    const btnSalir = document.getElementById("btnSalir");
-    if (btnSalir) btnSalir.addEventListener("click", cerrarSesion);
-
-    // 3. CONTINUAR CARGA ORIGINAL
-    if (typeof cargarCategorias === 'function') await cargarCategorias();
+    await cargarCategorias();
 });
-
-function mostrarSelectorDeRoles(roles) {
-    let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
-    roles.forEach(rol => {
-        let nombreRol = '', url = '';
-        if(rol === 'ROLE_ADMIN') { nombreRol = '<i class="fa-solid fa-user-tie"></i> Administrador'; url = '../admin-dashboard.html'; }
-        if(rol === 'ROLE_JEFE') { nombreRol = '<i class="fa-solid fa-user-shield"></i> Jefe de Trabajo'; url = '../../jefe/jefe-dashboard.html'; }
-        if(rol === 'ROLE_EMPLOYEE') { nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Subcontratista / Empleado'; url = '../../employee/employee-dashboard.html'; }
-        if(nombreRol) {
-            opcionesHTML += `<button class="swal2-confirm swal2-styled" style="width: 100%; margin: 0; background-color: #0F2D4A; color: #fff; font-weight:600;" onclick="window.location.href='${url}'">${nombreRol}</button>`;
-        }
-    });
-    opcionesHTML += '</div>';
-
-    Swal.fire({
-        title: 'Selecciona tu área de trabajo',
-        html: opcionesHTML,
-        showConfirmButton: false,
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#2E3238'
-    });
-}
 
 async function cargarCategorias() {
     try {
