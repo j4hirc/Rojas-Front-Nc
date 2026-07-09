@@ -5,12 +5,16 @@ let userToken = '';
 let allJobsCache = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
+    console.log("=== [DEBUG] DOMContentLoaded Iniciado ===");
     userToken = localStorage.getItem('jwt_token');
     const rolesString = localStorage.getItem('user_roles');
     const userEmail = localStorage.getItem('user_email');
 
+    console.log("[DEBUG] Datos de sesión:", { userToken: !!userToken, rolesString, userEmail });
+
     // Validación de seguridad
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_ADMIN')) {
+        console.error("[DEBUG] Validación de seguridad fallida. Redirigiendo...");
         Swal.fire({
             icon: 'error',
             title: 'Acceso Denegado',
@@ -20,27 +24,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
-
-    // 🔥 CONFIGURACIÓN DE CAMBIAR ROL
-    let userRoles = [];
-    try { 
-        userRoles = JSON.parse(rolesString); 
-    } catch(e) { 
-        console.error("Error al parsear roles", e); 
-    }
-    
-    const btnPerfilAdmin = document.getElementById("btnPerfilAdmin");
-    if (btnPerfilAdmin) {
-        if (userRoles.length > 1) {
-            btnPerfilAdmin.style.cursor = "pointer";
-            btnPerfilAdmin.addEventListener("click", () => mostrarSelectorDeRoles(userRoles));
-        } else {
-            // Remueve el icono visual si no tiene múltiples roles
-            const iconExchange = btnPerfilAdmin.querySelector(".fa-right-left");
-            if (iconExchange) iconExchange.remove();
-            btnPerfilAdmin.style.cursor = "default";
-        }
+    const emailDisplay = document.getElementById('admin-email-display');
+    if (emailDisplay) {
+        emailDisplay.textContent = userEmail || 'Admin';
+    } else {
+        console.warn("[DEBUG] No se encontró el elemento '#admin-email-display' en el HTML.");
     }
 
     // --- PANTALLA DE CARGA ---
@@ -55,80 +43,51 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // --- CERRAMOS PANTALLA DE CARGA ---
     Swal.close();
+    console.log("=== [DEBUG] DOMContentLoaded Finalizado ===");
 });
-
-// 🔥 FUNCIÓN DEL SELECTOR DE ROLES (Adaptada con rutas desde subcarpeta admin/evidencias/)
-function mostrarSelectorDeRoles(roles) {
-    let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
-    
-    roles.forEach(rol => {
-        let nombreRol = '';
-        let url = '';
-        
-        if (rol === 'ROLE_ADMIN') { 
-            nombreRol = '<i class="fa-solid fa-user-tie"></i> Administrador'; 
-            url = '../admin-dashboard.html'; 
-        }
-        if (rol === 'ROLE_JEFE') { 
-            nombreRol = '<i class="fa-solid fa-user-shield"></i> Jefe de Trabajo'; 
-            url = '../../jefe/jefe-dashboard.html'; 
-        }
-        if (rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Subcontratista / Empleado'; 
-            url = '../../employee/employee-dashboard.html'; 
-        }
-
-        if (nombreRol) {
-            opcionesHTML += `
-                <button class="swal2-confirm swal2-styled" 
-                        style="width: 100%; margin: 0; background-color: #0F2D4A; color: #fff; font-weight: 600; border-radius: 8px;" 
-                        onclick="window.location.href='${url}'">
-                    ${nombreRol}
-                </button>`;
-        }
-    });
-    
-    opcionesHTML += '</div>';
-
-    Swal.fire({
-        title: 'Selecciona tu área de trabajo',
-        html: opcionesHTML,
-        showConfirmButton: false,
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#ea5455'
-    });
-}
 
 // 1. OBTENEMOS A LOS JEFES PARA EL FILTRO
 async function cargarFiltroJefes() {
+    console.log("[DEBUG] Ejecutando cargarFiltroJefes()...");
     try {
         const res = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        console.log(`[DEBUG] Respuesta de USERS_URL API: Status ${res.status}`);
+        
         if (res.ok) {
             const users = await res.json();
-            const selectManager = document.getElementById('filterManager');
-            if (!selectManager) return;
-
-            // Mantener opción base por defecto limpia
-            selectManager.innerHTML = '<option value="ALL">Todos los Jefes</option>';
+            console.log(`[DEBUG] Usuarios cargados: ${users.length}`);
             
+            const selectManager = document.getElementById('filterManager');
+            if (!selectManager) {
+                console.warn("[DEBUG] Elemento select '#filterManager' no existe en el HTML.");
+                return;
+            }
+            
+            selectManager.innerHTML = '<option value="ALL">Todos los Jefes</option>';
             const jefes = users.filter(u => u.roles.some(r => r.name === 'ROLE_JEFE'));
+            console.log(`[DEBUG] Jefes filtrados para el select: ${jefes.length}`);
             
             jefes.forEach(jefe => {
-                selectManager.innerHTML += `<option value="${jefe.userId}">${jefe.firstName} ${jefe.lastName}</option>`;
+                selectManager.innerHTML += `<option value="${jefe.userId}">${jefe.firstName || jefe.name} ${jefe.lastName || ''}</option>`;
             });
+        } else {
+            console.error("[DEBUG] Error en la respuesta de la API de usuarios:", res.statusText);
         }
     } catch (e) {
-        console.error("Error al cargar jefes", e);
+        console.error("[DEBUG] Excepción atrapada en cargarFiltroJefes():", e);
     }
 }
 
 // 2. OBTENEMOS LOS TRABAJOS CON SUS ACTUALIZACIONES
 async function cargarTrabajos() {
+    console.log("[DEBUG] Ejecutando cargarTrabajos()...");
     try {
         const res = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        console.log(`[DEBUG] Respuesta de JOBS_URL API: Status ${res.status}`);
+        
         if (res.ok) {
             allJobsCache = await res.json();
+            console.log("[DEBUG] Datos crudos recibidos de Jobs:", allJobsCache);
 
             // 1. Primero dibujamos todas las tarjetas en la pantalla de forma normal
             filtrarTrabajos();
@@ -136,17 +95,19 @@ async function cargarTrabajos() {
             // 2. Detectamos si en la URL viene el ID del proyecto (?jobId=...)
             const urlParams = new URLSearchParams(window.location.search);
             const jobIdParam = urlParams.get('jobId');
+            console.log(`[DEBUG] Parámetro 'jobId' detectado en URL: ${jobIdParam}`);
 
             if (jobIdParam) {
                 const idNumerico = parseInt(jobIdParam);
-
-                // 3. Buscamos el proyecto específico dentro del caché de datos
                 const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
+                console.log("[DEBUG] Trabajo buscado por URL URL Param:", trabajoEncontrado);
 
                 if (trabajoEncontrado) {
                     if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
+                        console.log(`[DEBUG] Abriendo automáticamente modal por parámetro URL para jobId: ${idNumerico}`);
                         window.abrirModalEvidencias(idNumerico);
                     } else {
+                        console.log("[DEBUG] El trabajo de la URL existe pero no contiene 'updateJob'.");
                         Swal.fire({
                             icon: 'info',
                             title: 'Sin evidencias',
@@ -154,22 +115,33 @@ async function cargarTrabajos() {
                             confirmButtonColor: '#0f4c81'
                         });
                     }
+                } else {
+                    console.warn(`[DEBUG] No se encontró ningún trabajo en el caché que coincida con el ID numérico: ${idNumerico}`);
                 }
             }
+        } else {
+            console.error("[DEBUG] Error en la respuesta de la API de trabajos:", res.statusText);
         }
     } catch (error) {
+        console.error("[DEBUG] Excepción atrapada en cargarTrabajos():", error);
         Swal.fire('Error', 'No se pudieron cargar las evidencias.', 'error');
     }
 }
 
 // 3. FILTRAMOS Y DIBUJAMOS LAS FILAS EN LA TABLA DE EVIDENCIAS
 window.filtrarTrabajos = () => {
+    console.log("[DEBUG] Ejecutando filtrarTrabajos()...");
     const managerId = document.getElementById('filterManager') ? document.getElementById('filterManager').value : 'ALL';
     const texto = document.getElementById('searchEvidenceText') ? document.getElementById('searchEvidenceText').value.toLowerCase().trim() : '';
     const estado = document.getElementById('filterEvidenceStatus') ? document.getElementById('filterEvidenceStatus').value : 'ALL';
 
+    console.log("[DEBUG] Valores de los Filtros Activos:", { managerId, texto, estado });
+
     const tbody = document.getElementById('evidencesTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error("[DEBUG] ERROR CRÍTICO: No se encontró el elemento '#evidencesTableBody' en el HTML. Las filas no se pueden renderizar.");
+        return;
+    }
     tbody.innerHTML = '';
 
     let trabajosFiltrados = allJobsCache.filter(job => {
@@ -183,6 +155,8 @@ window.filtrarTrabajos = () => {
 
         return coincideManager && coincideTexto && coincideEstado;
     });
+
+    console.log(`[DEBUG] Cantidad de trabajos que pasaron el filtro: ${trabajosFiltrados.length}`);
 
     if (trabajosFiltrados.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #A3AED0; font-weight:500;">No se encontraron proyectos asignados a este filtro.</td></tr>';
@@ -234,65 +208,92 @@ document.addEventListener("DOMContentLoaded", () => {
     if (managerEv) managerEv.addEventListener('change', window.filtrarTrabajos);
 });
 
-// 5. LÓGICA PARA VER EL HISTORIAL (MODAL PROTEGIDO)
+// 5. LÓGICA PARA VER EL HISTORIAL (MODAL)
 window.abrirModalEvidencias = (jobId) => {
+    console.log(`=== [DEBUG] abrirModalEvidencias() ejecutado para ID: ${jobId} ===`);
     const job = allJobsCache.find(j => j.jobId === jobId);
-    if (!job) return;
+    
+    if (!job) {
+        console.error(`[DEBUG] ERROR: No se encontró el trabajo con ID ${jobId} en la memoria caché.`);
+        return;
+    }
+    console.log("[DEBUG] Objeto de trabajo seleccionado:", job);
 
-    // Blindaje de elementos opcionales en el HTML
+    // Verificación exhaustiva de cada ID en el HTML para evitar que el script se muera:
     const modalTitulo = document.getElementById('modalTitulo');
     if (modalTitulo) {
         modalTitulo.innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
+    } else {
+        console.warn("[DEBUG] Alerta: No existe un elemento con ID '#modalTitulo' en el HTML.");
     }
 
     const jobDescText = document.getElementById('jobDescriptionText');
     if (jobDescText) {
         jobDescText.innerHTML = `<strong>Descripción de obra:</strong> <br> ${job.description || 'Sin descripción'}`;
+    } else {
+        console.warn("[DEBUG] Alerta: No existe un elemento con ID '#jobDescriptionText' en el HTML.");
     }
 
     const timeline = document.getElementById('evidencesTimeline');
-    if (!timeline) return;
+    if (!timeline) {
+        console.error("[DEBUG] ERROR DETENIDO: No existe el contenedor '#evidencesTimeline' en tu HTML, por lo tanto las fotos y actualizaciones no tienen dónde dibujarse.");
+        return;
+    }
     timeline.innerHTML = '';
 
-    const updatesOrdenados = job.updateJob.sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (!job.updateJob || job.updateJob.length === 0) {
+        console.warn("[DEBUG] El trabajo existe en el caché pero el arreglo 'updateJob' viene vacío o indefinido desde el servidor.");
+        timeline.innerHTML = '<span style="font-size:14px; padding:20px; display:block; text-align:center; color:#A3AED0;">Este proyecto no cuenta con bitácoras registradas.</span>';
+    } else {
+        console.log(`[DEBUG] Procesando y ordenando ${job.updateJob.length} actualizaciones...`);
+        const updatesOrdenados = job.updateJob.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    updatesOrdenados.forEach(update => {
-        const fechaObj = new Date(update.date);
-        const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        updatesOrdenados.forEach((update, index) => {
+            console.log(`[DEBUG] Renderizando actualización #${index + 1}:`, update);
+            const fechaObj = new Date(update.date);
+            const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-        let galeriaHTML = '';
-        if (update.evidences && update.evidences.length > 0) {
-            update.evidences.forEach(evi => {
-                const urlLower = evi.imageUri.toLowerCase();
+            let galeriaHTML = '';
+            if (update.evidences && update.evidences.length > 0) {
+                console.log(`[DEBUG] Actualización #${index + 1} tiene ${update.evidences.length} archivos multimedia.`);
+                update.evidences.forEach(evi => {
+                    const urlLower = evi.imageUri.toLowerCase();
 
-                if (urlLower.includes('.pdf')) {
-                    galeriaHTML += `
-                        <a href="${evi.imageUri}" target="_blank" class="pdf-btn" title="Descargar Reporte PDF">
-                            <i class="fa-solid fa-file-pdf"></i>
-                            Reporte
-                        </a>
-                    `;
-                } else {
-                    galeriaHTML += `<img src="${evi.imageUri}" class="gallery-img" alt="Evidencia" onclick="verFotoGrande('${evi.imageUri}')">`;
-                }
-            });
-        } else {
-            galeriaHTML = `<span style="font-size:12px; color:#A3AED0;">No se subieron archivos en esta actualización.</span>`;
-        }
+                    if (urlLower.includes('.pdf')) {
+                        galeriaHTML += `
+                            <a href="${evi.imageUri}" target="_blank" class="pdf-btn" title="Descargar Reporte PDF">
+                                <i class="fa-solid fa-file-pdf"></i>
+                                Reporte
+                            </a>
+                        `;
+                    } else {
+                        galeriaHTML += `<img src="${evi.imageUri}" class="gallery-img" alt="Evidencia" onclick="verFotoGrande('${evi.imageUri}')">`;
+                    }
+                });
+            } else {
+                console.log(`[DEBUG] Actualización #${index + 1} no tiene archivos adjuntos.`);
+                galeriaHTML = `<span style="font-size:12px; color:#A3AED0;">No se subieron archivos en esta actualización.</span>`;
+            }
 
-        timeline.innerHTML += `
-            <div class="timeline-update">
-                <span class="timeline-date"><i class="fa-regular fa-calendar"></i> ${fechaFormateada}</span>
-                <div class="timeline-comment">"${update.comment}"</div>
-                <div class="gallery-grid">
-                    ${galeriaHTML}
+            timeline.innerHTML += `
+                <div class="timeline-update">
+                    <span class="timeline-date"><i class="fa-regular fa-calendar"></i> ${fechaFormateada}</span>
+                    <div class="timeline-comment">"${update.comment || 'Sin comentario'}"</div>
+                    <div class="gallery-grid">
+                        ${galeriaHTML}
+                    </div>
                 </div>
-            </div>
-        `;
-    });
+            `;
+        });
+    }
 
     const modalEvidencias = document.getElementById('modalEvidencias');
-    if (modalEvidencias) modalEvidencias.style.display = 'flex';
+    if (modalEvidencias) {
+        console.log("[DEBUG] Mostrando el modal '#modalEvidencias' cambiando style.display a 'flex'");
+        modalEvidencias.style.display = 'flex';
+    } else {
+        console.error("[DEBUG] ERROR CRÍTICO: No existe el contenedor principal '#modalEvidencias' en el HTML. No se puede abrir visualmente nada.");
+    }
 };
 
 window.cerrarModalEvidencias = () => {
