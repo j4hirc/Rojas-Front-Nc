@@ -323,23 +323,21 @@ function renderizarTrabajos(trabajos) {
         else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
-        // 2. 🔥 Badge estético para la Prioridad (Personalizable)
+        // 2. Badge estético para la Prioridad
         let priorityBadge = '';
         const pValor = job.priority !== null && job.priority !== undefined ? job.priority : 2;
         
         if (pValor === 0 || pValor === 1) {
-            // Prioridad Alta / Urgente
             priorityBadge = `<span style="background: #FBE9E7; color: #d32f2f; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #ffccbc;"><i class="fa-solid fa-triangle-exclamation"></i> ${pValor} - Alta</span>`;
         } else if (pValor === 2) {
-            // Prioridad Normal
             priorityBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #c8e6c9;"><i class="fa-solid fa-circle-info"></i> ${pValor} - Normal</span>`;
         } else {
-            // Prioridades bajas o secundarias (3, 4, etc)
             priorityBadge = `<span style="background: #ECEFF1; color: #546E7A; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #cfd8dc;"> ${pValor} - Baja</span>`;
         }
 
-        const empName = job.nameEmployee || 'Sin asignar'; // 🔥 Cambiado a employeeName
-        const manName = job.nameManager || 'Sin asignar';   // 🔥 Cambiado a managerName
+        // Propiedades corregidas del DTO de Spring Boot
+        const empName = job.employeeName || 'Sin asignar'; 
+        const manName = job.managerName || 'Sin asignar';   
         const fechaTxt = formatearFecha(job.jobDate);
         
         // Limpiamos notas previas de materiales en la descripción
@@ -369,8 +367,12 @@ function renderizarTrabajos(trabajos) {
                 <span style="color:#546e7a; font-size: 13px;">M: ${manName}</span>
             </td>
             <td>${statusBadge}</td>
-            <td>${priorityBadge}</td> <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
+            <td>${priorityBadge}</td> 
+            <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
+                <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #0f4c81; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
+                    <i class="fa-solid fa-camera"></i>
+                </a>
                 <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
                     <i class="fa-solid fa-pen"></i>
                 </button>
@@ -394,7 +396,8 @@ function renderizarTrabajos(trabajos) {
                     <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>
                     <div style="display: flex; gap: 5px;">
                         ${statusBadge}
-                        ${priorityBadge} </div>
+                        ${priorityBadge} 
+                    </div>
                 </div>
                 <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
                 <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
@@ -413,6 +416,9 @@ function renderizarTrabajos(trabajos) {
                 <p style="margin: 10px 0 0 0; font-size: 15px; color:#2e7d32; font-weight: bold;">Pago: $${job.pay.toFixed(2)}</p>
                 
                 <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 10px;">
+                    <a href="../evidencias/evidencias.html?jobId=${job.jobId}" style="flex: 1; padding: 8px; border-radius: 8px; background: #E3F2FD; color: #0f4c81; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <i class="fa-solid fa-camera"></i> Evidencias
+                    </a>
                     <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;">
                         <i class="fa-solid fa-pen"></i> Editar
                     </button>
