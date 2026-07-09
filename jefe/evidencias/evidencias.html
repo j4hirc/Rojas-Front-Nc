@@ -12,77 +12,117 @@
     <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 
     <style>
-    /* Estilos para las tarjetas */
-    .card {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.07);
-        border: 1px solid #E0E5F2;
-        width: 100%;
-    }
-
-    /* RESPONSIVE FUERTE */
-    @media (max-width: 768px) {
-
-        html, body, .app-layout, .main-content, .content-body {
-            min-height: 100vh;
-            overflow-x: hidden;
+        /* ==================== ESTILOS BASE ==================== */
+        .timeline-update {
+            background: #F9FAFC; 
+            border-left: 4px solid #198754; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border-radius: 0 8px 8px 0;
         }
-
-        .usuarios-container {
-            padding: 20px 15px !important;
-            margin-top: 10px !important;
-            width: 100% !important;
+        .timeline-date { 
+            font-size: 0.8rem; 
+            color: #666; 
+            font-weight: 600; 
+            margin-bottom: 5px; 
+            display: block;
         }
-
-        .header-section {
-            margin-bottom: 25px;
+        .timeline-comment { 
+            font-size: 0.95rem; 
+            color: #2B3674; 
+            margin-bottom: 10px; 
         }
-
-        .filters-container {
-            flex-direction: column;
-            gap: 16px;
+        .gallery-grid { 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
         }
-
-        /* Grid de trabajos */
-        .grid-cards {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 20px !important;
-            width: 100% !important;
+        .gallery-img { 
+            width: 80px; 
+            height: 80px; 
+            object-fit: cover; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            border: 2px solid #E0E5F2; 
         }
-
-        .card {
-            padding: 18px !important;
-            margin-bottom: 0;
-        }
-
-        .gallery-grid {
-            gap: 10px;
-        }
-
-        .gallery-img {
-            width: 72px !important;
-            height: 72px !important;
-        }
-
         .pdf-btn {
-            width: 72px !important;
-            height: 72px !important;
+            display: inline-flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            width: 80px; 
+            height: 80px; 
+            background: #e8f5e9; 
+            border: 2px dashed #198754; 
+            border-radius: 8px;
+            color: #198754; 
+            text-decoration: none; 
+            font-size: 11px; 
+            font-weight: bold; 
         }
-    }
 
-    @media (max-width: 480px) {
+        /* ==================== TARJETAS GENERADAS POR JS ==================== */
         .card {
-            padding: 16px !important;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+            border: 1px solid #E0E5F2;
+            margin-bottom: 16px;
+            width: 100%;
         }
-        .gallery-img, .pdf-btn {
-            width: 65px !important;
-            height: 65px !important;
+
+        /* ==================== RESPONSIVE PARA MÓVIL ==================== */
+        @media (max-width: 768px) {
+            .app-layout, .main-content, .content-body {
+                min-height: 100vh;
+            }
+
+            .usuarios-container {
+                padding: 20px 15px !important;
+                margin-top: 10px !important;
+                border-radius: 16px;
+                width: 100% !important;
+            }
+
+            .header-section h2 {
+                font-size: 1.4rem !important;
+            }
+
+            .grid-cards {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 18px !important;
+                width: 100% !important;
+            }
+
+            .card {
+                padding: 18px !important;
+                border-radius: 14px;
+            }
+
+            .gallery-img {
+                width: 70px !important;
+                height: 70px !important;
+            }
+
+            .pdf-btn {
+                width: 70px !important;
+                height: 70px !important;
+                font-size: 10px !important;
+            }
         }
-    }
-</style>
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 16px !important;
+            }
+            .gallery-img, .pdf-btn {
+                width: 65px !important;
+                height: 65px !important;
+            }
+        }
+    </style>
 </head>
 <body>
 
@@ -118,45 +158,11 @@
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-                    
                     <div class="header-section">
                         <h2 style="margin: 0; color: #2B3674;">Supervisión de mis Proyectos</h2>
-
-                        <!-- Filtros -->
-                        <div class="filters-container" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 15px;">
-                            <div style="flex: 1; min-width: 240px;">
-                                <label style="display:block; font-size:0.85rem; font-weight:600; color:#0f4c81; margin-bottom:6px;">
-                                    Buscar Proyecto o Personal
-                                </label>
-                                <input type="text" id="searchInput" class="input-field" 
-                                       placeholder="Buscar por cliente, jefe o subcontrata..." style="width:100%;">
-                            </div>
-
-                            <div style="flex: 1; min-width: 200px;">
-                                <label style="display:block; font-size:0.85rem; font-weight:600; color:#0f4c81; margin-bottom:6px;">
-                                    Estado de Obra
-                                </label>
-                                <select id="statusFilter" class="input-field" style="width:100%;">
-                                    <option value="ALL">Todos los Estados</option>
-                                    <option value="PENDING">Pendiente</option>
-                                    <option value="IN_PROGRESS">En Progreso</option>
-                                    <option value="COMPLETED">Completado</option>
-                                </select>
-                            </div>
-
-                            <div style="flex: 1; min-width: 200px;">
-                                <label style="display:block; font-size:0.85rem; font-weight:600; color:#0f4c81; margin-bottom:6px;">
-                                    Filtrar por Jefe
-                                </label>
-                                <select id="jefeFilter" class="input-field" style="width:100%;">
-                                    <option value="ALL">Todos los Jefes</option>
-                                </select>
-                            </div>
-                        </div>
                     </div>
 
                     <div id="jobsGrid" class="grid-cards"></div>
-
                 </div>
             </div>
         </main>
