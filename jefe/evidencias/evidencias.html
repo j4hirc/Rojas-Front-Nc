@@ -12,41 +12,27 @@
     <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 
     <style>
-    /* Estilos específicos para evidencias */
-    .timeline-update {
-        background: #F9FAFC; 
-        border-left: 4px solid #198754; 
-        padding: 15px; 
-        margin-bottom: 15px; 
-        border-radius: 0 8px 8px 0;
-    }
-    .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
-    .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
-
-    .gallery-grid { 
-        display: flex; 
-        gap: 10px; 
-        flex-wrap: wrap; 
-    }
-    .gallery-img { 
-        width: 75px; 
-        height: 75px; 
-        object-fit: cover; 
-        border-radius: 8px; 
-        cursor: pointer; 
-        border: 2px solid #E0E5F2; 
+    /* Estilos base para tarjetas generadas por JS */
+    .card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        border: 1px solid #E0E5F2;
+        margin-bottom: 16px;
     }
 
-    /* ==================== RESPONSIVE MEJORADO ==================== */
+    /* Responsive para móviles */
     @media (max-width: 768px) {
 
         .usuarios-container {
             padding: 20px 15px !important;
             margin-top: 10px !important;
+            border-radius: 16px;
         }
 
         .header-section h2 {
-            font-size: 1.35rem !important;
+            font-size: 1.4rem !important;
         }
 
         /* Filtros */
@@ -55,24 +41,33 @@
             gap: 16px;
         }
 
-        /* Grid de evidencias */
+        /* Grid */
         .grid-cards {
-            display: grid !important;
-            grid-template-columns: 1fr !important;
+            display: flex !important;
+            flex-direction: column !important;
             gap: 18px !important;
-            padding: 5px;
         }
 
-        /* Cada tarjeta */
+        /* Tarjetas en móvil */
         .card {
-            padding: 20px !important;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            padding: 18px !important;
+            border-radius: 14px;
+        }
+
+        .gallery-grid {
+            gap: 8px;
+            justify-content: flex-start;
         }
 
         .gallery-img {
-            width: 68px;
-            height: 68px;
+            width: 70px !important;
+            height: 70px !important;
+        }
+
+        .pdf-btn {
+            width: 70px !important;
+            height: 70px !important;
+            font-size: 10px !important;
         }
     }
 
@@ -80,9 +75,9 @@
         .card {
             padding: 16px !important;
         }
-        .gallery-img {
-            width: 60px;
-            height: 60px;
+        .gallery-img, .pdf-btn {
+            width: 65px !important;
+            height: 65px !important;
         }
     }
 </style>
