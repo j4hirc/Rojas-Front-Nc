@@ -12,130 +12,121 @@
     <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 
     <style>
-        /* Estilos específicos para la galería de evidencias */
+        /* Estilos específicos para la galería */
         .timeline-update {
-            background: #F9FAFC; border-left: 4px solid #198754; padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
+            background: #F9FAFC; 
+            border-left: 4px solid #198754; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border-radius: 0 8px 8px 0;
         }
-        .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
-        .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
-        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .timeline-date { 
+            font-size: 0.8rem; 
+            color: #666; 
+            font-weight: 600; 
+            margin-bottom: 5px; 
+            display: block;
+        }
+        .timeline-comment { 
+            font-size: 0.95rem; 
+            color: #2B3674; 
+            margin-bottom: 10px; 
+        }
+        .gallery-grid { 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+            align-items: center; 
+        }
         .gallery-img { 
-            width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; 
-            border: 2px solid #E0E5F2; transition: transform 0.2s;
+            width: 80px; 
+            height: 80px; 
+            object-fit: cover; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            border: 2px solid #E0E5F2; 
+            transition: transform 0.2s;
         }
-        .gallery-img:hover { transform: scale(1.05); border-color: #198754; }
-        .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
-        
-        /* NUEVO: ESTILO PARA EL BOTÓN DEL PDF */
-        .pdf-btn {
-            display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 80px; height: 80px; background: #e8f5e9; border: 2px dashed #198754; border-radius: 8px;
-            color: #198754; text-decoration: none; font-size: 11px; font-weight: bold; transition: 0.3s;
+        .gallery-img:hover { 
+            transform: scale(1.05); 
+            border-color: #198754; 
         }
-        .pdf-btn i { font-size: 24px; margin-bottom: 5px; color: #e65100; }
-        .pdf-btn:hover { background: #198754; color: white; border-style: solid; }
-        .pdf-btn:hover i { color: white; }
+        .empty-state { 
+            text-align: center; 
+            color: #A3AED0; 
+            padding: 30px; 
+            font-weight: 500; 
+        }
 
-        /* =============================================
-   RESPONSIVE PARA EVIDENCIAS (MÓVIL)
-   ============================================= */
+        /* Responsive - Evidencias */
+        @media (max-width: 768px) {
+            .usuarios-container {
+                padding: 20px 15px !important;
+                margin-top: 10px !important;
+                border-radius: 16px;
+            }
 
-@media (max-width: 768px) {
+            .header-section {
+                margin-bottom: 25px;
+            }
 
-    .usuarios-container {
-        padding: 18px 15px !important;
-        margin-top: 10px !important;
-        border-radius: 16px;
-    }
+            .header-section h2 {
+                font-size: 1.4rem !important;
+            }
 
-    .header-section {
-        margin-bottom: 20px;
-    }
+            /* Filtros en móvil */
+            .filters-container {
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
 
-    .header-section h2 {
-        font-size: 1.35rem !important;
-        text-align: left;
-    }
+            .grid-cards {
+                grid-template-columns: 1fr !important;
+                gap: 16px !important;
+            }
 
-    /* Grid de tarjetas - Muy importante para móviles */
-    .grid-cards {
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
-        padding: 5px;
-    }
+            .card {
+                padding: 18px !important;
+            }
 
-    /* Ajuste de cada tarjeta en móvil */
-    .card {
-        padding: 18px !important;
-        margin-bottom: 10px;
-    }
+            .gallery-img {
+                width: 70px;
+                height: 70px;
+            }
 
-    /* Contenido dentro de las tarjetas */
-    .gallery-grid {
-        gap: 8px;
-        justify-content: flex-start;
-    }
+            .modal-container {
+                width: 95% !important;
+                max-width: none !important;
+            }
 
-    .gallery-img {
-        width: 70px;
-        height: 70px;
-    }
+            .modal-body {
+                padding: 18px 15px !important;
+            }
+        }
 
-    /* Modal en móvil */
-    .modal-container {
-        width: 95% !important;
-        max-width: none !important;
-        margin: 10px auto;
-    }
-
-    .modal-body {
-        padding: 18px 15px !important;
-        max-height: 70vh;
-    }
-}
-
-/* Para celulares pequeños */
-@media (max-width: 480px) {
-
-    .grid-cards {
-        gap: 14px;
-    }
-
-    .card {
-        padding: 16px !important;
-    }
-
-    .gallery-img {
-        width: 65px;
-        height: 65px;
-    }
-}
+        @media (max-width: 480px) {
+            .gallery-img {
+                width: 65px;
+                height: 65px;
+            }
+        }
     </style>
 </head>
 <body>
 
     <div class="app-layout">
-        
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <img src="../../img/logo.png" alt="Rojas Remodeling">
             </div>
             
             <nav class="sidebar-nav">
-                <a href="../jefe-dashboard.html">
-                    <i class="fa-solid fa-house"></i> Inicio
-                </a>
-                <a href="../usuarios/usuarios.html">
-                    <i class="fa-solid fa-users-gear"></i> Mi Personal
-                </a>
-                <a href="../trabajos/trabajos.html">
-                    <i class="fa-solid fa-hammer"></i> Mis Trabajos
-                </a>
-                <a href="evidencias.html" class="active">
-                    <i class="fa-solid fa-camera"></i> Evidencias
-                </a>
+                <a href="../jefe-dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
+                <a href="../usuarios/usuarios.html"><i class="fa-solid fa-users-gear"></i> Mi Personal</a>
+                <a href="../trabajos/trabajos.html"><i class="fa-solid fa-hammer"></i> Mis Trabajos</a>
+                <a href="evidencias.html" class="active"><i class="fa-solid fa-camera"></i> Evidencias</a>
                 <a href="../calendario/calendario.html"><i class="fa-solid fa-calendar-days"></i> Calendario</a>
-                
             </nav>
 
             <div class="sidebar-footer">
@@ -159,10 +150,41 @@
                     
                     <div class="header-section">
                         <h2 style="margin: 0; color: #2B3674;">Supervisión de mis Proyectos</h2>
+
+                        <!-- Filtros -->
+                        <div class="filters-container" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 15px;">
+                            <div style="flex: 1; min-width: 240px;">
+                                <label style="display:block; font-size:0.85rem; font-weight:600; color:#0f4c81; margin-bottom:6px;">
+                                    Buscar Proyecto o Personal
+                                </label>
+                                <input type="text" id="searchInput" class="input-field" 
+                                       placeholder="Buscar por cliente, jefe o subcontrata..." style="width:100%;">
+                            </div>
+
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display:block; font-size:0.85rem; font-weight:600; color:#0f4c81; margin-bottom:6px;">
+                                    Estado de Obra
+                                </label>
+                                <select id="statusFilter" class="input-field" style="width:100%;">
+                                    <option value="ALL">Todos los Estados</option>
+                                    <option value="PENDING">Pendiente</option>
+                                    <option value="IN_PROGRESS">En Progreso</option>
+                                    <option value="COMPLETED">Completado</option>
+                                </select>
+                            </div>
+
+                            <div style="flex: 1; min-width: 200px;">
+                                <label style="display:block; font-size:0.85rem; font-weight:600; color:#0f4c81; margin-bottom:6px;">
+                                    Filtrar por Jefe
+                                </label>
+                                <select id="jefeFilter" class="input-field" style="width:100%;">
+                                    <option value="ALL">Todos los Jefes</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <div id="jobsGrid" class="grid-cards">
-                        </div>
+                    <div id="jobsGrid" class="grid-cards"></div>
 
                 </div>
             </div>
@@ -177,11 +199,8 @@
             </div>
             
             <div class="modal-body">
-                <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 8px; color: #2e7d32; font-size: 0.9rem;">
-                    </div>
-
-                <div id="evidencesTimeline">
-                    </div>
+                <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 8px; color: #2e7d32; font-size: 0.9rem;"></div>
+                <div id="evidencesTimeline"></div>
             </div>
             
             <div class="modal-footer">
