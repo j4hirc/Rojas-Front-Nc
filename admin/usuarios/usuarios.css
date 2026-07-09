@@ -259,7 +259,7 @@ select.input-field { cursor: pointer; }
     }
 }
 /* =============================================
-   ARREGLO RESPONSIVE DEL CUADRADO PRINCIPAL
+   ARREGLO FINAL DEL CUADRADO .usuarios-container
    ============================================= */
 
 @media (max-width: 768px) {
@@ -268,69 +268,60 @@ select.input-field { cursor: pointer; }
         padding: 20px 15px !important;
         margin-top: 10px !important;
         border-radius: 16px;
-        width: 100% !important;
     }
 
-    /* Header: Título + Buscador + Botón */
     .header-section {
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 18px;
-        margin-bottom: 20px;
-        padding-bottom: 20px;
+        gap: 16px;
+        margin-bottom: 25px;
     }
 
     .header-section h2 {
-        font-size: 1.35rem !important;
-        margin: 0 !important;
+        font-size: 1.4rem !important;
+        margin-bottom: 5px !important;
+        color: #2B3674;
     }
 
-    /* Contenedor del buscador y filtro */
+    /* Contenedor que tiene el buscador, estado y botón */
     .header-section > div[style*="display:flex"] {
         width: 100% !important;
         flex-direction: column !important;
-        gap: 12px;
+        gap: 14px;
     }
 
     #searchJobInput {
-        height: 48px !important;
-        font-size: 1rem;
+        height: 50px !important;
+        font-size: 1rem !important;
+        padding: 0 15px !important;
     }
 
     #filterStatusInput {
-        height: 48px !important;
+        height: 50px !important;
+        font-size: 1rem !important;
     }
 
     .btn-add {
-        height: 50px !important;
-        font-size: 1rem;
+        height: 52px !important;
+        font-size: 1.05rem !important;
+        width: 100% !important;
+        border-radius: 12px !important;
     }
 
-    /* Espaciado interno de la tabla */
+    /* Mejorar el área de la tabla */
     .table-container {
-        margin-top: 10px;
-    }
-
-    /* Mobile Cards (las tarjetas de proyectos) */
-    .mobile-cards {
-        display: flex !important;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    /* Ajuste de las tarjetas de proyecto */
-    .job-card, .card {   /* por si tu JS usa cualquiera de estas clases */
-        padding: 18px !important;
-        border-radius: 14px;
+        margin-top: 15px;
+        border-radius: 12px;
+        overflow: hidden;
     }
 }
 
 @media (max-width: 480px) {
     .usuarios-container {
-        padding: 16px 12px !important;
+        padding: 18px 12px !important;
     }
     
     .header-section {
-        gap: 14px;
+        gap: 13px;
     }
 }
