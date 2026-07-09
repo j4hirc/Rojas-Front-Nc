@@ -21,17 +21,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-
     // --- PANTALLA DE CARGA ---
-    Swal.fire({
-        title: 'Cargando evidencias...',
-        allowOutsideClick: false,
+    Swal.fire({ 
+        title: 'Cargando evidencias...', 
+        allowOutsideClick: false, 
         didOpen: () => { Swal.showLoading(); }
     });
 
     await cargarFiltroJefes();
     await cargarTrabajos();
-
 
     // --- CERRAMOS PANTALLA DE CARGA ---
     Swal.close();
@@ -40,13 +38,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 // 1. OBTENEMOS A LOS JEFES PARA EL FILTRO
 async function cargarFiltroJefes() {
     try {
-        const res = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
+        const res = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (res.ok) {
             const users = await res.json();
             const selectManager = document.getElementById('filterManager');
-
+            
             const jefes = users.filter(u => u.roles.some(r => r.name === 'ROLE_JEFE'));
-
+            
             jefes.forEach(jefe => {
                 selectManager.innerHTML += `<option value="${jefe.userId}">${jefe.name}</option>`;
             });
@@ -60,12 +58,12 @@ async function cargarFiltroJefes() {
 // 🔥 REEMPLAZA ESTA FUNCIÓN COMPLETA EN TU ARCHIVO EVIDENCIAS.JS
 async function cargarTrabajos() {
     try {
-        const res = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
+        const res = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (res.ok) {
             allJobsCache = await res.json();
-
+            
             // 1. Primero dibujamos todas las tarjetas en la pantalla de forma normal
-            filtrarTrabajos();
+            filtrarTrabajos(); 
 
             // 2. Detectamos si en la URL viene el ID del proyecto (?jobId=...)
             const urlParams = new URLSearchParams(window.location.search);
@@ -73,10 +71,10 @@ async function cargarTrabajos() {
 
             if (jobIdParam) {
                 const idNumerico = parseInt(jobIdParam);
-
+                
                 // 3. Buscamos el proyecto específico dentro del caché de datos
                 const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
-
+                
                 if (trabajoEncontrado) {
                     // Si tiene actualizaciones previas, disparamos el modal automáticamente al instante
                     if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
@@ -98,100 +96,81 @@ async function cargarTrabajos() {
     }
 }
 
-// 3. FILTRAMOS Y DIBUJAMOS LAS FILAS EN LA TABLA DE EVIDENCIAS (CORREGIDO)
+// 3. FILTRAMOS Y DIBUJAMOS LAS TARJETAS
 window.filtrarTrabajos = () => {
-    const managerId = document.getElementById('filterManager') ? document.getElementById('filterManager').value : 'ALL';
-    const texto = document.getElementById('searchEvidenceText') ? document.getElementById('searchEvidenceText').value.toLowerCase().trim() : '';
-    const estado = document.getElementById('filterEvidenceStatus') ? document.getElementById('filterEvidenceStatus').value : 'ALL';
+    const managerId = document.getElementById('filterManager').value;
+    const grid = document.getElementById('jobsGrid');
+    grid.innerHTML = '';
 
-    const tbody = document.getElementById('evidencesTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    let trabajosFiltrados = allJobsCache;
 
-    // Evaluamos los filtros sobre el respaldo original en memoria
-    let trabajosFiltrados = allJobsCache.filter(job => {
-        // Filtro por Manager (Jefe)
-        const coincideManager = (managerId === 'ALL') || (job.managerId == managerId);
-
-        // Filtro por Texto (Mapeado con las propiedades reales de la respuesta JSON)
-        const coincideTexto =
-            (job.clientName || '').toLowerCase().includes(texto) ||
-            (job.description || '').toLowerCase().includes(texto) ||
-            (job.nameEmployee || job.employeeName || '').toLowerCase().includes(texto) ||
-            (job.nameManager || job.managerName || '').toLowerCase().includes(texto);
-
-        // Filtro por Estado de Obra
-        const coincideEstado = (estado === 'ALL') || (job.status === estado);
-
-        return coincideManager && coincideTexto && coincideEstado;
-    });
+    if (managerId !== 'ALL') {
+        trabajosFiltrados = allJobsCache.filter(job => job.managerId == managerId);
+    }
 
     if (trabajosFiltrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #A3AED0; font-weight:500;">No se encontraron proyectos asignados a este filtro.</td></tr>';
+        grid.innerHTML = '<div style="grid-column: 1 / -1;" class="empty-state">No hay proyectos asignados a este filtro.</div>';
         return;
     }
 
-    // Dibujamos cada proyecto como una fila de la lista
     trabajosFiltrados.forEach(job => {
         const numUpdates = job.updateJob ? job.updateJob.length : 0;
         let numFotos = 0;
-        if (job.updateJob) {
+        if(job.updateJob) {
             job.updateJob.forEach(update => {
-                if (update.evidences) numFotos += update.evidences.length;
+                if(update.evidences) numFotos += update.evidences.length;
             });
         }
 
-        // Badges estéticos para el Estado de la obra en la lista
         let statusBadge = '';
-        if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
-        else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
-        else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
-        else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
+        if(job.status === 'PENDING') statusBadge = `<span style="color: #ff9800; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-clock"></i> Pendiente</span>`;
+        else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="color: #1e88e5; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-spinner"></i> En Progreso</span>`;
+        else if(job.status === 'COMPLETED') statusBadge = `<span style="color: #2e7d32; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-check-double"></i> Completado</span>`;
+        else statusBadge = `<span style="color: #d32f2f; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-ban"></i> Cancelado</span>`;
 
-        // 🔥 CONTROL DE PROPIEDADES ENCADENADAS: Valida ambos nombres posibles para evitar el vacío
-        const jefeNombre = job.nameManager || job.managerName || 'Sin asignar';
-        const empleadoNombre = job.nameEmployee || job.employeeName || 'Sin asignar';
+        const btnEvidencias = numUpdates > 0 
+            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="width:100%; padding:8px; background:#0f4c81; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Poppins'; font-weight:600;"><i class="fa-solid fa-folder-open"></i> Ver ${numFotos} Archivos</button>`
+            : `<button disabled style="width:100%; padding:8px; background:#e9ecef; color:#A3AED0; border:none; border-radius:8px; font-family:'Poppins'; font-weight:600;">Sin evidencias aún</button>`;
 
-        // Configuración del botón de acción estilo Admin
-        const btnEvidencias = numUpdates > 0
-            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="padding: 6px 12px; background: #0f4c81; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; font-family: 'Poppins';"><i class="fa-solid fa-folder-open"></i> Ver ${numFotos} Archivos</button>`
-            : `<button disabled style="padding: 6px 12px; background: #e9ecef; color: #A3AED0; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; font-family: 'Poppins';">Sin evidencias</button>`;
+        const safeDesc = job.description ? job.description : 'Sin descripción';
 
-        const tr = document.createElement('tr');
-        // Ejemplo dentro de evidencias.js al generar el TR:
-        tr.innerHTML = `
-    <td data-label="Proyecto:"><strong style="color: #2B3674;">${job.clientName}</strong></td>
-    <td data-label="Jefe:">${jefeNombre}</td>
-    <td data-label="Subcontratista:">${empleadoNombre}</td>
-    <td data-label="Estado:">${statusBadge}</td>
-    <td data-label="Acción:">${btnEvidencias}</td>
-    `;
-        tbody.appendChild(tr);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.flexDirection = 'column';
+        card.style.alignItems = 'flex-start';
+        card.innerHTML = `
+            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid #f0f2f5; padding-bottom: 10px; margin-bottom: 10px;">
+                <h3 style="margin:0; font-size:1.1rem; color:#2B3674;">${job.clientName}</h3>
+                ${statusBadge}
+            </div>
+            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-user-tie"></i> <strong>Jefe:</strong> ${job.nameManager}</p>
+            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-helmet-safety"></i> <strong>Emp:</strong> ${job.nameEmployee}</p>
+            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
+            
+            <div style="margin: 10px 0; padding-left: 10px; border-left: 3px solid #0f4c81; width: 100%;">
+                <p style="margin: 0; font-size: 13px; color: #444; font-style: italic; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                    "${safeDesc}"
+                </p>
+            </div>
+
+            <div style="margin-top: 15px; width: 100%;">
+                ${btnEvidencias}
+            </div>
+        `;
+        grid.appendChild(card);
     });
 };
-
-// 4. ESCUCHADORES DE EVENTOS EN TIEMPO REAL
-// Añade este bloque al final de tu archivo para que escuche cuando escribes o cambias el estado
-document.addEventListener("DOMContentLoaded", () => {
-    const textEv = document.getElementById('searchEvidenceText');
-    const statusEv = document.getElementById('filterEvidenceStatus');
-    const managerEv = document.getElementById('filterManager');
-
-    if (textEv) textEv.addEventListener('input', window.filtrarTrabajos);
-    if (statusEv) statusEv.addEventListener('change', window.filtrarTrabajos);
-    if (managerEv) managerEv.addEventListener('change', window.filtrarTrabajos);
-});
 
 // 4. LÓGICA PARA VER EL HISTORIAL (MODAL)
 window.abrirModalEvidencias = (jobId) => {
     const job = allJobsCache.find(j => j.jobId === jobId);
-    if (!job) return;
+    if(!job) return;
 
     document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
-
+    
     // INYECTAR LA DESCRIPCIÓN EN EL MODAL
     document.getElementById('jobDescriptionText').innerHTML = `<strong>Descripción de obra:</strong> <br> ${job.description || 'Sin descripción'}`;
-
+    
     const timeline = document.getElementById('evidencesTimeline');
     timeline.innerHTML = '';
 
@@ -199,13 +178,13 @@ window.abrirModalEvidencias = (jobId) => {
 
     updatesOrdenados.forEach(update => {
         const fechaObj = new Date(update.date);
-        const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' });
 
         let galeriaHTML = '';
-        if (update.evidences && update.evidences.length > 0) {
+        if(update.evidences && update.evidences.length > 0) {
             update.evidences.forEach(evi => {
                 const urlLower = evi.imageUri.toLowerCase();
-
+                
                 // MAGIA: VERIFICAMOS SI LA URL ES UN PDF
                 if (urlLower.includes('.pdf')) {
                     galeriaHTML += `
