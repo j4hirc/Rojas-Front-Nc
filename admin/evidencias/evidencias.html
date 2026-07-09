@@ -3,68 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evidencias - Rojas Remodeling</title>
+    <title>Mis Evidencias - Rojas Remodeling</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../admin.css"> 
-    <link rel="stylesheet" href="../usuarios/usuarios.css"> 
+    
+    <link rel="stylesheet" href="../../admin/admin.css"> 
+    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 
     <style>
-        /* Estilos específicos para la galería de evidencias */
+        /* ==================== ESTILOS PARA ESTA PÁGINA ==================== */
         .timeline-update {
-            background: #F9FAFC; border-left: 4px solid #0f4c81; padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
+            background: #F9FAFC; 
+            border-left: 4px solid #198754; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            border-radius: 0 8px 8px 0;
         }
-        .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
-        .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
-        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-        .gallery-img { 
-            width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; 
-            border: 2px solid #E0E5F2; transition: transform 0.2s;
-        }
-        .gallery-img:hover { transform: scale(1.05); border-color: #0f4c81; }
-        .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
+        .timeline-date { font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 6px; }
+        .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 12px; }
 
+        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+        .gallery-img { 
+            width: 80px; height: 80px; object-fit: cover; border-radius: 8px; 
+            cursor: pointer; border: 2px solid #E0E5F2; 
+        }
         .pdf-btn {
             display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 80px; height: 80px; background: #E3F2FD; border: 2px dashed #0f4c81; border-radius: 8px;
-            color: #0f4c81; text-decoration: none; font-size: 11px; font-weight: bold; transition: 0.3s;
+            width: 80px; height: 80px; background: #e8f5e9; border: 2px dashed #198754; 
+            border-radius: 8px; color: #198754; font-size: 11px; font-weight: bold;
         }
-        .pdf-btn i { font-size: 24px; margin-bottom: 5px; color: #d32f2f; }
-        .pdf-btn:hover { background: #0f4c81; color: white; border-style: solid; }
-        .pdf-btn:hover i { color: white; }
+
+        /* Tarjetas generadas por tu JS */
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+            border: 1px solid #E0E5F2;
+            margin-bottom: 18px;
+            width: 100%;
+        }
+
+        /* ==================== RESPONSIVE ==================== */
+        @media (max-width: 768px) {
+            .app-layout { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; }
+            .sidebar-nav { flex-direction: row; padding: 10px; gap: 8px; }
+            .sidebar-nav a { padding: 10px 14px; font-size: 0.85rem; white-space: nowrap; }
+
+            .content-body { padding: 15px !important; }
+
+            .usuarios-container {
+                padding: 18px 15px !important;
+                margin-top: 10px !important;
+                border-radius: 16px;
+            }
+
+            .grid-cards {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 18px !important;
+                width: 100% !important;
+            }
+
+            .card {
+                padding: 18px !important;
+                border-radius: 14px;
+            }
+
+            .gallery-img, .pdf-btn {
+                width: 68px !important;
+                height: 68px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card { padding: 16px !important; }
+            .gallery-img, .pdf-btn { width: 62px !important; height: 62px !important; }
+        }
     </style>
 </head>
 <body>
 
     <div class="app-layout">
-        
         <aside class="sidebar">
-           <div class="sidebar-logo">
+            <div class="sidebar-logo">
                 <img src="../../img/logo.png" alt="Rojas Remodeling">
             </div>
-            
             <nav class="sidebar-nav">
-                <a href="../admin-dashboard.html">
-                    <i class="fa-solid fa-house"></i> Inicio
-                </a>
-                <a href="../usuarios/usuarios.html">
-                    <i class="fa-solid fa-users-gear"></i> Usuarios
-                </a>
-                <a href="../trabajos/trabajos.html">
-                    <i class="fa-solid fa-hammer"></i> Trabajos
-                </a>
-                <a href="evidencias.html" class="active">
-                    <i class="fa-solid fa-camera"></i> Evidencias
-                </a>
-                <a href="../categorias/categorias.html">
-                    <i class="fa-solid fa-tags"></i> Categorías
-                </a>
-                <a href="../materiales/materiales.html">
-                    <i class="fa-solid fa-boxes-stacked"></i> Materiales
-                </a>
+                <a href="../jefe-dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
+                <a href="../usuarios/usuarios.html"><i class="fa-solid fa-users-gear"></i> Mi Personal</a>
+                <a href="../trabajos/trabajos.html"><i class="fa-solid fa-hammer"></i> Mis Trabajos</a>
+                <a href="evidencias.html" class="active"><i class="fa-solid fa-camera"></i> Evidencias</a>
+                <a href="../calendario/calendario.html"><i class="fa-solid fa-calendar-days"></i> Calendario</a>
             </nav>
-
             <div class="sidebar-footer">
                 <button class="btn-logout-sidebar" onclick="cerrarSesion()">
                     <i class="fa-solid fa-right-from-bracket"></i> Salir
@@ -75,60 +108,18 @@
         <main class="main-content">
             <header class="top-navbar">
                 <div class="page-title">Evidencias y Progreso de Trabajos</div>
-                <div class="user-profile">
+                <div class="user-profile" style="color: #198754; background: #E8F5E9;">
                     <i class="fa-solid fa-user-tie"></i>
-                    <span id="admin-email-display">Cargando...</span>
+                    <span id="jefe-email-display">Cargando...</span>
                 </div>
             </header>
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-                    
-                    <div class="header-section" style="flex-wrap: wrap;">
-                        <h2 style="margin: 0; color: #2B3674;">Supervisión de Proyectos</h2>
+                    <div class="header-section">
+                        <h2 style="margin: 0; color: #2B3674;">Supervisión de mis Proyectos</h2>
                     </div>
-
-                    <div class="filters-bar" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 15px;">
-                        
-                        <div style="flex: 2; min-width: 220px;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Buscar Proyecto o Personal</label>
-                            <input type="text" id="searchEvidenceText" class="input-field" placeholder="🔍 Buscar por cliente, jefe o subcontratista..." style="width: 100%; margin: 0;">
-                        </div>
-
-                        <div style="flex: 1; min-width: 150px;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Estado de Obra</label>
-                            <select id="filterEvidenceStatus" class="input-field" style="width: 100%; margin: 0;">
-                                <option value="ALL">Todos los Estados</option>
-                                <option value="PENDING">Pendiente</option>
-                                <option value="IN_PROGRESS">En Progreso</option>
-                                <option value="COMPLETED">Completado</option>
-                                <option value="CANCELLED">Cancelado</option>
-                            </select>
-                        </div>
-
-                        <div style="flex: 1; min-width: 150px;">
-                            <label style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Filtrar por Jefe</label>
-                            <select id="filterManager" class="input-field" style="width: 100%; margin: 0;">
-                                <option value="ALL">Todos los Jefes</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="table-container" style="margin-top: 20px;">
-                        <table class="user-table">
-                            <thead>
-                                <tr>
-                                    <th>Título del Proyecto</th>
-                                    <th>Jefe (Manager)</th>
-                                    <th>Subcontratista (Empleado)</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="evidencesTableBody"></tbody>
-                        </table>
-                    </div>
-
+                    <div id="jobsGrid" class="grid-cards"></div>
                 </div>
             </div>
         </main>
@@ -140,21 +131,16 @@
                 <span id="modalTitulo"><i class="fa-solid fa-images"></i> Historial del Proyecto</span>
                 <button onclick="cerrarModalEvidencias()" class="btn-close-modal">✕</button>
             </div>
-            
             <div class="modal-body">
-                <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E3F2FD; border: 1px solid #BBDEFB; border-radius: 8px; color: #0f4c81; font-size: 0.9rem;">
-                </div>
-
-                <div id="evidencesTimeline">
-                </div>
+                <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 8px; color: #2e7d32; font-size: 0.9rem;"></div>
+                <div id="evidencesTimeline"></div>
             </div>
-            
             <div class="modal-footer">
                 <button onclick="cerrarModalEvidencias()" class="btn-secondary">Cerrar</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="evidencias.js"></script>
+    <script type="module" src="evidencias-jefe.js"></script>
 </body>
 </html>
