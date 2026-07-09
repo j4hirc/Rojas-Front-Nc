@@ -21,7 +21,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-
     // --- PANTALLA DE CARGA ---
     Swal.fire({ 
         title: 'Cargando evidencias...', 
@@ -31,8 +30,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await cargarFiltroJefes();
     await cargarTrabajos();
-
-    
 
     // --- CERRAMOS PANTALLA DE CARGA ---
     Swal.close();
