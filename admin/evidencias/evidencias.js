@@ -21,30 +21,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
-    // Cambio de rol
-let userRoles = [];
-
-try {
-    userRoles = JSON.parse(rolesString);
-} catch (e) {
-    console.error("Error al parsear roles");
-}
-
-const btnPerfilAdmin = document.getElementById("btnPerfilAdmin");
-
-if (btnPerfilAdmin) {
-    if (userRoles.length > 1) {
-        btnPerfilAdmin.addEventListener("click", () => {
-            mostrarSelectorDeRoles(userRoles);
-        });
-    } else {
-        const iconExchange = btnPerfilAdmin.querySelector(".fa-right-left");
-        if (iconExchange) iconExchange.remove();
-
-        btnPerfilAdmin.style.cursor = "default";
-        btnPerfilAdmin.title = "";
-    }
-}
 
     // --- PANTALLA DE CARGA ---
     Swal.fire({ 
@@ -55,6 +31,8 @@ if (btnPerfilAdmin) {
 
     await cargarFiltroJefes();
     await cargarTrabajos();
+
+    
 
     // --- CERRAMOS PANTALLA DE CARGA ---
     Swal.close();
@@ -275,50 +253,6 @@ window.verFotoGrande = (url) => {
         backdrop: `rgba(0,0,0,0.8)`
     });
 };
-
-function mostrarSelectorDeRoles(roles) {
-    let opcionesHTML = '<div style="display:flex;flex-direction:column;gap:10px;margin-top:15px;">';
-
-    roles.forEach(rol => {
-        let nombreRol = '';
-        let url = '';
-
-        if (rol === 'ROLE_ADMIN') {
-            nombreRol = '<i class="fa-solid fa-user-tie"></i> Administrador';
-            url = '../admin-dashboard.html';
-        }
-
-        if (rol === 'ROLE_JEFE') {
-            nombreRol = '<i class="fa-solid fa-user-shield"></i> Jefe de Trabajo';
-            url = '../../jefe/jefe-dashboard.html';
-        }
-
-        if (rol === 'ROLE_EMPLOYEE') {
-            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Subcontratista';
-            url = '../../employee/employee-dashboard.html';
-        }
-
-        if (nombreRol) {
-            opcionesHTML += `
-                <button class="swal2-confirm swal2-styled"
-                    style="width:100%;margin:0;background:#111C44;color:#fff;font-weight:500;border-radius:8px;"
-                    onclick="window.location.href='${url}'">
-                    ${nombreRol}
-                </button>`;
-        }
-    });
-
-    opcionesHTML += '</div>';
-
-    Swal.fire({
-        title: 'Selecciona tu área de trabajo',
-        html: opcionesHTML,
-        showConfirmButton: false,
-        showCancelButton: true,
-        cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#ea5455'
-    });
-}
 
 window.cerrarSesion = () => {
     Swal.fire({
