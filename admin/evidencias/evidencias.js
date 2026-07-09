@@ -156,13 +156,14 @@ window.filtrarTrabajos = () => {
             : `<button disabled style="padding: 6px 12px; background: #e9ecef; color: #A3AED0; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; font-family: 'Poppins';">Sin evidencias</button>`;
 
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong style="color: #2B3674; font-size: 14px;">${job.clientName}</strong></td>
-            <td style="color: #4A5568; font-size: 14px;">${jefeNombre}</td>
-            <td style="color: #4A5568; font-size: 14px;">${empleadoNombre}</td>
-            <td>${statusBadge}</td>
-            <td>${btnEvidencias}</td>
-        `;
+        // Ejemplo dentro de evidencias.js al generar el TR:
+tr.innerHTML = `
+    <td data-label="Proyecto:"><strong style="color: #2B3674;">${job.clientName}</strong></td>
+    <td data-label="Jefe:">${jefeNombre}</td>
+    <td data-label="Subcontratista:">${empleadoNombre}</td>
+    <td data-label="Estado:">${statusBadge}</td>
+    <td data-label="Acción:">${btnEvidencias}</td>
+`;
         tbody.appendChild(tr);
     });
 };

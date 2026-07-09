@@ -190,3 +190,49 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
 .sidebar-logo img:hover {
     transform: scale(1.05); /* Efecto hover elegante */
 }
+
+/* REGLAS DE RESPONSIVIDAD PARA TODAS LAS TABLAS DEL SISTEMA */
+@media screen and (max-width: 768px) {
+    /* Ocultamos la cabecera de la tabla porque verticalmente no tiene sentido */
+    .user-table thead {
+        display: none;
+    }
+
+    /* Transformamos cada fila en un bloque independiente (parecido a una tarjeta) */
+    .user-table tr {
+        display: block;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    /* Hacemos que cada celda ocupe el ancho completo y se alinee verticalmente */
+    .user-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 4px !important;
+        border-bottom: 1px dashed #edf2f7;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* Eliminamos la línea discontinua de la última celda de acciones */
+    .user-table td:last-child {
+        border-bottom: none;
+        justify-content: center; /* Centra los botones de acción */
+        gap: 10px;
+        margin-top: 5px;
+    }
+
+    /* Opcional: Agrega un texto indicativo antes del valor para saber qué columna es */
+    .user-table td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        color: #4a5568;
+        font-size: 0.85rem;
+    }
+}
