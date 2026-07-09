@@ -55,12 +55,41 @@ async function cargarFiltroJefes() {
 }
 
 // 2. OBTENEMOS LOS TRABAJOS CON SUS ACTUALIZACIONES
+// 🔥 REEMPLAZA ESTA FUNCIÓN COMPLETA EN TU ARCHIVO EVIDENCIAS.JS
 async function cargarTrabajos() {
     try {
         const res = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (res.ok) {
             allJobsCache = await res.json();
-            filtrarTrabajos(); // Pinta todos por defecto
+            
+            // 1. Primero dibujamos todas las tarjetas en la pantalla de forma normal
+            filtrarTrabajos(); 
+
+            // 2. Detectamos si en la URL viene el ID del proyecto (?jobId=...)
+            const urlParams = new URLSearchParams(window.location.search);
+            const jobIdParam = urlParams.get('jobId');
+
+            if (jobIdParam) {
+                const idNumerico = parseInt(jobIdParam);
+                
+                // 3. Buscamos el proyecto específico dentro del caché de datos
+                const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
+                
+                if (trabajoEncontrado) {
+                    // Si tiene actualizaciones previas, disparamos el modal automáticamente al instante
+                    if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
+                        window.abrirModalEvidencias(idNumerico);
+                    } else {
+                        // Si no tiene registros aún, le avisamos estéticamente al usuario con una alerta limpia
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Sin evidencias',
+                            text: `El proyecto de "${trabajoEncontrado.clientName}" no registra avances fotográficos todavía.`,
+                            confirmButtonColor: '#0f4c81'
+                        });
+                    }
+                }
+            }
         }
     } catch (error) {
         Swal.fire('Error', 'No se pudieron cargar las evidencias.', 'error');
