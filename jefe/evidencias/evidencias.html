@@ -12,106 +12,80 @@
     <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 
     <style>
-        /* Estilos específicos para la galería */
-        .timeline-update {
-            background: #F9FAFC; 
-            border-left: 4px solid #198754; 
-            padding: 15px; 
-            margin-bottom: 15px; 
-            border-radius: 0 8px 8px 0;
-        }
-        .timeline-date { 
-            font-size: 0.8rem; 
-            color: #666; 
-            font-weight: 600; 
-            margin-bottom: 5px; 
-            display: block;
-        }
-        .timeline-comment { 
-            font-size: 0.95rem; 
-            color: #2B3674; 
-            margin-bottom: 10px; 
-        }
-        .gallery-grid { 
-            display: flex; 
-            gap: 10px; 
-            flex-wrap: wrap; 
-            align-items: center; 
-        }
-        .gallery-img { 
-            width: 80px; 
-            height: 80px; 
-            object-fit: cover; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            border: 2px solid #E0E5F2; 
-            transition: transform 0.2s;
-        }
-        .gallery-img:hover { 
-            transform: scale(1.05); 
-            border-color: #198754; 
-        }
-        .empty-state { 
-            text-align: center; 
-            color: #A3AED0; 
-            padding: 30px; 
-            font-weight: 500; 
+    /* Estilos específicos para evidencias */
+    .timeline-update {
+        background: #F9FAFC; 
+        border-left: 4px solid #198754; 
+        padding: 15px; 
+        margin-bottom: 15px; 
+        border-radius: 0 8px 8px 0;
+    }
+    .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
+    .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
+
+    .gallery-grid { 
+        display: flex; 
+        gap: 10px; 
+        flex-wrap: wrap; 
+    }
+    .gallery-img { 
+        width: 75px; 
+        height: 75px; 
+        object-fit: cover; 
+        border-radius: 8px; 
+        cursor: pointer; 
+        border: 2px solid #E0E5F2; 
+    }
+
+    /* ==================== RESPONSIVE MEJORADO ==================== */
+    @media (max-width: 768px) {
+
+        .usuarios-container {
+            padding: 20px 15px !important;
+            margin-top: 10px !important;
         }
 
-        /* Responsive - Evidencias */
-        @media (max-width: 768px) {
-            .usuarios-container {
-                padding: 20px 15px !important;
-                margin-top: 10px !important;
-                border-radius: 16px;
-            }
-
-            .header-section {
-                margin-bottom: 25px;
-            }
-
-            .header-section h2 {
-                font-size: 1.4rem !important;
-            }
-
-            /* Filtros en móvil */
-            .filters-container {
-                display: flex;
-                flex-direction: column;
-                gap: 14px;
-            }
-
-            .grid-cards {
-                grid-template-columns: 1fr !important;
-                gap: 16px !important;
-            }
-
-            .card {
-                padding: 18px !important;
-            }
-
-            .gallery-img {
-                width: 70px;
-                height: 70px;
-            }
-
-            .modal-container {
-                width: 95% !important;
-                max-width: none !important;
-            }
-
-            .modal-body {
-                padding: 18px 15px !important;
-            }
+        .header-section h2 {
+            font-size: 1.35rem !important;
         }
 
-        @media (max-width: 480px) {
-            .gallery-img {
-                width: 65px;
-                height: 65px;
-            }
+        /* Filtros */
+        .filters-container {
+            flex-direction: column !important;
+            gap: 16px;
         }
-    </style>
+
+        /* Grid de evidencias */
+        .grid-cards {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 18px !important;
+            padding: 5px;
+        }
+
+        /* Cada tarjeta */
+        .card {
+            padding: 20px !important;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .gallery-img {
+            width: 68px;
+            height: 68px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .card {
+            padding: 16px !important;
+        }
+        .gallery-img {
+            width: 60px;
+            height: 60px;
+        }
+    }
+</style>
 </head>
 <body>
 
