@@ -199,8 +199,8 @@ select.input-field { cursor: pointer; }
     .modal-header { padding: 15px 20px; }
     .modal-footer { padding: 15px 20px; flex-direction: column; }
     .btn-secondary, .btn-primary { width: 100%; text-align: center; margin-bottom: 10px; }
-    .table-container { display: block; } 
-    .mobile-cards { display: none; } /* Ocultamos las tarjetas en móviles */
+    .table-container { display: none; } 
+    .mobile-cards { display: grid; gap: 15px; margin-top: 20px;}
     
     .card { background: var(--white); padding: 20px; border-radius: 16px; border: 1px solid #E0E5F2; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; }
