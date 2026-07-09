@@ -258,7 +258,6 @@ select.input-field { cursor: pointer; }
         white-space: nowrap !important; /* Impide que los textos salten de línea */
     }
 }
-
 /* ==================== RESPONSIVE TRABAJOS - TODOS LOS CELULARES ==================== */
 
 @media (max-width: 768px) {
