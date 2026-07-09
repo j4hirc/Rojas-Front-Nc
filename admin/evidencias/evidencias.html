@@ -1,122 +1,50 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evidencias - Rojas Remodeling</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../admin.css">
-    <link rel="stylesheet" href="../usuarios/usuarios.css">
+    <link rel="stylesheet" href="../admin.css"> 
+    <link rel="stylesheet" href="../usuarios/usuarios.css"> 
 
     <style>
         /* Estilos específicos para la galería de evidencias */
         .timeline-update {
-            background: #F9FAFC;
-            border-left: 4px solid #0f4c81;
-            padding: 15px;
-            margin-bottom: 15px;
-            border-radius: 0 8px 8px 0;
+            background: #F9FAFC; border-left: 4px solid #0f4c81; padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
         }
-
-        .timeline-date {
-            font-size: 0.8rem;
-            color: #666;
-            font-weight: 600;
-            margin-bottom: 5px;
-            display: block;
+        .timeline-date { font-size: 0.8rem; color: #666; font-weight: 600; margin-bottom: 5px; display: block;}
+        .timeline-comment { font-size: 0.95rem; color: #2B3674; margin-bottom: 10px; }
+        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .gallery-img { 
+            width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer; 
+            border: 2px solid #E0E5F2; transition: transform 0.2s;
         }
+        .gallery-img:hover { transform: scale(1.05); border-color: #0f4c81; }
+        .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
 
-        .timeline-comment {
-            font-size: 0.95rem;
-            color: #2B3674;
-            margin-bottom: 10px;
-        }
-
-        .gallery-grid {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .gallery-img {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 2px solid #E0E5F2;
-            transition: transform 0.2s;
-        }
-
-        .gallery-img:hover {
-            transform: scale(1.05);
-            border-color: #0f4c81;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: #A3AED0;
-            padding: 30px;
-            font-weight: 500;
-        }
-
+        /* NUEVO: ESTILO PARA EL BOTÓN DEL PDF (Tema Admin - Azul) */
         .pdf-btn {
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 80px;
-            height: 80px;
-            background: #E3F2FD;
-            border: 2px dashed #0f4c81;
-            border-radius: 8px;
-            color: #0f4c81;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: bold;
-            transition: 0.3s;
+            display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 80px; height: 80px; background: #E3F2FD; border: 2px dashed #0f4c81; border-radius: 8px;
+            color: #0f4c81; text-decoration: none; font-size: 11px; font-weight: bold; transition: 0.3s;
         }
-
-        .pdf-btn i {
-            font-size: 24px;
-            margin-bottom: 5px;
-            color: #d32f2f;
-        }
-
-        .pdf-btn:hover {
-            background: #0f4c81;
-            color: white;
-            border-style: solid;
-        }
-
-        .pdf-btn:hover i {
-            color: white;
-        }
-
-        .table-container {
-            display: block;
-        }
-
-        .mobile-cards {
-            display: none;
-        }
+        .pdf-btn i { font-size: 24px; margin-bottom: 5px; color: #d32f2f; }
+        .pdf-btn:hover { background: #0f4c81; color: white; border-style: solid; }
+        .pdf-btn:hover i { color: white; }
     </style>
 </head>
-
 <body>
 
     <div class="app-layout">
-
+        
         <aside class="sidebar">
-            <div class="sidebar-logo">
+           <div class="sidebar-logo">
                 <img src="../../img/logo.png" alt="Rojas Remodeling">
             </div>
-
+            
             <nav class="sidebar-nav">
                 <a href="../admin-dashboard.html">
                     <i class="fa-solid fa-house"></i> Inicio
@@ -133,9 +61,11 @@
                 <a href="../categorias/categorias.html">
                     <i class="fa-solid fa-tags"></i> Categorías
                 </a>
+                
                 <a href="../materiales/materiales.html">
                     <i class="fa-solid fa-boxes-stacked"></i> Materiales
                 </a>
+                
             </nav>
 
             <div class="sidebar-footer">
@@ -148,75 +78,39 @@
         <main class="main-content">
             <header class="top-navbar">
                 <div class="page-title">Evidencias y Progreso de Trabajos</div>
-                <div id="btnPerfilAdmin" class="user-profile"
-                    style="cursor: pointer; display: flex; align-items: center; gap: 8px;" title="Cambiar de Rol">
-                    <i class="fa-solid fa-user-tie"></i>
-                    <span id="admin-email-display">Cargando...</span>
-                    <i class="fa-solid fa-right-left" style="font-size: 11px; color: #12CFF4; margin-left: 3px;"></i>
-                </div>
+                <div id="btnPerfilAdmin"
+     class="user-profile"
+     style="cursor:pointer;display:flex;align-items:center;gap:8px;"
+     title="Cambiar de Rol">
+    <i class="fa-solid fa-user-tie"></i>
+    <span id="admin-email-display">Cargando...</span>
+    <i class="fa-solid fa-right-left"
+       style="font-size:11px;color:#12CFF4;margin-left:3px;"></i>
+</div>
             </header>
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-
+                    
                     <div class="header-section" style="flex-wrap: wrap;">
                         <h2 style="margin: 0; color: #2B3674;">Supervisión de Proyectos</h2>
-                    </div>
-
-                    <div class="filters-bar"
-                        style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 15px;">
-
-                        <div style="flex: 2; min-width: 220px;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Buscar
-                                Proyecto o Personal</label>
-                            <input type="text" id="searchEvidenceText" class="input-field"
-                                placeholder="🔍 Buscar por cliente, jefe o subcontratista..."
-                                style="width: 100%; margin: 0;">
-                        </div>
-
-                        <div style="flex: 1; min-width: 150px;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Estado
-                                de Obra</label>
-                            <select id="filterEvidenceStatus" class="input-field" style="width: 100%; margin: 0;">
-                                <option value="ALL">Todos los Estados</option>
-                                <option value="PENDING">Pendiente</option>
-                                <option value="IN_PROGRESS">En Progreso</option>
-                                <option value="COMPLETED">Completado</option>
-                                <option value="CANCELLED">Cancelado</option>
-                            </select>
-                        </div>
-
-                        <div style="flex: 1; min-width: 150px;">
-                            <label
-                                style="display: block; font-size: 0.85rem; font-weight: bold; color: #0f4c81; margin-bottom: 5px;">Filtrar
-                                por Jefe</label>
-                            <select id="filterManager" class="input-field" style="width: 100%; margin: 0;">
+                        
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <label style="font-weight: 600; font-size: 0.9rem; color:#2B3674;">Filtrar por Jefe:</label>
+                            <select id="filterManager" class="input-field" style="width: auto; padding: 10px;" onchange="filtrarTrabajos()">
                                 <option value="ALL">Todos los Jefes</option>
                             </select>
                         </div>
                     </div>
 
-                    <div class="table-container" style="margin-top: 20px;">
-                        <table class="user-table">
-                            <thead>
-                                <tr>
-                                    <th>Título del Proyecto</th>
-                                    <th>Jefe (Manager)</th>
-                                    <th>Subcontratista (Empleado)</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="evidencesTableBody"></tbody>
-                        </table>
-                    </div>
+                    <div id="jobsGrid" class="grid-cards" style="margin-top: 20px;">
+                        </div>
 
                 </div>
             </div>
         </main>
     </div>
+    <button id="btnCambiarRol" style="display:none;"></button>
 
     <div class="modal-overlay" id="modalEvidencias">
         <div class="modal-container" style="max-width: 600px;">
@@ -224,16 +118,15 @@
                 <span id="modalTitulo"><i class="fa-solid fa-images"></i> Historial del Proyecto</span>
                 <button onclick="cerrarModalEvidencias()" class="btn-close-modal">✕</button>
             </div>
-
+            
             <div class="modal-body">
-                <div id="jobDescriptionText"
-                    style="margin-bottom: 20px; padding: 12px; background: #E3F2FD; border: 1px solid #BBDEFB; border-radius: 8px; color: #0f4c81; font-size: 0.9rem;">
-                </div>
+                <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E3F2FD; border: 1px solid #BBDEFB; border-radius: 8px; color: #0f4c81; font-size: 0.9rem;">
+                    </div>
 
                 <div id="evidencesTimeline">
-                </div>
+                    </div>
             </div>
-
+            
             <div class="modal-footer">
                 <button onclick="cerrarModalEvidencias()" class="btn-secondary">Cerrar</button>
             </div>
@@ -242,5 +135,4 @@
 
     <script type="module" src="evidencias.js"></script>
 </body>
-
 </html>
