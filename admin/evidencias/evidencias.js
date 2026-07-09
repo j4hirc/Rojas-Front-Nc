@@ -115,8 +115,8 @@ window.filtrarTrabajos = () => {
         const coincideTexto = 
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
-            (job.employeeName || '').toLowerCase().includes(texto) ||
-            (job.managerName || '').toLowerCase().includes(texto);
+            (job.nameEmployee || '').toLowerCase().includes(texto) ||
+            (job.nameManager || '').toLowerCase().includes(texto);
 
         // Filtro por Estado de Obra
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
