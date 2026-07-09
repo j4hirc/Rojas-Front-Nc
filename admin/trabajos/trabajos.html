@@ -56,11 +56,55 @@
                 <div class="usuarios-container" style="margin-top: 0;">
 
                     <div class="header-section">
-                        <h2 style="margin: 0; color: #2B3674;">Proyectos Asignados</h2>
-                        <button class="btn-add" onclick="abrirModalCrearJob()" style="background: #e65100;">
-                            <i class="fa-solid fa-plus"></i> Nuevo Trabajo
-                        </button>
-                    </div>
+
+    <h2 style="margin:0; color:#2B3674; white-space:nowrap;">
+        Proyectos Asignados
+    </h2>
+
+    <div style="display:flex; align-items:flex-end; gap:15px; flex:1; margin-left:30px;">
+
+        <div style="flex:2;">
+            <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                Buscar por Cliente o Descripción
+            </label>
+
+            <input
+                type="text"
+                id="searchJobInput"
+                class="input-field"
+                placeholder="🔍 Escribe un nombre o descripción..."
+                style="width:100%; margin:0;">
+        </div>
+
+        <div style="width:260px;">
+            <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                Estado
+            </label>
+
+            <select id="filterStatusInput" class="input-field" style="width:100%; margin:0;">
+                <option value="ALL">Todos los Estados</option>
+                <option value="PENDING">Pendiente</option>
+                <option value="IN_PROGRESS">En Progreso</option>
+                <option value="COMPLETED">Completado</option>
+                <option value="CANCELLED">Cancelado</option>
+            </select>
+        </div>
+
+        <button class="btn-add"
+                onclick="abrirModalCrearJob()"
+                style="background:#e65100; height:45px; white-space:nowrap;">
+            <i class="fa-solid fa-plus"></i>
+            Nuevo Trabajo
+        </button>
+
+    </div>
+
+</div>
+
+                    <div class="filters-bar" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 15px;">
+                        
+                        
+
 
                     <div class="table-container">
                         <table class="user-table">
@@ -69,8 +113,9 @@
                                     <th>Cliente</th>
                                     <th>Dirección y Fecha</th>
                                     <th>Descripción</th>
-                                    <th>Empleado / Manager</th>
+                                    <th>Subcontratista / Manager</th>
                                     <th>Estado</th>
+                                    <th>Prioridad</th>
                                     <th>Pago ($)</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -203,7 +248,7 @@
                     <div class="form-group">
                             <label>Prioridad del Trabajo (Número)</label>
                             <input type="number" id="jobPriority" class="input-field" 
-                                min="0" value="2" step="1" required
+                                min="1" value="2" step="1" required
                                 style="text-align: center;" placeholder="Ej: 0, 1, 2, 3...">
                         </div>
 

@@ -4,6 +4,7 @@ const MATERIALS_URL = 'https://api-remomn.onrender.com/api/v1/materials/all';
 
 let userToken = '';
 let mapa, marcador;
+let allJobsCache = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -29,6 +30,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (inputLat && inputLng) {
         inputLat.addEventListener('input', window.actualizarMapaDesdeInputs);
         inputLng.addEventListener('input', window.actualizarMapaDesdeInputs);
+    }
+
+    // 🔥 AQUÍ ES DONDE VA EXACTAMENTE EL BLOQUE DE EVENTOS DE FILTRADO:
+    const txtIn = document.getElementById('searchJobInput');
+    const estIn = document.getElementById('filterStatusInput');
+    const priIn = document.getElementById('filterPriorityInput');
+    const btnCl = document.getElementById('clearPriorityBtn');
+
+    if (txtIn) txtIn.addEventListener('input', window.filtrarTrabajosCombinados);
+    if (estIn) estIn.addEventListener('change', window.filtrarTrabajosCombinados);
+    if (priIn) priIn.addEventListener('input', window.filtrarTrabajosCombinados);
+    if (btnCl) {
+        btnCl.addEventListener('click', () => {
+            document.getElementById('filterPriorityInput').value = '';
+            window.filtrarTrabajosCombinados();
+        });
     }
 
     Swal.close();
@@ -250,11 +267,40 @@ async function cargarTrabajos() {
     try {
         const response = await fetch(`${API_URL}/all`, { method: 'GET', headers: { 'Authorization': `Bearer ${userToken}` } });
         if (response.ok) {
-            const trabajos = await response.json();
-            renderizarTrabajos(trabajos);
+            // 🔥 Guardamos el respaldo original
+            allJobsCache = await response.json(); 
+            // Ejecutamos la lógica que aplica los filtros combinados
+            filtrarTrabajosCombinados(); 
         }
     } catch (error) { console.error("Error al cargar trabajos", error); }
 }
+
+window.filtrarTrabajosCombinados = () => {
+    const texto = document.getElementById('searchJobInput') ? document.getElementById('searchJobInput').value.toLowerCase().trim() : '';
+    const estado = document.getElementById('filterStatusInput') ? document.getElementById('filterStatusInput').value : 'ALL';
+    const prioridad = document.getElementById('filterPriorityInput') ? document.getElementById('filterPriorityInput').value.trim() : '';
+
+    const trabajosFiltrados = allJobsCache.filter(job => {
+        // 1. Filtro por Texto (Corregido para mapear exactamente con el Backend de Spring)
+        const coincideTexto = 
+            (job.clientName || '').toLowerCase().includes(texto) ||
+            (job.clientPhone || '').toLowerCase().includes(texto) ||
+            (job.description || '').toLowerCase().includes(texto) ||
+            (job.employeeName || '').toLowerCase().includes(texto) || // 🔥 ANTES: nameEmployee
+            (job.managerName || '').toLowerCase().includes(texto);   // 🔥 ANTES: nameManager
+
+        // 2. Filtro por Estado
+        const coincideEstado = (estado === 'ALL') || (job.status === estado);
+
+        // 3. Filtro por Prioridad (Soporta 0, 1, 2...)
+        const coincidePrioridad = (prioridad === '') || (job.priority !== null && job.priority.toString() === prioridad);
+
+        return coincideTexto && coincideEstado && coincidePrioridad;
+    });
+
+    // Le mandamos la lista ya filtrada a tu función renderizarTrabajos que se encarga del DOM
+    renderizarTrabajos(trabajosFiltrados);
+};
 
 function renderizarTrabajos(trabajos) {
     const tbody = document.getElementById('jobTableBody');
@@ -264,28 +310,45 @@ function renderizarTrabajos(trabajos) {
     if (mobileContainer) mobileContainer.innerHTML = '';
 
     if (trabajos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
         if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No hay trabajos registrados.</div>`;
         return;
     }
 
     trabajos.forEach(job => {
+        // 1. Badge para el Estado
         let statusBadge = '';
         if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
         else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
         else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
-        const empName = job.nameEmployee || 'Sin asignar';
-        const manName = job.nameManager || 'Sin asignar';
+        // 2. 🔥 Badge estético para la Prioridad (Personalizable)
+        let priorityBadge = '';
+        const pValor = job.priority !== null && job.priority !== undefined ? job.priority : 2;
+        
+        if (pValor === 0 || pValor === 1) {
+            // Prioridad Alta / Urgente
+            priorityBadge = `<span style="background: #FBE9E7; color: #d32f2f; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #ffccbc;"><i class="fa-solid fa-triangle-exclamation"></i> ${pValor} - Alta</span>`;
+        } else if (pValor === 2) {
+            // Prioridad Normal
+            priorityBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #c8e6c9;"><i class="fa-solid fa-circle-info"></i> ${pValor} - Normal</span>`;
+        } else {
+            // Prioridades bajas o secundarias (3, 4, etc)
+            priorityBadge = `<span style="background: #ECEFF1; color: #546E7A; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #cfd8dc;"> ${pValor} - Baja</span>`;
+        }
+
+        const empName = job.nameEmployee || 'Sin asignar'; // 🔥 Cambiado a employeeName
+        const manName = job.nameManager || 'Sin asignar';   // 🔥 Cambiado a managerName
         const fechaTxt = formatearFecha(job.jobDate);
         
-        // Limpiamos notas previas si existían
+        // Limpiamos notas previas de materiales en la descripción
         let safeDesc = job.description ? job.description : 'Sin descripción';
         if (safeDesc.includes('[MATERIALES PRE-ASIGNADOS]:')) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
         }
 
+        // GENERACIÓN DE FILA EN LA TABLA DESKTOP
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -306,7 +369,7 @@ function renderizarTrabajos(trabajos) {
                 <span style="color:#546e7a; font-size: 13px;">M: ${manName}</span>
             </td>
             <td>${statusBadge}</td>
-            <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
+            <td>${priorityBadge}</td> <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
                 <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
                     <i class="fa-solid fa-pen"></i>
@@ -318,6 +381,7 @@ function renderizarTrabajos(trabajos) {
         `;
         tbody.appendChild(tr);
 
+        // GENERACIÓN DE TARJETA EN LA VISTA MÓVIL
         if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
@@ -326,9 +390,11 @@ function renderizarTrabajos(trabajos) {
             card.style.padding = '20px';
 
             card.innerHTML = `
-                <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px;">
+                <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 5px;">
                     <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>
-                    ${statusBadge}
+                    <div style="display: flex; gap: 5px;">
+                        ${statusBadge}
+                        ${priorityBadge} </div>
                 </div>
                 <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
                 <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
