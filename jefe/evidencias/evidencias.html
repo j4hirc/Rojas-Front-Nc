@@ -12,62 +12,64 @@
     <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
 
     <style>
-    /* Estilos base para tarjetas generadas por JS */
+    /* Estilos para las tarjetas */
     .card {
         background: white;
         border-radius: 16px;
         padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.07);
         border: 1px solid #E0E5F2;
-        margin-bottom: 16px;
+        width: 100%;
     }
 
-    /* Responsive para móviles */
+    /* RESPONSIVE FUERTE */
     @media (max-width: 768px) {
+
+        html, body, .app-layout, .main-content, .content-body {
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
         .usuarios-container {
             padding: 20px 15px !important;
             margin-top: 10px !important;
-            border-radius: 16px;
+            width: 100% !important;
         }
 
-        .header-section h2 {
-            font-size: 1.4rem !important;
+        .header-section {
+            margin-bottom: 25px;
         }
 
-        /* Filtros */
         .filters-container {
-            flex-direction: column !important;
+            flex-direction: column;
             gap: 16px;
         }
 
-        /* Grid */
+        /* Grid de trabajos */
         .grid-cards {
             display: flex !important;
             flex-direction: column !important;
-            gap: 18px !important;
+            gap: 20px !important;
+            width: 100% !important;
         }
 
-        /* Tarjetas en móvil */
         .card {
             padding: 18px !important;
-            border-radius: 14px;
+            margin-bottom: 0;
         }
 
         .gallery-grid {
-            gap: 8px;
-            justify-content: flex-start;
+            gap: 10px;
         }
 
         .gallery-img {
-            width: 70px !important;
-            height: 70px !important;
+            width: 72px !important;
+            height: 72px !important;
         }
 
         .pdf-btn {
-            width: 70px !important;
-            height: 70px !important;
-            font-size: 10px !important;
+            width: 72px !important;
+            height: 72px !important;
         }
     }
 
