@@ -263,16 +263,45 @@ async function cargarUsuariosYMateriales(emailActual) {
     } catch (e) { console.error("Error cargando dependencias", e); }
 }
 
+// REEMPLAZA ESTA FUNCIÓN COMPLETA EN TU ARCHIVO DE EVIDENCIAS.JS
 async function cargarTrabajos() {
     try {
-        const response = await fetch(`${API_URL}/all`, { method: 'GET', headers: { 'Authorization': `Bearer ${userToken}` } });
-        if (response.ok) {
-            // 🔥 Guardamos el respaldo original
-            allJobsCache = await response.json(); 
-            // Ejecutamos la lógica que aplica los filtros combinados
-            filtrarTrabajosCombinados(); 
+        const res = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        if (res.ok) {
+            allJobsCache = await res.json();
+            
+            // 1. Primero dibujamos todas las tarjetas en la pantalla
+            filtrarTrabajos(); 
+
+            // 2. 🔥 MAGIA: Detectamos si en la URL viene el ID del proyecto
+            const urlParams = new URLSearchParams(window.location.search);
+            const jobIdParam = urlParams.get('jobId');
+
+            if (jobIdParam) {
+                const idNumerico = parseInt(jobIdParam);
+                
+                // 3. Buscamos si el proyecto realmente existe en la lista
+                const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
+                
+                if (trabajoEncontrado) {
+                    // Si tiene actualizaciones, abrimos el modal automáticamente al instante
+                    if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
+                        window.abrirModalEvidencias(idNumerico);
+                    } else {
+                        // Si no tiene registros, le avisamos con una alerta limpia
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Sin evidencias',
+                            text: `El proyecto de "${trabajoEncontrado.clientName}" no registra avances fotográficos todavía.`,
+                            confirmButtonColor: '#0f4c81'
+                        });
+                    }
+                }
+            }
         }
-    } catch (error) { console.error("Error al cargar trabajos", error); }
+    } catch (error) {
+        Swal.fire('Error', 'No se pudieron cargar las evidencias.', 'error');
+    }
 }
 
 window.filtrarTrabajosCombinados = () => {
