@@ -96,14 +96,14 @@ async function cargarTrabajos() {
     }
 }
 
-// 3. FILTRAMOS Y DIBUJAMOS LAS TARJETAS
-// 3. FILTRAMOS Y DIBUJAMOS LAS FILAS EN LA TABLA DE EVIDENCIAS
+// 3. FILTRAMOS Y DIBUJAMOS LAS FILAS EN LA TABLA DE EVIDENCIAS (CORREGIDO)
 window.filtrarTrabajos = () => {
     const managerId = document.getElementById('filterManager') ? document.getElementById('filterManager').value : 'ALL';
     const texto = document.getElementById('searchEvidenceText') ? document.getElementById('searchEvidenceText').value.toLowerCase().trim() : '';
     const estado = document.getElementById('filterEvidenceStatus') ? document.getElementById('filterEvidenceStatus').value : 'ALL';
 
     const tbody = document.getElementById('evidencesTableBody');
+    if (!tbody) return;
     tbody.innerHTML = '';
 
     // Evaluamos los filtros sobre el respaldo original en memoria
@@ -111,12 +111,12 @@ window.filtrarTrabajos = () => {
         // Filtro por Manager (Jefe)
         const coincideManager = (managerId === 'ALL') || (job.managerId == managerId);
 
-        // Filtro por Texto (Cliente, Descripción, Empleado o Jefe)
+        // Filtro por Texto (Mapeado con las propiedades reales de la respuesta JSON)
         const coincideTexto = 
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
-            (job.employeeName || '').toLowerCase().includes(texto) ||
-            (job.managerName || '').toLowerCase().includes(texto);
+            (job.nameEmployee || job.employeeName || '').toLowerCase().includes(texto) ||
+            (job.nameManager || job.managerName || '').toLowerCase().includes(texto);
 
         // Filtro por Estado de Obra
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
@@ -125,7 +125,7 @@ window.filtrarTrabajos = () => {
     });
 
     if (trabajosFiltrados.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px;">No se encontraron proyectos asignados a este filtro.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #A3AED0; font-weight:500;">No se encontraron proyectos asignados a este filtro.</td></tr>';
         return;
     }
 
@@ -146,16 +146,20 @@ window.filtrarTrabajos = () => {
         else if(job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
-        // Configuración del botón de acción
+        // 🔥 CONTROL DE PROPIEDADES ENCADENADAS: Valida ambos nombres posibles para evitar el vacío
+        const jefeNombre = job.nameManager || job.managerName || 'Sin asignar';
+        const empleadoNombre = job.nameEmployee || job.employeeName || 'Sin asignar';
+
+        // Configuración del botón de acción estilo Admin
         const btnEvidencias = numUpdates > 0 
-            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="padding: 6px 12px; background: #0f4c81; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;"><i class="fa-solid fa-folder-open"></i> Ver ${numFotos} Archivos</button>`
-            : `<button disabled style="padding: 6px 12px; background: #e9ecef; color: #A3AED0; border: none; border-radius: 6px; font-weight: 600; font-size: 12px;">Sin evidencias</button>`;
+            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="padding: 6px 12px; background: #0f4c81; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; font-family: 'Poppins';"><i class="fa-solid fa-folder-open"></i> Ver ${numFotos} Archivos</button>`
+            : `<button disabled style="padding: 6px 12px; background: #e9ecef; color: #A3AED0; border: none; border-radius: 6px; font-weight: 600; font-size: 12px; font-family: 'Poppins';">Sin evidencias</button>`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><strong style="color: #2B3674;">${job.clientName}</strong></td>
-            <td>${job.managerName || 'Sin asignar'}</td>
-            <td>${job.employeeName || 'Sin asignar'}</td>
+            <td><strong style="color: #2B3674; font-size: 14px;">${job.clientName}</strong></td>
+            <td style="color: #4A5568; font-size: 14px;">${jefeNombre}</td>
+            <td style="color: #4A5568; font-size: 14px;">${empleadoNombre}</td>
             <td>${statusBadge}</td>
             <td>${btnEvidencias}</td>
         `;
