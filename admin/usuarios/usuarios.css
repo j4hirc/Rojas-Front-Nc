@@ -259,7 +259,7 @@ select.input-field { cursor: pointer; }
     }
 }
 /* =============================================
-   ARREGLO FINAL - TODO A LA IZQUIERDA
+   AJUSTE SOLO DEL BUSCADOR, ESTADO Y BOTÓN
    ============================================= */
 
 @media (max-width: 768px) {
@@ -267,50 +267,50 @@ select.input-field { cursor: pointer; }
     .usuarios-container {
         padding: 20px 15px !important;
         margin-top: 10px !important;
-        border-radius: 16px;
     }
 
     .header-section {
         flex-direction: column !important;
-        align-items: flex-start !important;   /* ← Esto alinea todo a la izquierda */
-        gap: 16px;
-        margin-bottom: 25px;
+        align-items: flex-start !important;
+        gap: 18px;
     }
 
+    /* Título se queda igual */
     .header-section h2 {
         font-size: 1.4rem !important;
-        margin-bottom: 5px !important;
-        text-align: left !important;
+        margin-bottom: 8px !important;
     }
 
-    /* Contenedor del buscador, filtro y botón */
+    /* Contenedor del buscador + estado + botón */
     .header-section > div[style*="display:flex"] {
         width: 100% !important;
         flex-direction: column !important;
         gap: 14px;
-        align-items: flex-start !important;   /* ← Alineación izquierda */
+        align-items: flex-start !important;
     }
 
+    /* Buscador y Estado */
     #searchJobInput,
     #filterStatusInput {
         width: 100% !important;
         height: 50px !important;
         font-size: 1rem !important;
+        padding-left: 15px !important;
         text-align: left !important;
     }
 
+    /* Botón NUEVO TRABAJO */
     .btn-add {
         height: 52px !important;
-        font-size: 1.05rem !important;
         width: 100% !important;
+        font-size: 1.05rem !important;
         border-radius: 12px !important;
-        text-align: center !important;
-        justify-content: center;
+        margin-top: 6px !important;
     }
 }
 
 @media (max-width: 480px) {
-    .usuarios-container {
-        padding: 18px 12px !important;
+    .header-section {
+        gap: 15px;
     }
 }
