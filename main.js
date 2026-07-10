@@ -73,7 +73,7 @@ loginForm?.addEventListener('submit', async (e) => {
                 }
                 if (roles.includes('ROLE_EMPLOYEE')) {
                     // Botón Warm Gold con texto en Azul Oscuro
-                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #F4A300; color: #0F2D4A; border: none; width: 100%; font-weight: 700; text-transform: uppercase;" onclick="Swal.close(); seleccionarRol('ROLE_EMPLOYEE')">Entrar como Empleado</button>`;
+                    opcionesHTML += `<button class="swal2-confirm swal2-styled" style="margin:0; background-color: #F4A300; color: #0F2D4A; border: none; width: 100%; font-weight: 700; text-transform: uppercase;" onclick="Swal.close(); seleccionarRol('ROLE_EMPLOYEE')">Entrar como Subcontratista</button>`;
                 }
                 opcionesHTML += '</div>';
 
