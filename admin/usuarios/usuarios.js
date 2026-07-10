@@ -377,20 +377,105 @@ window.guardarUsuario = async () => {
     }
 };
 
-window.cerrarSesion = () => {
-    Swal.fire({
-        title: "¿Cerrar sesión?",
-        text: "¿Estás seguro que deseas salir del sistema?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#12CFF4",
-        cancelButtonColor: "#2E3238",
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = '../../index.html';
+// 1. Modificamos la función de cerrar sesión para que sea la que controle el flujo
+function cerrarSesion() {
+    // Leemos los roles del localStorage para saber si tiene más de uno
+    const rolesString = localStorage.getItem('user_roles');
+    let userRoles = [];
+    
+    if (rolesString) {
+        try { 
+            userRoles = JSON.parse(rolesString); 
+        } catch(e) { 
+            console.error("Error al leer roles"); 
+        }
+    }
+
+    // Si tiene más de un rol disponible, le damos las 3 opciones (Salir, Cambiar Rol o Cancelar)
+    if (userRoles.length > 1) {
+        Swal.fire({
+            title: "¿Qué deseas hacer?",
+            text: "Selecciona si deseas salir del panel o cambiar tu rol de trabajo.",
+            icon: "question",
+            showCancelButton: true,
+            showDenyButton: true, // Activamos el tercer botón de SweetAlert2
+            confirmButtonColor: "#0f4c81",
+            denyButtonColor: "#00B8A9",    // Usamos el color cyan/turquesa de tus botones de rol
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            denyButtonText: "Cambiar de Rol", // Acción para desplegar tus opciones
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Acción: Salir del sistema
+                localStorage.clear();
+                window.location.href = "../index.html";
+            } else if (result.isDenied) {
+                // Acción: Desplegar el selector dinámico que ya programaste abajo
+                mostrarSelectorDeRoles(userRoles);
+            }
+        });
+    } else {
+        // Si el usuario solo tiene 1 rol asignado, se mantiene el modal tradicional de salida directa
+        Swal.fire({
+            title: "¿Cerrar sesión?",
+            text: "¿Estás seguro que deseas salir del panel?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#0f4c81",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = "../index.html";
+            }
+        });
+    }
+}
+
+// 2. Tu función existente se mantiene intacta para generar la ventana de opciones
+function mostrarSelectorDeRoles(roles) {
+    if (typeof cerrarModalPerfil === 'function') {
+        cerrarModalPerfil(); 
+    } else {
+        const modales = document.querySelectorAll('.modal-overlay');
+        modales.forEach(m => m.style.display = 'none');
+    }
+
+    let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
+    
+    roles.forEach(rol => {
+        let nombreRol = '';
+        let url = '';
+        
+        if(rol === 'ROLE_ADMIN') { 
+            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
+            url = '../admin/admin-dashboard.html'; 
+        }
+        if(rol === 'ROLE_JEFE') { 
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Jefe'; 
+            url = '../jefe/jefe-dashboard.html'; 
+        }
+        if(rol === 'ROLE_EMPLOYEE') { 
+            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista'; 
+            url = '../employee/employee-dashboard.html'; 
+        }
+
+        if(nombreRol) {
+            opcionesHTML += `<button class="swal2-confirm swal2-styled" style="width: 100%; margin: 0; background-color: #00B8A9;" onclick="window.location.href='${url}'">${nombreRol}</button>`;
         }
     });
-};
+    
+    opcionesHTML += '</div>';
+
+    Swal.fire({
+        title: 'Selecciona tu área de trabajo',
+        html: opcionesHTML,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#111C44'
+    });
+}
