@@ -432,26 +432,9 @@ window.exportarNominaSemanalAPdf = () => {
 };
 
 // --- LOGOUT NORMAL ---
+// 1. Modificamos la función de cerrar sesión para que sea la que controle el flujo
 function cerrarSesion() {
-    Swal.fire({
-        title: "¿Cerrar sesión?",
-        text: "¿Estás seguro que deseas salir del panel?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#0f4c81",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = "../index.html";
-        }
-    });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Leer los roles del localStorage
+    // Leemos los roles del localStorage para saber si tiene más de uno
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
     
@@ -463,36 +446,65 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // 2. Si el botón existe y tiene más de 1 rol, lo mostramos
-    const btnCambiarRol = document.getElementById("btnCambiarRol");
-    if (btnCambiarRol) {
-        if (userRoles.length > 1) {
-            btnCambiarRol.style.display = 'inline-block';
-            btnCambiarRol.addEventListener("click", () => mostrarSelectorDeRoles(userRoles));
-        } else {
-            btnCambiarRol.style.display = 'none'; // Se oculta si solo tiene 1 rol
-        }
+    // Si tiene más de un rol disponible, le damos las 3 opciones (Salir, Cambiar Rol o Cancelar)
+    if (userRoles.length > 1) {
+        Swal.fire({
+            title: "¿Qué deseas hacer?",
+            text: "Selecciona si deseas salir del panel o cambiar tu rol de trabajo.",
+            icon: "question",
+            showCancelButton: true,
+            showDenyButton: true, // Activamos el tercer botón de SweetAlert2
+            confirmButtonColor: "#0f4c81",
+            denyButtonColor: "#00B8A9",    // Usamos el color cyan/turquesa de tus botones de rol
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            denyButtonText: "Cambiar de Rol", // Acción para desplegar tus opciones
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Acción: Salir del sistema
+                localStorage.clear();
+                window.location.href = "../index.html";
+            } else if (result.isDenied) {
+                // Acción: Desplegar el selector dinámico que ya programaste abajo
+                mostrarSelectorDeRoles(userRoles);
+            }
+        });
+    } else {
+        // Si el usuario solo tiene 1 rol asignado, se mantiene el modal tradicional de salida directa
+        Swal.fire({
+            title: "¿Cerrar sesión?",
+            text: "¿Estás seguro que deseas salir del panel?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#0f4c81",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            cancelButtonText: "Cancelar",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = "../index.html";
+            }
+        });
     }
-});
+}
 
+// 2. Tu función existente se mantiene intacta para generar la ventana de opciones
 function mostrarSelectorDeRoles(roles) {
-    // Cerramos el modal del perfil si existe la función
     if (typeof cerrarModalPerfil === 'function') {
         cerrarModalPerfil(); 
     } else {
-        // Fallback genérico por si la función tiene otro nombre en otra vista
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
     }
 
-    // Armamos los botones según los roles que tenga
     let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
     
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
         
-        // Asignamos las URLs relativas (funcionan porque todos los dashboards están a 1 carpeta de distancia de la raíz)
         if(rol === 'ROLE_ADMIN') { 
             nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
             url = '../admin/admin-dashboard.html'; 
