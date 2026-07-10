@@ -233,20 +233,93 @@ window.verFotoGrande = (url) => {
 };
 
 window.cerrarSesion = () => {
-    Swal.fire({
-        title: "¿Cerrar sesión?",
-        text: "¿Estás seguro que deseas salir?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#0f4c81",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = '../../index.html';
+    const rolesString = localStorage.getItem('user_roles');
+    let userRoles = [];
+    if (rolesString) { 
+        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    }
+
+    if (userRoles.length > 1) {
+        Swal.fire({
+            title: "¿Qué deseas hacer?",
+            text: "Selecciona si deseas salir del sistema o cambiar tu rol de trabajo.",
+            icon: "question",
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: "#0f4c81",
+            denyButtonColor: "#00B8A9",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            denyButtonText: "Cambiar de Rol",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = '../../index.html';
+            } else if (result.isDenied) {
+                mostrarSelectorDeRolesEnSubcarpeta(userRoles);
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "¿Cerrar sesión?",
+            text: "¿Estás seguro que deseas salir del sistema?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#0f4c81",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = '../../index.html';
+            }
+        });
+    }
+};
+
+function mostrarSelectorDeRolesEnSubcarpeta(roles) {
+    if (typeof cerrarModalPerfil === 'function') {
+        cerrarModalPerfil(); 
+    } else {
+        const modales = document.querySelectorAll('.modal-overlay');
+        modales.forEach(m => m.style.display = 'none');
+    }
+
+    let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
+    
+    roles.forEach(rol => {
+        let nombreRol = '';
+        let url = '';
+        
+        if(rol === 'ROLE_ADMIN') { 
+            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
+            url = '../admin-dashboard.html'; 
+        }
+        if(rol === 'ROLE_JEFE') { 
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Jefe'; 
+            url = '../../jefe/jefe-dashboard.html'; 
+        }
+        if(rol === 'ROLE_EMPLOYEE') { 
+            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista'; 
+            url = '../../employee/employee-dashboard.html'; 
+        }
+
+        if(nombreRol) {
+            opcionesHTML += `<button class="swal2-confirm swal2-styled" style="width: 100%; margin: 0; background-color: #00B8A9;" onclick="window.location.href='${url}'">${nombreRol}</button>`;
         }
     });
-};
+    
+    opcionesHTML += '</div>';
+
+    Swal.fire({
+        title: 'Selecciona tu área de trabajo',
+        html: opcionesHTML,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#d33'
+    });
+}
 

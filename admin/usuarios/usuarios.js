@@ -377,66 +377,58 @@ window.guardarUsuario = async () => {
     }
 };
 
-// 1. Modificamos la función de cerrar sesión para que sea la que controle el flujo
-function cerrarSesion() {
-    // Leemos los roles del localStorage para saber si tiene más de uno
+window.cerrarSesion = () => {
+    // 1. Leer los roles del localStorage de manera segura
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    
-    if (rolesString) {
-        try { 
-            userRoles = JSON.parse(rolesString); 
-        } catch(e) { 
-            console.error("Error al leer roles"); 
-        }
+    if (rolesString) { 
+        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
     }
 
-    // Si tiene más de un rol disponible, le damos las 3 opciones (Salir, Cambiar Rol o Cancelar)
+    // 2. Si tiene más de 1 rol, mostramos las 3 opciones
     if (userRoles.length > 1) {
         Swal.fire({
             title: "¿Qué deseas hacer?",
-            text: "Selecciona si deseas salir del panel o cambiar tu rol de trabajo.",
+            text: "Selecciona si deseas salir del sistema o cambiar tu rol de trabajo.",
             icon: "question",
             showCancelButton: true,
-            showDenyButton: true, // Activamos el tercer botón de SweetAlert2
-            confirmButtonColor: "#0f4c81",
-            denyButtonColor: "#00B8A9",    // Usamos el color cyan/turquesa de tus botones de rol
-            cancelButtonColor: "#d33",
+            showDenyButton: true,
+            confirmButtonColor: "#12CFF4",
+            denyButtonColor: "#00B8A9", // Color secundario turquesa
+            cancelButtonColor: "#2E3238",
             confirmButtonText: "Sí, salir",
-            denyButtonText: "Cambiar de Rol", // Acción para desplegar tus opciones
-            cancelButtonText: "Cancelar",
+            denyButtonText: "Cambiar de Rol",
+            cancelButtonText: "Cancelar"
         }).then((result) => {
             if (result.isConfirmed) {
-                // Acción: Salir del sistema
                 localStorage.clear();
-                window.location.href = "../index.html";
+                window.location.href = '../../index.html';
             } else if (result.isDenied) {
-                // Acción: Desplegar el selector dinámico que ya programaste abajo
-                mostrarSelectorDeRoles(userRoles);
+                mostrarSelectorDeRolesEnSubcarpeta(userRoles);
             }
         });
     } else {
-        // Si el usuario solo tiene 1 rol asignado, se mantiene el modal tradicional de salida directa
+        // Alerta normal si solo tiene un rol
         Swal.fire({
-            title: "¿Cerrar sesión?",
-            text: "¿Estás seguro que deseas salir del panel?",
+            title: "@Cerrar sesión?",
+            text: "¿Estás seguro que deseas salir del sistema?",
             icon: "question",
             showCancelButton: true,
-            confirmButtonColor: "#0f4c81",
-            cancelButtonColor: "#d33",
+            confirmButtonColor: "#12CFF4",
+            cancelButtonColor: "#2E3238",
             confirmButtonText: "Sí, salir",
-            cancelButtonText: "Cancelar",
+            cancelButtonText: "Cancelar"
         }).then((result) => {
             if (result.isConfirmed) {
                 localStorage.clear();
-                window.location.href = "../index.html";
+                window.location.href = '../../index.html';
             }
         });
     }
-}
+};
 
-// 2. Tu función existente se mantiene intacta para generar la ventana de opciones
-function mostrarSelectorDeRoles(roles) {
+// Función auxiliar para renderizar el selector dinámico de roles desde la subcarpeta
+function mostrarSelectorDeRolesEnSubcarpeta(roles) {
     if (typeof cerrarModalPerfil === 'function') {
         cerrarModalPerfil(); 
     } else {
@@ -452,15 +444,15 @@ function mostrarSelectorDeRoles(roles) {
         
         if(rol === 'ROLE_ADMIN') { 
             nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
-            url = '../admin/admin-dashboard.html'; 
+            url = '../admin-dashboard.html'; 
         }
         if(rol === 'ROLE_JEFE') { 
             nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Jefe'; 
-            url = '../jefe/jefe-dashboard.html'; 
+            url = '../../jefe/jefe-dashboard.html'; 
         }
         if(rol === 'ROLE_EMPLOYEE') { 
             nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista'; 
-            url = '../employee/employee-dashboard.html'; 
+            url = '../../employee/employee-dashboard.html'; 
         }
 
         if(nombreRol) {
@@ -476,6 +468,6 @@ function mostrarSelectorDeRoles(roles) {
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
-        cancelButtonColor: '#111C44'
+        cancelButtonColor: '#2E3238'
     });
-}
+}   
