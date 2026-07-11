@@ -52,6 +52,26 @@ async function inicializarDatosDelJefe(emailActual) {
         }
         
         Swal.close();
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobIdParam = urlParams.get('jobId');
+
+        if (jobIdParam) {
+            const idNumerico = parseInt(jobIdParam);
+            const trabajoEncontrado = misTrabajosCache.find(j => j.jobId === idNumerico);
+
+            if (trabajoEncontrado) {
+                if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
+                    window.abrirModalEvidencias(idNumerico);
+                } else {
+                    Swal.fire({
+                        icon: 'info',
+                        title: 'Sin evidencias',
+                        text: `El proyecto de "${trabajoEncontrado.clientName}" no registra avances fotográficos todavía.`,
+                        confirmButtonColor: '#198754'
+                    });
+                }
+            }
+        }
 
     } catch (e) {
         console.error("Error al inicializar datos:", e);
@@ -137,7 +157,11 @@ window.abrirModalEvidencias = (jobId) => {
 
     updatesOrdenados.forEach(update => {
         const fechaObj = new Date(update.date);
-        const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+        const dia = String(fechaObj.getDate()).padStart(2, '0');
+        const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
+        const anio = fechaObj.getFullYear();
+        const hora = fechaObj.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+        const fechaFormateada = `${mes}/${dia}/${anio} - ${hora}`;
 
         let galeriaHTML = '';
         if(update.evidences && update.evidences.length > 0) {

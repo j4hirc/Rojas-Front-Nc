@@ -16,11 +16,11 @@ function formatearFecha(fecha) {
         const dia = String(fecha[2]).padStart(2, '0');
         const mes = String(fecha[1]).padStart(2, '0');
         const anio = fecha[0];
-        return `${dia}/${mes}/${anio}`;
+        return `${mes}/${dia}/${anio}`;
     } else if (typeof fecha === 'string') {
         const partes = fecha.split('-');
         if (partes.length === 3) {
-            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+            return `${partes[1]}/${partes[2]}/${partes[0]}`;
         }
     }
     return fecha;
@@ -430,13 +430,18 @@ function renderizarTrabajos(trabajos) {
             <td>${priorityBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
-                <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
-                    <i class="fa-solid fa-pen"></i>
-                </button>
-                <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </td>
+            <!-- NUEVO: Botón Evidencias Desktop -->
+            <td>
+            <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #155e75; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
+                <i class="fa-solid fa-camera"></i>
+            </a>
+            <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+            <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </td>
         `;
         tbody.appendChild(tr);
 
@@ -444,7 +449,6 @@ function renderizarTrabajos(trabajos) {
         if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
-            // Se fuerza flex-direction: column para que todo vaya hacia abajo y no se desborde
             card.style.cssText = 'padding: 20px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; width: 100%; margin-bottom: 15px;';
             
             card.innerHTML = `
@@ -461,15 +465,21 @@ function renderizarTrabajos(trabajos) {
                 <p style="margin:0; color:#198754; font-size: 14px;"><strong>Empleado:</strong> ${empName}</p>
                 <p style="margin:5px 0 0 0; font-weight:bold; color:#2e7d32; font-size: 15px;">Pago: $${job.pay.toFixed(2)}</p>
                 
-                <div class="card-actions" style="margin-top:15px; display:flex; gap:10px; width: 100%;">
-                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold;">Editar</button>
-                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold;">Eliminar</button>
-                </div>
+                <!-- ACCIONES MÓVIL ACTUALIZADAS -->
+                <div class="card-actions" style="margin-top:15px; display:flex; gap:8px; width: 100%;">
+                <a href="../evidencias/evidencias.html?jobId=${job.jobId}" style="flex: 1; padding: 8px; border-radius: 4px; background: #155e75; color: white; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <i class="fa-solid fa-camera"></i> Evidencias
+                </a>
+                <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold;">Editar</button>
+                <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold;">Eliminar</button>
+            </div>
             `;
             mobileContainer.appendChild(card);
         }
     });
 }
+
+
 
 function getPriorityBadge(priority) {
     const p = (priority !== null && priority !== undefined) ? parseInt(priority) : 2;
@@ -485,6 +495,10 @@ function getPriorityBadge(priority) {
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
+
+    if (document.getElementById('jobPriority')) {
+        document.getElementById('jobPriority').value = '2';
+    }
 
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
@@ -546,6 +560,12 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobStatus').value = data.status || 'PENDING';
             document.getElementById('jobEmployee').value = data.employeeId;
 
+            if (data.priority !== null && data.priority !== undefined) {
+                document.getElementById('jobPriority').value = data.priority;
+            } else {
+                document.getElementById('jobPriority').value = '2';
+            }
+
             // 🔥 AHORA LEEMOS LOS DATOS DIRECTO DE LA BASE DE DATOS (DEL JSON)
             if (data.materials && data.materials.length > 0) {
                 document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
@@ -605,6 +625,12 @@ window.guardarTrabajo = async () => {
 
     const descripcionFinal = document.getElementById('jobDesc').value.trim();
 
+    // 🔥 Capturamos la prioridad. Si está vacía o es inválida, mandamos 2 por defecto.
+    let prioridadSeleccionada = parseInt(document.getElementById('jobPriority').value);
+    if (isNaN(prioridadSeleccionada)) {
+        prioridadSeleccionada = 2;
+    }
+
     // 🔥 ENVIAMOS "materials" EN LUGAR DE "materialIds"
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
@@ -619,7 +645,8 @@ window.guardarTrabajo = async () => {
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: myManagerId,
-        materials: selectedMaterials
+        materials: selectedMaterials,
+        priority: prioridadSeleccionada
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {

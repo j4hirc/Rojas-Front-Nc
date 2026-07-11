@@ -292,8 +292,15 @@ window.filtrarTrabajosCombinados = () => {
         // 2. Filtro por Estado
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
 
-        // 3. Filtro por Prioridad (Soporta 0, 1, 2...)
-        const coincidePrioridad = (prioridad === '') || (job.priority !== null && job.priority.toString() === prioridad);
+        // 3. Filtro por Prioridad (seguro contra valores null/undefined, con default 2)
+        let coincidePrioridad = true;
+        if (prioridad !== '') {
+            const prioBuscada = parseInt(prioridad);
+            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '')
+                ? parseInt(job.priority)
+                : 2;
+            coincidePrioridad = prioJob === prioBuscada;
+        }
 
         return coincideTexto && coincideEstado && coincidePrioridad;
     });
@@ -804,11 +811,11 @@ function formatearFecha(fecha) {
         const dia = String(fecha[2]).padStart(2, '0');
         const mes = String(fecha[1]).padStart(2, '0');
         const anio = fecha[0];
-        return `${mes}-${dia}-${anio}`; 
+        return `${mes}/${dia}/${anio}`;
     } else if (typeof fecha === 'string') {
         const partes = fecha.split('-');
         if (partes.length === 3) {
-            return `${partes[1]}-${partes[2]}-${partes[0]}`; 
+            return `${partes[1]}/${partes[2]}/${partes[0]}`;
         }
     }
     return fecha;
