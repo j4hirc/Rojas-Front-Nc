@@ -192,19 +192,48 @@ window.verFotoGrande = (url) => {
 };
 
 window.cerrarSesion = () => {
-    Swal.fire({
-        title: "¿Cerrar sesión?",
-        text: "¿Estás seguro que deseas salir del portal?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#198754",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = '../../index.html';
-        }
-    });
+    const rolesString = localStorage.getItem('user_roles');
+    let userRoles = [];
+    if (rolesString) { 
+        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    }
+
+    if (userRoles.length > 1) {
+        Swal.fire({
+            title: "¿Qué deseas hacer?",
+            text: "Selecciona si deseas salir del portal o cambiar tu rol de trabajo.",
+            icon: "question",
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: "#198754",
+            denyButtonColor: "#00B8A9",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            denyButtonText: "Cambiar de Rol",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = '../../index.html';
+            } else if (result.isDenied) {
+                mostrarSelectorDeRolesDesdeJefe(userRoles, true);
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "¿Cerrar sesión?",
+            text: "¿Estás seguro que deseas salir del portal?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#198754",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = '../../index.html';
+            }
+        });
+    }
 };  

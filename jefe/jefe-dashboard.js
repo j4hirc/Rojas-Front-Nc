@@ -119,21 +119,50 @@ async function guardarPerfil() {
 }
 
 function cerrarSesion() {
-    Swal.fire({
-        title: "¿Cerrar sesión?",
-        text: "¿Estás seguro que deseas salir del portal?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#12CFF4",
-        cancelButtonColor: "#2E3238",
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = '../index.html';
-        }
-    });
+    const rolesString = localStorage.getItem('user_roles');
+    let userRoles = [];
+    if (rolesString) { 
+        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    }
+
+    if (userRoles.length > 1) {
+        Swal.fire({
+            title: "¿Qué deseas hacer?",
+            text: "Selecciona si deseas salir del portal o cambiar tu rol de trabajo.",
+            icon: "question",
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: "#12CFF4",
+            denyButtonColor: "#00B8A9", // Color secundario turquesa
+            cancelButtonColor: "#2E3238",
+            confirmButtonText: "Sí, salir",
+            denyButtonText: "Cambiar de Rol",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = '../index.html';
+            } else if (result.isDenied) {
+                mostrarSelectorDeRolesDesdeJefe(userRoles, false);
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "¿Cerrar sesión?",
+            text: "¿Estás seguro que deseas salir del portal?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#12CFF4",
+            cancelButtonColor: "#2E3238",
+            confirmButtonText: "Sí, salir",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = '../index.html';
+            }
+        });
+    }
 }
 
 // --- RESUMEN DE BODEGA ---
