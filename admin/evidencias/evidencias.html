@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="../usuarios/usuarios.css"> 
 
     <style>
-        /* Estilos específicos para la galería de evidencias */
+        /* Estilos específicos para la galería de evidencias (modal) */
         .timeline-update {
             background: #F9FAFC; border-left: 4px solid #0f4c81; padding: 15px; margin-bottom: 15px; border-radius: 0 8px 8px 0;
         }
@@ -25,7 +25,6 @@
         .gallery-img:hover { transform: scale(1.05); border-color: #0f4c81; }
         .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
 
-        /* NUEVO: ESTILO PARA EL BOTÓN DEL PDF (Tema Admin - Azul) */
         .pdf-btn {
             display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
             width: 80px; height: 80px; background: #E3F2FD; border: 2px dashed #0f4c81; border-radius: 8px;
@@ -34,6 +33,13 @@
         .pdf-btn i { font-size: 24px; margin-bottom: 5px; color: #d32f2f; }
         .pdf-btn:hover { background: #0f4c81; color: white; border-style: solid; }
         .pdf-btn:hover i { color: white; }
+
+        /* Descripción truncada dentro de la tabla */
+        .desc-cell {
+            max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-size: 13px; color: #555; background: #f8faff; padding: 6px 10px; border-radius: 6px;
+            border-left: 3px solid #0f4c81; display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -93,18 +99,71 @@
                 <div class="usuarios-container" style="margin-top: 0;">
                     
                     <div class="header-section" style="flex-wrap: wrap;">
-                        <h2 style="margin: 0; color: #2B3674;">Supervisión de Proyectos</h2>
-                        
-                        <div style="display: flex; gap: 15px; align-items: center;">
-                            <label style="font-weight: 600; font-size: 0.9rem; color:#2B3674;">Filtrar por Jefe:</label>
-                            <select id="filterManager" class="input-field" style="width: auto; padding: 10px;" onchange="filtrarTrabajos()">
-                                <option value="ALL">Todos los Jefes</option>
-                            </select>
+
+                        <h2 style="margin:0; color:#2B3674; white-space:nowrap;">
+                            Supervisión de Proyectos
+                        </h2>
+
+                        <div style="display:flex; align-items:flex-end; gap:15px; flex:1; margin-left:30px; flex-wrap: wrap;">
+
+                            <div style="flex:2; min-width:200px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Buscar por Proyecto / Cliente
+                                </label>
+                                <input type="text" id="searchJobInput" class="input-field"
+                                    placeholder="🔍 Escribe un nombre..." style="width:100%; margin:0;">
+                            </div>
+
+                            <div style="width:200px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Jefe
+                                </label>
+                                <select id="filterManager" class="input-field" style="width:100%; margin:0;">
+                                    <option value="ALL">Todos los Jefes</option>
+                                </select>
+                            </div>
+
+                            <div style="width:200px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Estado
+                                </label>
+                                <select id="filterStatusInput" class="input-field" style="width:100%; margin:0;">
+                                    <option value="ALL">Todos los Estados</option>
+                                    <option value="PENDING">Pendiente</option>
+                                    <option value="IN_PROGRESS">En Progreso</option>
+                                    <option value="COMPLETED">Completado</option>
+                                    <option value="CANCELLED">Cancelado</option>
+                                </select>
+                            </div>
+
+                            <div style="width:160px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Prioridad
+                                </label>
+                                <input type="number" id="filterPriorityInput" class="input-field"
+                                    placeholder="Ej: 0, 1, 2..." style="width:100%; margin:0;" min="0">
+                            </div>
+
                         </div>
                     </div>
 
-                    <div id="jobsGrid" class="grid-cards" style="margin-top: 20px;">
-                        </div>
+                    <div class="table-container" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px;">
+                        <table class="user-table" style="width: 100%; min-width: 800px; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th>Proyecto</th>
+                                    <th>Jefe</th>
+                                    <th>Subcontratista</th>
+                                    <th>Estado</th>
+                                    <th>Prioridad</th>
+                                    <th>Evidencias</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mobile-cards" id="mobileCardsContainer"></div>
 
                 </div>
             </div>

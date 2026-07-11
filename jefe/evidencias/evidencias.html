@@ -7,76 +7,65 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <link rel="stylesheet" href="../../admin/admin.css"> 
-    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css"> 
+
+    <link rel="stylesheet" href="../../admin/admin.css">
+    <link rel="stylesheet" href="../../admin/usuarios/usuarios.css">
 
     <style>
-        /* ==================== ESTILOS BASE ==================== */
         .timeline-update {
-            background: #F9FAFC; 
-            border-left: 4px solid #198754; 
-            padding: 15px; 
-            margin-bottom: 15px; 
+            background: #F9FAFC;
+            border-left: 4px solid #198754;
+            padding: 15px;
+            margin-bottom: 15px;
             border-radius: 0 8px 8px 0;
         }
-        .timeline-date { 
-            font-size: 0.8rem; 
-            color: #666; 
-            font-weight: 600; 
-            margin-bottom: 5px; 
+        .timeline-date {
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: 600;
+            margin-bottom: 5px;
             display: block;
         }
-        .timeline-comment { 
-            font-size: 0.95rem; 
-            color: #2B3674; 
-            margin-bottom: 10px; 
+        .timeline-comment {
+            font-size: 0.95rem;
+            color: #2B3674;
+            margin-bottom: 10px;
         }
-        .gallery-grid { 
-            display: flex; 
-            gap: 10px; 
-            flex-wrap: wrap; 
-        }
-        .gallery-img { 
-            width: 80px; 
-            height: 80px; 
-            object-fit: cover; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            border: 2px solid #E0E5F2; 
+        .gallery-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+        .gallery-img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid #E0E5F2;
         }
         .pdf-btn {
-            display: inline-flex; 
-            flex-direction: column; 
-            align-items: center; 
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
-            width: 80px; 
-            height: 80px; 
-            background: #e8f5e9; 
-            border: 2px dashed #198754; 
+            width: 80px;
+            height: 80px;
+            background: #e8f5e9;
+            border: 2px dashed #198754;
             border-radius: 8px;
-            color: #198754; 
-            text-decoration: none; 
-            font-size: 11px; 
-            font-weight: bold; 
+            color: #198754;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
         }
+        .empty-state { text-align: center; color: #A3AED0; padding: 30px; font-weight: 500; }
 
-        /* ==================== TARJETAS GENERADAS POR JS ==================== */
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
-            border: 1px solid #E0E5F2;
-            margin-bottom: 16px;
-            width: 100%;
+        .desc-cell {
+            max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            font-size: 13px; color: #555; background: #f4fbf6; padding: 6px 10px; border-radius: 6px;
+            border-left: 3px solid #198754; display: inline-block;
         }
 
         /* ==================== RESPONSIVE PARA MÓVIL ==================== */
         @media (max-width: 768px) {
-            .app-layout, .main-content, .content-body {
-                min-height: 100vh;
-            }
+            .app-layout, .main-content, .content-body { min-height: 100vh; }
 
             .usuarios-container {
                 padding: 20px 15px !important;
@@ -85,42 +74,14 @@
                 width: 100% !important;
             }
 
-            .header-section h2 {
-                font-size: 1.4rem !important;
-            }
+            .header-section h2 { font-size: 1.4rem !important; }
+            .header-section > div { margin-left: 0 !important; margin-top: 15px; }
 
-            .grid-cards {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 18px !important;
-                width: 100% !important;
-            }
-
-            .card {
-                padding: 18px !important;
-                border-radius: 14px;
-            }
-
-            .gallery-img {
-                width: 70px !important;
-                height: 70px !important;
-            }
-
-            .pdf-btn {
-                width: 70px !important;
-                height: 70px !important;
-                font-size: 10px !important;
-            }
+            .gallery-img, .pdf-btn { width: 70px !important; height: 70px !important; }
         }
 
         @media (max-width: 480px) {
-            .card {
-                padding: 16px !important;
-            }
-            .gallery-img, .pdf-btn {
-                width: 65px !important;
-                height: 65px !important;
-            }
+            .gallery-img, .pdf-btn { width: 65px !important; height: 65px !important; }
         }
     </style>
 </head>
@@ -131,7 +92,7 @@
             <div class="sidebar-logo">
                 <img src="../../img/logo.png" alt="Rojas Remodeling">
             </div>
-            
+
             <nav class="sidebar-nav">
                 <a href="../jefe-dashboard.html"><i class="fa-solid fa-house"></i> Inicio</a>
                 <a href="../usuarios/usuarios.html"><i class="fa-solid fa-users-gear"></i> Mi Personal</a>
@@ -158,11 +119,65 @@
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-                    <div class="header-section">
-                        <h2 style="margin: 0; color: #2B3674;">Supervisión de mis Proyectos</h2>
+
+                    <div class="header-section" style="flex-wrap: wrap;">
+
+                        <h2 style="margin:0; color:#2B3674; white-space:nowrap;">
+                            Supervisión de mis Proyectos
+                        </h2>
+
+                        <div style="display:flex; align-items:flex-end; gap:15px; flex:1; margin-left:30px; flex-wrap: wrap;">
+
+                            <div style="flex:2; min-width:200px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                    Buscar por Proyecto / Cliente
+                                </label>
+                                <input type="text" id="searchJobInput" class="input-field"
+                                    placeholder="🔍 Escribe un nombre..." style="width:100%; margin:0;">
+                            </div>
+
+                            <div style="width:200px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                    Estado
+                                </label>
+                                <select id="filterStatusInput" class="input-field" style="width:100%; margin:0;">
+                                    <option value="ALL">Todos los Estados</option>
+                                    <option value="PENDING">Pendiente</option>
+                                    <option value="IN_PROGRESS">En Progreso</option>
+                                    <option value="COMPLETED">Completado</option>
+                                    <option value="CANCELLED">Cancelado</option>
+                                </select>
+                            </div>
+
+                            <div style="width:160px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                    Prioridad
+                                </label>
+                                <input type="number" id="filterPriorityInput" class="input-field"
+                                    placeholder="Ej: 0, 1, 2..." style="width:100%; margin:0;" min="0">
+                            </div>
+
+                        </div>
                     </div>
 
-                    <div id="jobsGrid" class="grid-cards"></div>
+                    <div class="table-container" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px;">
+                        <table class="user-table" style="width: 100%; min-width: 800px; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th>Proyecto</th>
+                                    <th>Jefe</th>
+                                    <th>Subcontratista</th>
+                                    <th>Estado</th>
+                                    <th>Prioridad</th>
+                                    <th>Evidencias</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mobile-cards" id="mobileCardsContainer"></div>
+
                 </div>
             </div>
         </main>
@@ -174,12 +189,12 @@
                 <span id="modalTitulo"><i class="fa-solid fa-images"></i> Historial del Proyecto</span>
                 <button onclick="cerrarModalEvidencias()" class="btn-close-modal">✕</button>
             </div>
-            
+
             <div class="modal-body">
                 <div id="jobDescriptionText" style="margin-bottom: 20px; padding: 12px; background: #E8F5E9; border: 1px solid #C8E6C9; border-radius: 8px; color: #2e7d32; font-size: 0.9rem;"></div>
                 <div id="evidencesTimeline"></div>
             </div>
-            
+
             <div class="modal-footer">
                 <button onclick="cerrarModalEvidencias()" class="btn-secondary">Cerrar</button>
             </div>

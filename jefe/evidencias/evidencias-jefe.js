@@ -1,7 +1,7 @@
 const JOBS_URL = 'https://api-remomn.onrender.com/api/v1/jobs/all';
 const USERS_URL = 'https://api-remomn.onrender.com/api/v1/user/all-users';
 let userToken = '';
-let myManagerId = null; 
+let myManagerId = null;
 let misTrabajosCache = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -23,6 +23,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('jefe-email-display').textContent = userEmail || 'Jefe';
 
     await inicializarDatosDelJefe(userEmail);
+
+    // Listeners de los filtros combinados
+    const txtIn = document.getElementById('searchJobInput');
+    const estIn = document.getElementById('filterStatusInput');
+    const priIn = document.getElementById('filterPriorityInput');
+
+    if (txtIn) txtIn.addEventListener('input', window.filtrarTrabajosCombinados);
+    if (estIn) estIn.addEventListener('change', window.filtrarTrabajosCombinados);
+    if (priIn) priIn.addEventListener('input', window.filtrarTrabajosCombinados);
 });
 
 // 1. IDENTIFICAR AL JEFE Y CARGAR SUS TRABAJOS
@@ -48,9 +57,9 @@ async function inicializarDatosDelJefe(emailActual) {
         if (resJobs.ok) {
             const todosLosTrabajos = await resJobs.json();
             misTrabajosCache = todosLosTrabajos.filter(job => job.managerId === myManagerId);
-            renderizarTrabajos(misTrabajosCache);
+            window.filtrarTrabajosCombinados();
         }
-        
+
         Swal.close();
         const urlParams = new URLSearchParams(window.location.search);
         const jobIdParam = urlParams.get('jobId');
@@ -79,80 +88,146 @@ async function inicializarDatosDelJefe(emailActual) {
     }
 }
 
-// 2. DIBUJAMOS LAS TARJETAS DE LOS PROYECTOS
+// 2. FILTROS COMBINADOS: texto, estado y prioridad
+window.filtrarTrabajosCombinados = () => {
+    const texto = document.getElementById('searchJobInput') ? document.getElementById('searchJobInput').value.toLowerCase().trim() : '';
+    const estado = document.getElementById('filterStatusInput') ? document.getElementById('filterStatusInput').value : 'ALL';
+    const prioridad = document.getElementById('filterPriorityInput') ? document.getElementById('filterPriorityInput').value.trim() : '';
+
+    const resultado = misTrabajosCache.filter(job => {
+        const coincideTexto =
+            (job.clientName || '').toLowerCase().includes(texto) ||
+            (job.description || '').toLowerCase().includes(texto) ||
+            (job.nameEmployee || '').toLowerCase().includes(texto);
+
+        const coincideEstado = (estado === 'ALL') || (job.status === estado);
+
+        let coincidePrioridad = true;
+        if (prioridad !== '') {
+            const prioBuscada = parseInt(prioridad);
+            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '')
+                ? parseInt(job.priority)
+                : 2;
+            coincidePrioridad = prioJob === prioBuscada;
+        }
+
+        return coincideTexto && coincideEstado && coincidePrioridad;
+    });
+
+    renderizarTrabajos(resultado);
+};
+
+// 3. BADGES DE ESTADO Y PRIORIDAD (mismo estilo que trabajos.js)
+function getStatusBadge(status) {
+    if (status === 'PENDING') return `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
+    if (status === 'IN_PROGRESS') return `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
+    if (status === 'COMPLETED') return `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
+    return `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
+}
+
+function getPriorityBadge(priority) {
+    const pValor = (priority !== null && priority !== undefined) ? priority : 2;
+
+    if (pValor === 0 || pValor === 1) {
+        return `<span style="background: #FBE9E7; color: #d32f2f; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #ffccbc;"><i class="fa-solid fa-triangle-exclamation"></i> ${pValor} - Alta</span>`;
+    } else if (pValor === 2) {
+        return `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #c8e6c9;"><i class="fa-solid fa-circle-info"></i> ${pValor} - Normal</span>`;
+    }
+    return `<span style="background: #ECEFF1; color: #546E7A; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #cfd8dc;"> ${pValor} - Baja</span>`;
+}
+
+// 4. DIBUJAMOS TABLA (desktop) + TARJETAS (mobile)
 function renderizarTrabajos(trabajos) {
-    const grid = document.getElementById('jobsGrid');
-    grid.innerHTML = '';
+    const tbody = document.getElementById('jobTableBody');
+    const mobileContainer = document.getElementById('mobileCardsContainer');
+
+    tbody.innerHTML = '';
+    if (mobileContainer) mobileContainer.innerHTML = '';
 
     if (trabajos.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1 / -1;" class="empty-state">No tienes proyectos asignados actualmente.</div>';
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">No hay proyectos que coincidan con los filtros.</td></tr>`;
+        if (mobileContainer) mobileContainer.innerHTML = `<div class="empty-state">No hay proyectos que coincidan con los filtros.</div>`;
         return;
     }
 
     trabajos.forEach(job => {
-        // Contamos cuántas actualizaciones, fotos y PDFs tiene este trabajo
         const numUpdates = job.updateJob ? job.updateJob.length : 0;
         let numArchivos = 0;
-        
-        if(job.updateJob) {
+
+        if (job.updateJob) {
             job.updateJob.forEach(update => {
-                if(update.evidences) numArchivos += update.evidences.length;
+                if (update.evidences) numArchivos += update.evidences.length;
             });
         }
 
-        let statusBadge = '';
-        if(job.status === 'PENDING') statusBadge = `<span style="color: #ff9800; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-clock"></i> Pendiente</span>`;
-        else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="color: #1e88e5; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-spinner"></i> En Progreso</span>`;
-        else if(job.status === 'COMPLETED') statusBadge = `<span style="color: #2e7d32; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-check-double"></i> Completado</span>`;
-        else statusBadge = `<span style="color: #d32f2f; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-ban"></i> Cancelado</span>`;
+        const statusBadge = getStatusBadge(job.status);
+        const priorityBadge = getPriorityBadge(job.priority);
 
-        const btnEvidencias = numUpdates > 0 
-            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="width:100%; padding:8px; background:#198754; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Poppins'; font-weight:600; transition:0.3s;"><i class="fa-solid fa-folder-open"></i> Ver ${numArchivos} Archivos</button>`
-            : `<button disabled style="width:100%; padding:8px; background:#e9ecef; color:#A3AED0; border:none; border-radius:8px; font-family:'Poppins'; font-weight:600;">Sin evidencias aún</button>`;
+        const btnEvidencias = numUpdates > 0
+            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="padding:8px 14px; background:#198754; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Poppins'; font-weight:600; white-space:nowrap;"><i class="fa-solid fa-folder-open"></i> Ver ${numArchivos}</button>`
+            : `<button disabled style="padding:8px 14px; background:#e9ecef; color:#A3AED0; border:none; border-radius:8px; font-family:'Poppins'; font-weight:600; white-space:nowrap;">Sin evidencias</button>`;
 
-        // Preparamos la descripción para que no se desborde si es muy larga
         const safeDesc = job.description ? job.description : 'Sin descripción';
 
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.style.flexDirection = 'column';
-        card.style.alignItems = 'flex-start';
-        card.innerHTML = `
-            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid #f0f2f5; padding-bottom: 10px; margin-bottom: 10px;">
-                <h3 style="margin:0; font-size:1.1rem; color:#2B3674;">${job.clientName}</h3>
-                ${statusBadge}
-            </div>
-            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-helmet-safety"></i> <strong>Empleado:</strong> ${job.nameEmployee}</p>
-            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
-            
-            <div style="margin: 10px 0; padding-left: 10px; border-left: 3px solid #198754;">
-                <p style="margin: 0; font-size: 13px; color: #444; font-style: italic; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                    "${safeDesc}"
-                </p>
-            </div>
-            
-            <div style="margin-top: 10px; width: 100%;">
-                ${btnEvidencias}
-            </div>
+        // FILA DE TABLA (DESKTOP)
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <strong>${job.clientName}</strong><br>
+                <span class="desc-cell" title="${safeDesc.replace(/"/g, '&quot;')}">${safeDesc}</span>
+            </td>
+            <td>${job.nameManager || 'Sin asignar'}</td>
+            <td>${job.nameEmployee || 'Sin asignar'}</td>
+            <td>${statusBadge}</td>
+            <td>${priorityBadge}</td>
+            <td>${btnEvidencias}</td>
         `;
-        grid.appendChild(card);
+        tbody.appendChild(tr);
+
+        // TARJETA (MOBILE)
+        if (mobileContainer) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.flexDirection = 'column';
+            card.style.alignItems = 'flex-start';
+            card.style.padding = '20px';
+            card.innerHTML = `
+                <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 5px;">
+                    <h3 style="margin:0; font-size:1.1rem; color:#198754;">${job.clientName}</h3>
+                    <div style="display:flex; gap:5px;">
+                        ${statusBadge}
+                        ${priorityBadge}
+                    </div>
+                </div>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-user-tie"></i> <strong>Jefe:</strong> ${job.nameManager || 'Sin asignar'}</p>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-helmet-safety"></i> <strong>Subcontratista:</strong> ${job.nameEmployee || 'Sin asignar'}</p>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
+
+                <div style="margin: 10px 0; padding: 10px; background: #f4fbf6; border-left: 3px solid #198754; border-radius: 6px; width: 100%;">
+                    <p style="margin: 0; font-size: 13px; color: #444; font-style: italic;">"${safeDesc}"</p>
+                </div>
+
+                <div style="margin-top: 10px; width: 100%;">
+                    ${btnEvidencias}
+                </div>
+            `;
+            mobileContainer.appendChild(card);
+        }
     });
 }
 
-// 3. LÓGICA PARA VER EL HISTORIAL (MODAL)
+// 5. LÓGICA PARA VER EL HISTORIAL (MODAL)
 window.abrirModalEvidencias = (jobId) => {
     const job = misTrabajosCache.find(j => j.jobId === jobId);
-    if(!job) return;
+    if (!job) return;
 
     document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
-    
-    // Descripción destacada
+
     document.getElementById('jobDescriptionText').innerHTML = `<strong>Descripción de obra:</strong> <br> ${job.description || 'Sin descripción'}`;
-    
+
     const timeline = document.getElementById('evidencesTimeline');
     timeline.innerHTML = '';
 
-    // Ordenamos las actualizaciones de la más nueva a la más vieja
     const updatesOrdenados = job.updateJob.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     updatesOrdenados.forEach(update => {
@@ -164,9 +239,8 @@ window.abrirModalEvidencias = (jobId) => {
         const fechaFormateada = `${mes}/${dia}/${anio} - ${hora}`;
 
         let galeriaHTML = '';
-        if(update.evidences && update.evidences.length > 0) {
+        if (update.evidences && update.evidences.length > 0) {
             update.evidences.forEach(evi => {
-                // VERIFICAMOS SI LA URL ES UN PDF
                 const urlLower = evi.imageUri.toLowerCase();
                 if (urlLower.includes('.pdf')) {
                     galeriaHTML += `
@@ -176,7 +250,6 @@ window.abrirModalEvidencias = (jobId) => {
                         </a>
                     `;
                 } else {
-                    // SI ES IMAGEN LA MOSTRAMOS NORMAL
                     galeriaHTML += `<img src="${evi.imageUri}" class="gallery-img" alt="Evidencia" onclick="verFotoGrande('${evi.imageUri}')">`;
                 }
             });
@@ -202,7 +275,7 @@ window.cerrarModalEvidencias = () => {
     document.getElementById('modalEvidencias').style.display = 'none';
 };
 
-// 4. FUNCIÓN PARA VER LA FOTO EN PANTALLA COMPLETA USANDO SWEETALERT
+// 6. FUNCIÓN PARA VER LA FOTO EN PANTALLA COMPLETA USANDO SWEETALERT
 window.verFotoGrande = (url) => {
     Swal.fire({
         imageUrl: url,
@@ -218,8 +291,8 @@ window.verFotoGrande = (url) => {
 window.cerrarSesion = () => {
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) { 
-        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    if (rolesString) {
+        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
     }
 
     if (userRoles.length > 1) {
@@ -260,11 +333,11 @@ window.cerrarSesion = () => {
             }
         });
     }
-};  
+};
 // Declararla en window asegura que esté disponible globalmente en todo el script
 window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
@@ -282,18 +355,18 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
-        if (rol === 'ROLE_ADMIN') { 
-            nombreRol = 'Acceder como Administrador'; 
-            url = `${prefijoRaiz}admin/admin-dashboard.html`; 
+
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = 'Acceder como Administrador';
+            url = `${prefijoRaiz}admin/admin-dashboard.html`;
         }
-        if (rol === 'ROLE_JEFE') { 
-            nombreRol = 'Acceder como Jefe'; 
-            url = `${prefijoJefe}jefe-dashboard.html`; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = 'Acceder como Jefe';
+            url = `${prefijoJefe}jefe-dashboard.html`;
         }
-        if (rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = 'Acceder como Subcontratista'; 
-            url = `${prefijoRaiz}employee/employee-dashboard.html`; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = 'Acceder como Subcontratista';
+            url = `${prefijoRaiz}employee/employee-dashboard.html`;
         }
 
         if (nombreRol) {
@@ -304,7 +377,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
             boton.style.backgroundColor = '#00B8A9';
             boton.style.cursor = 'pointer';
             boton.textContent = nombreRol;
-            
+
             boton.addEventListener('click', () => {
                 window.location.href = url;
             });
@@ -315,7 +388,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
 
     Swal.fire({
         title: 'Selecciona tu área de trabajo',
-        html: contenedor, 
+        html: contenedor,
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
