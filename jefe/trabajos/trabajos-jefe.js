@@ -550,13 +550,19 @@ window.abrirModalCrearJob = () => {
         document.getElementById('jobPriority').value = '2';
     }
 
-    // 🔥 NUEVO: reseteamos estado de materiales y filtros, y repintamos la lista completa
     materialesEstado = {};
     if (document.getElementById('searchMaterialInput')) document.getElementById('searchMaterialInput').value = '';
     if (document.getElementById('filterCategoryMaterial')) document.getElementById('filterCategoryMaterial').value = '';
     renderizarMateriales(allMaterialsCache);
 
     limpiarMaterialesNecesarios();
+
+    // 🔥 Configuración del pago automático
+    const payInput = document.getElementById('jobPay');
+    if (payInput) {
+        payInput.value = '0.00';
+        payInput.readOnly = true;
+    }
 
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
@@ -626,9 +632,17 @@ window.abrirModalEditarJob = async (id) => {
 
             calcularTotalMaterialesNecesarios();
 
+            const payInput = document.getElementById('jobPay');
+            if (payInput) {
+                payInput.readOnly = true;
+            }
+
             Swal.close();
             document.getElementById('modalJob').style.display = 'flex';
             inicializarMapa(data.latitude, data.longitude);
+            
+
+            
         }
     } catch (error) {
         Swal.close();
@@ -816,9 +830,10 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
             <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}"
                    style="margin:0; text-align:center;" data-matid="${matId}">
 
-            <div style="text-align: right; font-weight: bold; color: #198754;">
-                $${price.toFixed(2)}
-            </div>
+            <!-- Precio editable -->
+            <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0"
+                   style="margin:0; text-align:right; font-weight: bold; color: #198754;"
+                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}">
 
             <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
                     style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
@@ -850,24 +865,22 @@ window.calcularTotalMaterialesNecesarios = () => {
         const qtyInput = row.querySelector('.nec-qty');
         const priceInput = row.querySelector('.nec-price');
 
-        let qty = 0;
-        let price = 0;
-
-        if (qtyInput) qty = parseFloat(qtyInput.value) || 0;
-
-        if (priceInput) {
-            price = parseFloat(priceInput.value) || 0;
-        } else {
-            const priceText = row.textContent.match(/\$([\d.]+)/);
-            if (priceText) price = parseFloat(priceText[1]) || 0;
-        }
+        const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+        const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
 
         total += qty * price;
     });
 
+    // Actualizar total visible
     const totalElement = document.getElementById('totalNecessaryMaterials');
     if (totalElement) {
         totalElement.textContent = total.toFixed(2);
+    }
+
+    // 🔥 ACTUALIZAR EL CAMPO DE PAGO
+    const payInput = document.getElementById('jobPay');
+    if (payInput) {
+        payInput.value = total.toFixed(2);
     }
 };
 

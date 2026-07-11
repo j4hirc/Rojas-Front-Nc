@@ -497,18 +497,23 @@ window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
 
-    // 🔥 Resetear prioridad por defecto (por ejemplo, 2)
     if (document.getElementById('jobPriority')) {
         document.getElementById('jobPriority').value = '2';
     }
 
-    // 🔥 NUEVO: reseteamos estado de materiales y filtros, y repintamos la lista completa
     materialesEstado = {};
     if (document.getElementById('searchMaterialInput')) document.getElementById('searchMaterialInput').value = '';
     if (document.getElementById('filterCategoryMaterial')) document.getElementById('filterCategoryMaterial').value = '';
+    
     renderizarMateriales(allMaterialsCache);
-
     limpiarMaterialesNecesarios();
+
+    // 🔥 Forzar pago en 0 al crear nuevo
+    const payInput = document.getElementById('jobPay');
+    if (payInput) {
+        payInput.value = '0.00';
+        payInput.readOnly = true;   // ← importante
+    }
 
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
@@ -595,6 +600,15 @@ window.abrirModalEditarJob = async (id) => {
             }
 
             calcularTotalMaterialesNecesarios();
+
+            const payInput = document.getElementById('jobPay');
+            if (payInput) {
+                payInput.readOnly = true;
+                // Si no hay materiales, mantener el valor que venía del backend
+                if (data.materials?.length === 0 && data.necessaryMaterials?.length === 0) {
+                    payInput.value = data.pay || '0.00';
+                }
+            }
 
             Swal.close();
             document.getElementById('modalJob').style.display = 'flex';
@@ -914,9 +928,9 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
             <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}"
                    style="margin:0; text-align:center;" data-matid="${matId}">
 
-            <div style="text-align: right; font-weight: bold; color: #198754;">
-                $${price.toFixed(2)}
-            </div>
+            <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0"
+                   style="margin:0; text-align:right; font-weight: bold; color: #198754;"
+                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}">
 
             <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
                     style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
@@ -947,22 +961,10 @@ window.calcularTotalMaterialesNecesarios = () => {
 
     document.querySelectorAll('.necessary-material-row').forEach(row => {
         const qtyInput = row.querySelector('.nec-qty');
-        const priceInput = row.querySelector('.nec-price') || row.querySelector('div[style*="color: #198754"]'); // por si es texto
+        const priceInput = row.querySelector('.nec-price');
 
-        let qty = 0;
-        let price = 0;
-
-        if (qtyInput) qty = parseFloat(qtyInput.value) || 0;
-
-        // Si el precio está en input
-        if (row.querySelector('.nec-price')) {
-            price = parseFloat(row.querySelector('.nec-price').value) || 0;
-        }
-        // Si el precio está como texto fijo (como en la versión actual)
-        else {
-            const priceText = row.textContent.match(/\$([\d.]+)/);
-            if (priceText) price = parseFloat(priceText[1]) || 0;
-        }
+        const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+        const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
 
         total += qty * price;
     });
@@ -970,6 +972,12 @@ window.calcularTotalMaterialesNecesarios = () => {
     const totalElement = document.getElementById('totalNecessaryMaterials');
     if (totalElement) {
         totalElement.textContent = total.toFixed(2);
+    }
+
+    // 🔥 NUEVO: Actualizar automáticamente el campo de pago
+    const payInput = document.getElementById('jobPay');
+    if (payInput) {
+        payInput.value = total.toFixed(2);
     }
 };
 
