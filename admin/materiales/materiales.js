@@ -36,7 +36,7 @@ async function cargarMateriales() {
         if (response.ok) {
             const materiales = await response.json();
             todosLosMaterialesCache = materiales; 
-            renderizarMateriales(materiales);
+            buscarMaterial();
         }
     } catch (error) {
         console.error('Error de red:', error);
@@ -230,6 +230,7 @@ window.guardarMaterial = async () => {
             Swal.fire({ icon: 'success', title: '¡Éxito!', text: isEditing ? 'Material actualizado.' : 'Material agregado.', confirmButtonColor: '#00B8A9' });
             cerrarModalMat();
             await cargarMateriales();
+            setTimeout(() => buscarMaterial(), 50);
         } else {
             const errorData = await response.json();
             Swal.fire({ icon: 'error', title: 'Error', text: errorData.message || 'No se pudo guardar el material.', confirmButtonColor: '#00B8A9' });
@@ -261,6 +262,7 @@ window.eliminarMaterial = async (id) => {
                 if (res.ok) {
                     Swal.fire({ icon: 'success', title: '¡Eliminado!', text: 'El material fue borrado.', confirmButtonColor: '#00B8A9' });
                     await cargarMateriales();
+                    setTimeout(() => buscarMaterial(), 50);
                 } else {
                     Swal.fire('Error', 'No se pudo eliminar el material.', 'error');
                 }

@@ -158,8 +158,20 @@ async function cargarCalendarioEmpleado(emailActual) {
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
-            locale: 'es', height: 'auto',
-            headerToolbar: { left: 'prev,next', center: 'title', right: 'dayGridMonth,listWeek' },
+            locale: 'es',
+            height: 'auto',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            buttonText: {
+                today: 'Hoy',
+                month: 'Mes',
+                week: 'Semana',
+                list: 'Agenda'
+            },
+            noEventsContent: 'No tienes trabajos asignados por el momento.',
             events: eventosFormateados,
 
             eventContent: function(arg) {
@@ -333,6 +345,8 @@ async function cargarCalendarioEmpleado(emailActual) {
 
         calendar.render();
         Swal.close();
+        setTimeout(() => { calendar.updateSize(); }, 300);
+        window.addEventListener('resize', () => { calendar.updateSize(); });
     } catch (error) { console.error(error); }
 }
 

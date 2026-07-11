@@ -11,8 +11,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
@@ -45,6 +43,19 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #12CFF4; /* Cyan al pasar el mouse */
         }
+
+        .calendario-wrapper {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(46, 50, 56, 0.05);
+    width: 100%;
+    overflow-x: hidden;
+}
+
+@media (max-width: 768px) {
+    .calendario-wrapper { padding: 15px; border-radius: 16px; }
+}
 
         /* CALENDARIO ESTILO HORIZON UI */
         #calendar {
@@ -257,7 +268,7 @@
             </header>
 
             <div class="content-body">
-                <div class="usuarios-container" style="margin-top: 0; padding: 20px;">
+                <div class="calendario-wrapper">
                     <div id='calendar'></div>
                 </div>
             </div>
