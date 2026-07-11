@@ -13,7 +13,7 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -41,21 +41,25 @@
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #12CFF4; /* Cyan al pasar el mouse */
+            background: #12CFF4;
+            /* Cyan al pasar el mouse */
         }
 
         .calendario-wrapper {
-    background: #FFFFFF;
-    border-radius: 16px;
-    padding: 25px;
-    box-shadow: 0 4px 15px rgba(46, 50, 56, 0.05);
-    width: 100%;
-    overflow-x: hidden;
-}
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(46, 50, 56, 0.05);
+            width: 100%;
+            overflow-x: hidden;
+        }
 
-@media (max-width: 768px) {
-    .calendario-wrapper { padding: 15px; border-radius: 16px; }
-}
+        @media (max-width: 768px) {
+            .calendario-wrapper {
+                padding: 15px;
+                border-radius: 16px;
+            }
+        }
 
         /* CALENDARIO ESTILO HORIZON UI */
         #calendar {
@@ -70,16 +74,19 @@
         /* --- TÍTULO Y BOTONES DEL CALENDARIO --- */
         .fc-toolbar-title {
             font-size: 1.4rem !important;
-            color: #0F2D4A !important; /* Azul oscuro */
+            color: #0F2D4A !important;
+            /* Azul oscuro */
             font-weight: 800 !important;
             text-transform: capitalize;
             letter-spacing: -0.5px !important;
         }
 
         .fc .fc-button-primary {
-            background-color: #0F2D4A !important; /* Fondo Azul Oscuro */
+            background-color: #0F2D4A !important;
+            /* Fondo Azul Oscuro */
             border-color: #0F2D4A !important;
-            color: #FFFFFF !important; /* Letras Blancas */
+            color: #FFFFFF !important;
+            /* Letras Blancas */
             font-weight: 600 !important;
             border-radius: 8px !important;
             text-transform: capitalize !important;
@@ -90,17 +97,21 @@
         .fc .fc-button-primary:hover,
         .fc .fc-button-primary:not(:disabled):active,
         .fc .fc-button-primary:not(:disabled).fc-button-active {
-            background-color: #12CFF4 !important; /* Hover Cian */
+            background-color: #12CFF4 !important;
+            /* Hover Cian */
             border-color: #12CFF4 !important;
-            color: #0F2D4A !important; /* Texto Azul oscuro */
+            color: #0F2D4A !important;
+            /* Texto Azul oscuro */
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(18, 207, 244, 0.3) !important;
         }
+
         /* -------------------------------------- */
 
         .fc-col-header-cell-cushion,
         .fc-daygrid-day-number {
-            color: #2E3238 !important; /* Gris oscuro para los números */
+            color: #2E3238 !important;
+            /* Gris oscuro para los números */
             text-decoration: none !important;
             font-weight: 600;
         }
@@ -117,7 +128,7 @@
 
         .fc-list-event td {
             padding: 12px 10px !important;
-            color: #0B0B0D; 
+            color: #0B0B0D;
             font-weight: 500;
         }
 
@@ -138,13 +149,15 @@
         }
 
         .fc-day-today {
-            background-color: rgba(18, 207, 244, 0.05) !important; /* Toque súper ligero de Cian para el día de hoy */
+            background-color: rgba(18, 207, 244, 0.05) !important;
+            /* Toque súper ligero de Cian para el día de hoy */
         }
 
         /* UPLOAD DE EVIDENCIAS Y FIRMA */
         .file-upload-container {
             background: #F8FAFC;
-            border: 2px dashed #12CFF4; /* Borde Cian */
+            border: 2px dashed #12CFF4;
+            /* Borde Cian */
             border-radius: 12px;
             padding: 20px;
             text-align: center;
@@ -174,7 +187,8 @@
             height: 75px;
             object-fit: cover;
             border-radius: 8px;
-            border: 2px solid #12CFF4; /* Borde de las fotos en Cian */
+            border: 2px solid #12CFF4;
+            /* Borde de las fotos en Cian */
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
@@ -182,7 +196,8 @@
             position: absolute;
             top: -8px;
             right: -8px;
-            background: #EF4444; /* Rojo para borrar */
+            background: #EF4444;
+            /* Rojo para borrar */
             color: white;
             border: none;
             border-radius: 50%;
@@ -213,7 +228,8 @@
 
         /* CHECKBOX MEJORADO */
         input[type="checkbox"] {
-            accent-color: #12CFF4; /* Checkboxes de color Cian */
+            accent-color: #12CFF4;
+            /* Checkboxes de color Cian */
             width: 18px;
             height: 18px;
             cursor: pointer;
@@ -299,9 +315,32 @@
 
                     <div class="form-group">
                         <label>Materiales Usados (Añadidos en Oficina)</label>
+
+                        <!-- 🔥 NUEVO: BUSCADOR + FILTRO DE CATEGORÍA -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px; margin-top: 8px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 180px;">
+                                <input type="text" id="searchMaterialInput" class="input-field"
+                                    placeholder="🔍 Buscar material por nombre..." style="width:100%; margin:0;">
+                            </div>
+                            <div style="width: 200px;">
+                                <select id="filterCategoryMaterial" class="input-field" style="width:100%; margin:0;">
+                                    <option value="">Todas las Categorías</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div id="employeeMaterialsContainer"
-                            style="max-height: 120px; overflow-y: auto; background: #F8FAFC; padding: 12px; border: 1.5px solid #E2E8F0; border-radius: 10px;">
+                            style="max-height: 180px; overflow-y: auto; background: #F8FAFC; padding: 12px; border: 1.5px solid #E2E8F0; border-radius: 10px;">
                             Cargando materiales...
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <label>Materiales Seleccionados (Cantidad y Unidad)</label>
+                            <div id="necessaryMaterialsContainerEmp"
+                                style="max-height: 180px; overflow-y: auto; background: #FFF3E0; padding: 12px; border: 1.5px solid #ffcc80; border-radius: 10px; margin-top: 8px;">
+                            </div>
+                            <div style="margin-top: 8px; text-align: right; font-weight: bold; color: #d32f2f;">
+                                Total Estimado: $<span id="totalNecessaryMaterialsEmp">0.00</span>
+                            </div>
                         </div>
                     </div>
 
@@ -359,14 +398,18 @@
 
                     <!-- RECUADRO DE FIRMA 1: SUBCONTRATISTA -->
                     <div class="form-group" style="margin-top: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <label style="margin: 0; color: #0F2D4A; font-weight: bold;">Firma del Subcontratista</label>
-                            <button type="button" onclick="limpiarFirmaSub()" style="background:none; border:none; color:#EF4444; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:0.2s;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label style="margin: 0; color: #0F2D4A; font-weight: bold;">Firma del
+                                Subcontratista</label>
+                            <button type="button" onclick="limpiarFirmaSub()"
+                                style="background:none; border:none; color:#EF4444; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:0.2s;">
                                 <i class="fa-solid fa-eraser"></i> Limpiar
                             </button>
                         </div>
                         <!-- IMPORTANTE: El ID debe ser signaturePadSub -->
-                        <canvas id="signaturePadSub" style="border: 2px solid #12CFF4; width: 100%; height: 150px; border-radius: 8px; background: #fff; cursor: crosshair; touch-action: none;"></canvas>
+                        <canvas id="signaturePadSub"
+                            style="border: 2px solid #12CFF4; width: 100%; height: 150px; border-radius: 8px; background: #fff; cursor: crosshair; touch-action: none;"></canvas>
                     </div>
                 </form>
             </div>
@@ -409,76 +452,192 @@
             </div>
             <div class="modal-footer" style="display: flex; justify-content: space-between; width: 100%;">
                 <!-- Este botón estará oculto por defecto y el JS lo mostrará si hay más de 1 rol -->
-                <button type="button" id="btnCambiarRol" class="btn-secondary" style="background: #F4A300; color: #fff; border: none; display: none;">
+                <button type="button" id="btnCambiarRol" class="btn-secondary"
+                    style="background: #F4A300; color: #fff; border: none; display: none;">
                     <i class="fa-solid fa-users-arrows-right-left"></i> Cambiar Rol
                 </button>
-                
+
                 <div>
                     <button type="button" id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
-                    <button type="button" id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar Cambios</button>
+                    <button type="button" id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar
+                        Cambios</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="pdfWrapper" style="visibility: hidden; position: fixed; top: 0; left: 0; width: 750px; z-index: -9999; pointer-events: none; background: #ffffff;">
-    <div id="pdfTemplate" style="width: 750px; margin: 0; padding: 20px 30px; font-family: 'Helvetica', sans-serif; color: #0B0B0D; background: #ffffff; box-sizing: border-box;">
-            
-            <table style="width: 100%; border-collapse: collapse; border-bottom: 3px solid #12CFF4; margin-bottom: 25px;">
+    <div id="pdfWrapper"
+        style="visibility: hidden; position: fixed; top: 0; left: 0; width: 750px; z-index: -9999; pointer-events: none; background: #ffffff;">
+        <div id="pdfTemplate"
+            style="width: 750px; margin: 0; padding: 20px 30px; font-family: 'Helvetica', sans-serif; color: #0B0B0D; background: #ffffff; box-sizing: border-box;">
+
+            <table
+                style="width: 100%; border-collapse: collapse; border-bottom: 3px solid #12CFF4; margin-bottom: 25px;">
                 <tr>
                     <td style="vertical-align: bottom; padding-bottom: 15px;">
                         <table style="border-collapse: collapse;">
                             <tr>
                                 <td style="padding-right: 15px; vertical-align: middle;">
-                                    <img src="../img/logonegro.png" style="max-height: 55px; width: auto; object-fit: contain;" alt="Logo">
+                                    <img src="../img/logonegro.png"
+                                        style="max-height: 55px; width: auto; object-fit: contain;" alt="Logo">
                                 </td>
                                 <td style="vertical-align: middle;">
-                                    <h1 style="color: #0F2D4A; margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: -0.5px;">REPORTE DE OBRA</h1>
-                                    <p style="margin: 2px 0 0 0; color: #12CFF4; font-size: 13px; font-weight: bold; letter-spacing: 1px;">Plataforma RemoMN</p>
+                                    <h1
+                                        style="color: #0F2D4A; margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: -0.5px;">
+                                        REPORTE DE OBRA</h1>
+                                    <p
+                                        style="margin: 2px 0 0 0; color: #12CFF4; font-size: 13px; font-weight: bold; letter-spacing: 1px;">
+                                        Plataforma RemoMN</p>
                                 </td>
                             </tr>
                         </table>
                     </td>
-                    <td style="text-align: right; vertical-align: bottom; padding-bottom: 15px; color: #2E3238; font-size: 13px;">
+                    <td
+                        style="text-align: right; vertical-align: bottom; padding-bottom: 15px; color: #2E3238; font-size: 13px;">
                         <p style="margin: 0; font-weight: bold;">Fecha de Emisión:</p>
                         <p style="margin: 0; font-size: 15px; color: #12CFF4; font-weight: bold;" id="pdfDate"></p>
                     </td>
                 </tr>
             </table>
-            
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; page-break-inside: avoid;">
-                <tr><td style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold; width: 25%;">Proyecto / Contacto:</td><td id="pdfJobName" style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: #0F2D4A;"></td></tr>
-                <tr><td style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold;">Dirección:</td><td id="pdfAddress" style="padding: 10px; border: 1px solid #ddd; color: #2E3238;"></td></tr>
-                <tr><td style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold;">Teléfono Contacto:</td><td id="pdfClientPhone" style="padding: 10px; border: 1px solid #ddd; color: #2E3238;"></td></tr>
-                <tr><td style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold;">Subcontratista:</td><td id="pdfEmployee" style="padding: 10px; border: 1px solid #ddd; color: #2E3238;"></td></tr>
-                <tr><td style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold;">Valor a Pagar:</td><td id="pdfJobPay" style="padding: 10px; border: 1px solid #ddd; color: #F4A300; font-size: 16px; font-weight: bold;"></td></tr>
-                <tr id="pdfNewPriceRow" style="display: none;"><td style="padding: 10px; border: 1px solid #ddd; background: #FFF3CD; color: #92400E; font-weight: bold;">ALERTA NUEVO PRECIO:</td><td id="pdfNewPrice" style="padding: 10px; border: 1px solid #ddd; color: #EF4444; font-size: 16px; font-weight: bold;"></td></tr>
-                <tr><td style="padding: 10px; border: 1px solid #ddd; background: rgba(18, 207, 244, 0.1); font-weight: bold; color: #0F2D4A;">Estado Reportado:</td><td id="pdfStatus" style="padding: 10px; border: 1px solid #ddd; color: #12CFF4; font-weight: bold; text-transform: uppercase;"></td></tr>
+
+            <table
+                style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; page-break-inside: avoid;">
+                <tr>
+                    <td
+                        style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold; width: 25%;">
+                        Proyecto / Contacto:</td>
+                    <td id="pdfJobName"
+                        style="padding: 10px; border: 1px solid #ddd; font-weight: bold; color: #0F2D4A;"></td>
+                </tr>
+                <tr>
+                    <td
+                        style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold;">
+                        Dirección:</td>
+                    <td id="pdfAddress" style="padding: 10px; border: 1px solid #ddd; color: #2E3238;"></td>
+                </tr>
+                <tr>
+                    <td
+                        style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold;">
+                        Teléfono Contacto:</td>
+                    <td id="pdfClientPhone" style="padding: 10px; border: 1px solid #ddd; color: #2E3238;"></td>
+                </tr>
+                <tr>
+                    <td
+                        style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold;">
+                        Subcontratista:</td>
+                    <td id="pdfEmployee" style="padding: 10px; border: 1px solid #ddd; color: #2E3238;"></td>
+                </tr>
+                <tr>
+                    <td
+                        style="padding: 10px; border: 1px solid #ddd; background: #0F2D4A; color: #FFFFFF; font-weight: bold;">
+                        Valor a Pagar:</td>
+                    <td id="pdfJobPay"
+                        style="padding: 10px; border: 1px solid #ddd; color: #F4A300; font-size: 16px; font-weight: bold;">
+                    </td>
+                </tr>
+                <tr id="pdfNewPriceRow" style="display: none;">
+                    <td
+                        style="padding: 10px; border: 1px solid #ddd; background: #FFF3CD; color: #92400E; font-weight: bold;">
+                        ALERTA NUEVO PRECIO:</td>
+                    <td id="pdfNewPrice"
+                        style="padding: 10px; border: 1px solid #ddd; color: #EF4444; font-size: 16px; font-weight: bold;">
+                    </td>
+                </tr>
+                <tr>
+                    <td
+                        style="padding: 10px; border: 1px solid #ddd; background: rgba(18, 207, 244, 0.1); font-weight: bold; color: #0F2D4A;">
+                        Estado Reportado:</td>
+                    <td id="pdfStatus"
+                        style="padding: 10px; border: 1px solid #ddd; color: #12CFF4; font-weight: bold; text-transform: uppercase;">
+                    </td>
+                </tr>
             </table>
 
-            <h3 style="color: #0F2D4A; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Comentarios del Avance</h3>
-            <div id="pdfComment" style="background: #F8FAFC; padding: 15px; border-left: 4px solid #12CFF4; margin-bottom: 20px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; color: #2E3238;"></div>
+            <h3
+                style="page-break-after: avoid;color: #0F2D4A; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                Comentarios del Avance</h3>
+            <div id="pdfComment"
+                style="background: #F8FAFC; padding: 15px; border-left: 4px solid #12CFF4; margin-bottom: 20px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; color: #2E3238;">
+            </div>
 
-            <div id="pdfGuaranteeBox" style="display: none; background: rgba(18, 207, 244, 0.05); padding: 15px; border: 1.5px solid #12CFF4; border-radius: 8px; margin-bottom: 20px; page-break-inside: avoid;">
+            <div id="pdfGuaranteeBox"
+                style="display: none; background: rgba(18, 207, 244, 0.05); padding: 15px; border: 1.5px solid #12CFF4; border-radius: 8px; margin-bottom: 20px; page-break-inside: avoid;">
                 <p style="margin: 0; font-size: 12px; color: #0F2D4A; font-weight: bold; text-align: justify;">
-                    ✓ CERTIFICACIÓN DE GARANTÍA: El subcontratista certifica que el proyecto está terminado y los errores encontrados después de terminar el proyecto serán cobrados al subcontratista como garantías del trabajo.
+                    ✓ CERTIFICACIÓN DE GARANTÍA: El subcontratista certifica que el proyecto está terminado y los
+                    errores encontrados después de terminar el proyecto serán cobrados al subcontratista como garantías
+                    del trabajo.
                 </p>
             </div>
 
-            <h3 style="color: #0F2D4A; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Materiales Utilizados</h3>
-            <ul id="pdfMaterials" style="margin-bottom: 20px; font-size: 13px; color: #2E3238; padding-left: 20px;"></ul>
+            <!-- 🔥 NUEVO: TABLA DE MATERIALES CON CANTIDAD, PRECIO UNIT. Y SUBTOTAL -->
+            <h3 style="page-break-after: avoid; color: #0F2D4A; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Materiales Utilizados</h3>
+            <table
+                style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; page-break-inside: avoid;">
+                <thead>
+                    <tr>
+                        <td
+                            style="padding: 8px; border: 1px solid #ddd; background: #0F2D4A; color: #fff; font-weight: bold;">
+                            Material</td>
+                        <td
+                            style="padding: 8px; border: 1px solid #ddd; background: #0F2D4A; color: #fff; font-weight: bold; text-align: center;">
+                            Cantidad</td>
+                        <td
+                            style="padding: 8px; border: 1px solid #ddd; background: #0F2D4A; color: #fff; font-weight: bold; text-align: right;">
+                            Precio Unit.</td>
+                        <td
+                            style="padding: 8px; border: 1px solid #ddd; background: #0F2D4A; color: #fff; font-weight: bold; text-align: right;">
+                            Subtotal</td>
+                    </tr>
+                </thead>
+                <tbody id="pdfMaterialsBody"></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3"
+                            style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; background: #F8FAFC; color: #0F2D4A;">
+                            Total Materiales:</td>
+                        <td id="pdfTotalMateriales"
+                            style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; color: #198754; background: #F8FAFC;">
+                            $0.00</td>
+                    </tr>
+                </tfoot>
+            </table>
 
-            <h3 style="color: #0F2D4A; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Evidencias Fotográficas</h3>
+            <!-- 🔥 NUEVO: RESUMEN FINAL - VALOR DEL TRABAJO Y TOTAL GENERAL -->
+            <table
+                style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; page-break-inside: avoid;">
+                <tr>
+                    <td
+                        style="padding: 10px; border: 1px solid #ddd; background: #F8FAFC; font-weight: bold; color: #0F2D4A; width: 70%;">
+                        Valor del Trabajo:</td>
+                    <td id="pdfValorTrabajoResumen"
+                        style="padding: 10px; border: 1px solid #ddd; text-align: right; font-weight: bold; color: #F4A300;">
+                        $0.00</td>
+                </tr>
+                <tr>
+                    <td
+                        style="padding: 12px; border: 2px solid #0F2D4A; background: #0F2D4A; color: #fff; font-weight: bold; font-size: 14px;">
+                        TOTAL GENERAL (Materiales + Trabajo):</td>
+                    <td id="pdfTotalGeneral"
+                        style="padding: 12px; border: 2px solid #0F2D4A; background: #0F2D4A; color: #fff; text-align: right; font-weight: bold; font-size: 14px;">
+                        $0.00</td>
+                </tr>
+            </table>
+
+            <h3 style="page-break-after: avoid; color: #0F2D4A; font-size: 16px; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Evidencias Fotográficas</h3>
             <div id="pdfImages" style="width: 100%; margin-bottom: 30px; display: block;"></div>
 
-            <table style="width: 100%; margin-top: 40px; border-collapse: collapse; page-break-inside: avoid;" cellspacing="0" cellpadding="0">
+            <table style="width: 100%; margin-top: 40px; border-collapse: collapse; page-break-inside: avoid;"
+                cellspacing="0" cellpadding="0">
                 <tr>
                     <td style="width: 100%; text-align: center; vertical-align: bottom; padding: 10px;">
                         <div style="min-height: 75px; display: block; margin-bottom: 10px; text-align: center;">
-                            <img id="pdfSignatureSubImg" src="" style="max-height: 75px; max-width: 100%; object-fit: contain;">
+                            <img id="pdfSignatureSubImg" src=""
+                                style="max-height: 75px; max-width: 100%; object-fit: contain;">
                         </div>
                         <div style="border-top: 1.5px solid #0F2D4A; padding-top: 6px; width: 300px; margin: 0 auto;">
-                            <p style="margin: 0; font-weight: bold; font-size: 12px; color: #0F2D4A; text-transform: uppercase; letter-spacing: 0.5px;">Subcontratista</p>
+                            <p
+                                style="margin: 0; font-weight: bold; font-size: 12px; color: #0F2D4A; text-transform: uppercase; letter-spacing: 0.5px;">
+                                Subcontratista</p>
                         </div>
                     </td>
                 </tr>
@@ -486,7 +645,7 @@
 
         </div>
     </div>
-</div>
+    </div>
 
     <script type="module" src="employee-dashboard.js"></script>
 </body>

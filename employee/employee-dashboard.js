@@ -12,6 +12,10 @@ let miUsuarioActual = null;
 let archivosSeleccionados = [];
 let imagenesBase64Data = [];
 
+// 🔥 NUEVO: cache de materiales + estado de selección (persiste aunque filtres)
+let allMaterialsCache = [];
+let materialesEstadoEmpleado = {}; // { [materialId]: { checked: bool, qty: string, unit: string } }
+
 // Variables para la doble firma
 let canvasSub, ctxSub;
 let drawingSub = false;
@@ -87,6 +91,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     inicializarCanvasFirma();
     await cargarMateriales();
     await cargarCalendarioEmpleado(userEmail);
+
+    // 🔥 NUEVO: Filtros de Materiales (buscador + categoría) dentro del modal
+    const matSearchIn = document.getElementById('searchMaterialInput');
+    const matCatIn = document.getElementById('filterCategoryMaterial');
+    if (matSearchIn) matSearchIn.addEventListener('input', window.filtrarMaterialesEmpleado);
+    if (matCatIn) matCatIn.addEventListener('change', window.filtrarMaterialesEmpleado);
 
     document.getElementById('evStatus').addEventListener('change', (e) => {
         const certBox = document.getElementById('certBox');
@@ -391,35 +401,175 @@ async function cargarCalendarioEmpleado(emailActual) {
     } catch (error) { console.error(error); }
 }
 
+// 🔥 NUEVO: intenta leer la categoría del material sin importar cómo la llame el backend.
+function obtenerNombreCategoriaEmpleado(mat) {
+    return mat.categoryName
+        || (mat.category && (mat.category.name || mat.category)) || '';
+}
+
+// 🔥 NUEVO: llena el <select id="filterCategoryMaterial"> con las categorías presentes en los materiales
+function poblarCategoriasMaterialesEmpleado(materials) {
+    const select = document.getElementById('filterCategoryMaterial');
+    if (!select) return;
+
+    const valorActual = select.value;
+    const categorias = new Set();
+    materials.forEach(mat => {
+        const cat = obtenerNombreCategoriaEmpleado(mat);
+        if (cat) categorias.add(cat);
+    });
+
+    select.innerHTML = '<option value="">Todas las Categorías</option>';
+    [...categorias].sort((a, b) => a.localeCompare(b)).forEach(cat => {
+        select.innerHTML += `<option value="${cat}">${cat}</option>`;
+    });
+
+    if ([...categorias].includes(valorActual)) select.value = valorActual;
+}
+
+// 🔥 pinta la lista de materiales: checkbox + nombre + precio unitario + cantidad/unidad (si está marcado)
+function renderizarMaterialesEmpleado(materials) {
+    const containerMat = document.getElementById('employeeMaterialsContainer');
+    if (!containerMat) return;
+
+    containerMat.innerHTML = '';
+
+    if (!materials || materials.length === 0) {
+        containerMat.innerHTML = '<p style="color: #64748B; font-size: 13px;">No se encontraron materiales con ese filtro.</p>';
+        return;
+    }
+
+    materials.forEach(mat => {
+        const precioMat = mat.price || 0;
+        const estado = materialesEstadoEmpleado[mat.materialId] || {};
+        const checkedAttr = estado.checked ? 'checked' : '';
+
+        containerMat.innerHTML += `
+            <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                <label style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; color: #2B3674; font-weight: bold; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" onchange="toggleMaterialEmpleado(${mat.materialId})" ${checkedAttr}>
+                        ${mat.name}
+                    </div>
+                    <span style="color: #198754; font-size: 12px; background: #e8f5e9; padding: 2px 6px; border-radius: 4px;">$${precioMat.toFixed(2)} c/u</span>
+                </label>
+            </div>
+        `;
+    });
+}
+
+// 🔥 NUEVO: filtra allMaterialsCache por texto + categoría y vuelve a pintar
+window.filtrarMaterialesEmpleado = () => {
+    const texto = document.getElementById('searchMaterialInput')
+        ? document.getElementById('searchMaterialInput').value.toLowerCase().trim() : '';
+    const categoria = document.getElementById('filterCategoryMaterial')
+        ? document.getElementById('filterCategoryMaterial').value : '';
+
+    const filtrados = allMaterialsCache.filter(mat => {
+        const coincideTexto = (mat.name || '').toLowerCase().includes(texto);
+        const coincideCategoria = !categoria || obtenerNombreCategoriaEmpleado(mat) === categoria;
+        return coincideTexto && coincideCategoria;
+    });
+
+    renderizarMaterialesEmpleado(filtrados);
+};
+
 async function cargarMateriales() {
     try {
         const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
-        const materials = await resMat.json();
-        const containerMat = document.getElementById('employeeMaterialsContainer');
-        containerMat.innerHTML = '';
-
-        if (!materials || materials.length === 0) {
-            containerMat.innerHTML = '<p style="color: #64748B; font-size: 13px;">No hay materiales registrados.</p>';
-            return;
+        if (resMat.ok) {
+            allMaterialsCache = await resMat.json();
+            poblarCategoriasMaterialesEmpleado(allMaterialsCache);
+            renderizarMaterialesEmpleado(allMaterialsCache);
         }
-
-        materials.forEach(mat => {
-            containerMat.innerHTML += `
-                <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2B3674; font-weight: bold; cursor: pointer;">
-                        <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}" onchange="document.getElementById('opts_${mat.materialId}').style.display = this.checked ? 'flex' : 'none'">
-                        ${mat.name}
-                    </label>
-                    
-                    <div id="opts_${mat.materialId}" style="display: none; gap: 10px; margin-top: 8px; margin-left: 24px;">
-                        <input type="number" id="qty_${mat.materialId}" placeholder="Cant." class="input-field" style="width: 80px; padding: 6px; border: 1px solid #12CFF4; border-radius: 5px;">
-                        <input type="text" id="unit_${mat.materialId}" placeholder="Unidad" class="input-field" style="flex: 1; padding: 6px; border: 1px solid #12CFF4; border-radius: 5px;">
-                    </div>
-                </div>
-            `;
-        });
     } catch (e) { console.error(e); }
 }
+
+// 🔥 Al marcar/desmarcar, se guarda el estado (checked/qty/unit) para que sobreviva a un re-render por filtro
+window.toggleMaterialEmpleado = (matId) => {
+    const checkbox = document.querySelector(`input[name="empMaterials"][value="${matId}"]`);
+    const matName = checkbox.getAttribute('data-name');
+    const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
+
+    if (!materialesEstadoEmpleado[matId]) materialesEstadoEmpleado[matId] = {};
+    materialesEstadoEmpleado[matId].checked = checkbox.checked;
+
+    if (checkbox.checked) {
+        agregarMaterialNecesarioEmpleado(matId, matName, matPrice);
+    } else {
+        eliminarMaterialNecesarioEmpleadoPorId(matId);
+        delete materialesEstadoEmpleado[matId];
+    }
+};
+
+function crearFilaMaterialNecesarioEmpleado(matId, name, price, qtyInicial, unitInicial) {
+    const qty = (qtyInicial !== undefined && qtyInicial !== null && qtyInicial !== '') ? qtyInicial : 1;
+    const unit = (unitInicial !== undefined && unitInicial !== null) ? unitInicial : '';
+
+    return `
+        <div class="necessary-material-row-emp" id="nec-emp-${matId}"
+             style="display: grid; grid-template-columns: 1.8fr 70px 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #12CFF4;">
+
+            <div style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
+
+            <input type="number" class="input-field nec-emp-qty" value="${qty}" min="1"
+                   style="margin:0; text-align:center;"
+                   oninput="calcularTotalMaterialesNecesariosEmpleado()" data-matid="${matId}">
+
+            <input type="text" class="input-field nec-emp-unit" placeholder="Unidad" value="${unit}"
+                   style="margin:0; text-align:center;" data-matid="${matId}">
+
+            <div style="text-align: right; font-weight: bold; color: #198754; font-size: 13px;">
+                $${price.toFixed(2)}
+            </div>
+
+            <button type="button" onclick="eliminarMaterialNecesarioEmpleadoPorId(${matId})"
+                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+    `;
+}
+
+window.agregarMaterialNecesarioEmpleado = (matId, name, price, qtyInicial, unitInicial) => {
+    const container = document.getElementById('necessaryMaterialsContainerEmp');
+    if (!container) return;
+    if (document.getElementById(`nec-emp-${matId}`)) return;
+
+    container.insertAdjacentHTML('beforeend', crearFilaMaterialNecesarioEmpleado(matId, name, price, qtyInicial, unitInicial));
+    calcularTotalMaterialesNecesariosEmpleado();
+};
+
+window.eliminarMaterialNecesarioEmpleadoPorId = (matId) => {
+    const row = document.getElementById(`nec-emp-${matId}`);
+    if (row) row.remove();
+    calcularTotalMaterialesNecesariosEmpleado();
+
+    const checkbox = document.querySelector(`input[name="empMaterials"][value="${matId}"]`);
+    if (checkbox) checkbox.checked = false;
+    if (materialesEstadoEmpleado[matId]) delete materialesEstadoEmpleado[matId];
+};
+
+window.calcularTotalMaterialesNecesariosEmpleado = () => {
+    let total = 0;
+    document.querySelectorAll('.necessary-material-row-emp').forEach(row => {
+        const qtyInput = row.querySelector('.nec-emp-qty');
+        const qty = qtyInput ? parseFloat(qtyInput.value) || 0 : 0;
+        const priceMatch = row.textContent.match(/\$([\d.]+)/);
+        const price = priceMatch ? parseFloat(priceMatch[1]) || 0 : 0;
+        total += qty * price;
+    });
+    const totalElement = document.getElementById('totalNecessaryMaterialsEmp');
+    if (totalElement) totalElement.textContent = total.toFixed(2);
+};
+
+function limpiarMaterialesNecesariosEmpleado() {
+    const container = document.getElementById('necessaryMaterialsContainerEmp');
+    if (container) container.innerHTML = '';
+    const totalElement = document.getElementById('totalNecessaryMaterialsEmp');
+    if (totalElement) totalElement.textContent = '0.00';
+}
+
 
 window.abrirModalEvidence = (jobId) => {
     document.getElementById('evidenceForm').reset();
@@ -437,36 +587,32 @@ window.abrirModalEvidence = (jobId) => {
     
     document.getElementById('evComment').value = ""; 
 
-    document.querySelectorAll('input[name="empMaterials"]').forEach(cb => {
-        cb.checked = false;
-        const divOpciones = document.getElementById('opts_' + cb.value);
-        if (divOpciones) divOpciones.style.display = 'none';
-        
-        const qtyInput = document.getElementById(`qty_${cb.value}`);
-        const unitInput = document.getElementById(`unit_${cb.value}`);
-        if(qtyInput) qtyInput.value = '';
-        if(unitInput) unitInput.value = '';
+    // 🔥 NUEVO: reseteamos filtros y estado de materiales, y reconstruimos desde el trabajo actual
+    materialesEstadoEmpleado = {};
+if (document.getElementById('searchMaterialInput')) document.getElementById('searchMaterialInput').value = '';
+if (document.getElementById('filterCategoryMaterial')) document.getElementById('filterCategoryMaterial').value = '';
 
-        if (currentJobInfo && currentJobInfo.materials) {
-            const matGuardado = currentJobInfo.materials.find(m => m.materialId == cb.value);
-            const nombreMat = cb.getAttribute('data-name').toLowerCase().trim();
-            const fallbackInfo = datosMaterialesGuardadosFallback[nombreMat];
+limpiarMaterialesNecesariosEmpleado();
 
-            if (matGuardado || fallbackInfo) {
-                cb.checked = true;
-                if (divOpciones) divOpciones.style.display = 'flex';
-                
-                let finalQty = (matGuardado && matGuardado.quantity != null) ? matGuardado.quantity : (fallbackInfo ? fallbackInfo.qty : '');
-                let finalUnit = (matGuardado && matGuardado.unit != null) ? matGuardado.unit : (fallbackInfo ? fallbackInfo.unit : '');
+allMaterialsCache.forEach(mat => {
+    const matId = mat.materialId;
+    const matGuardado = (currentJobInfo && currentJobInfo.materials) ? currentJobInfo.materials.find(m => m.materialId == matId) : null;
+    const nombreMat = (mat.name || '').toLowerCase().trim();
+    const fallbackInfo = datosMaterialesGuardadosFallback[nombreMat];
 
-                if(finalUnit === 'N/A' || finalUnit === 'undefined') finalUnit = '';
-                if(finalQty === 'undefined' || finalQty == 0) finalQty = '';
+    if (matGuardado || fallbackInfo) {
+        let finalQty = (matGuardado && matGuardado.quantity != null) ? matGuardado.quantity : (fallbackInfo ? fallbackInfo.qty : '');
+        let finalUnit = (matGuardado && matGuardado.unit != null) ? matGuardado.unit : (fallbackInfo ? fallbackInfo.unit : '');
 
-                if(qtyInput) qtyInput.value = finalQty;
-                if(unitInput) unitInput.value = finalUnit;
-            }
-        }
-    });
+        if (finalUnit === 'N/A' || finalUnit === 'undefined') finalUnit = '';
+        if (finalQty === 'undefined' || finalQty == 0) finalQty = '';
+
+        materialesEstadoEmpleado[matId] = { checked: true };
+        agregarMaterialNecesarioEmpleado(matId, mat.name, mat.price || 0, finalQty, finalUnit);
+    }
+});
+
+renderizarMaterialesEmpleado(allMaterialsCache);
 
     document.getElementById('modalEvidence').style.display = 'flex';
 
@@ -603,32 +749,51 @@ window.guardarReporteYPdf = async () => {
         document.getElementById('pdfNewPriceRow').style.display = 'none';
     }
 
-    const selectedMatNodes = document.querySelectorAll('input[name="empMaterials"]:checked');
-    const selectedMaterials = []; 
-    const selectedMaterialIds = []; 
-    let selectedMaterialNames = '';
-    let resumenMaterialesBD = '';
+    // 🔥 NUEVO: recorremos los materiales marcados, calculando subtotal (cantidad x precio unitario)
+    // para armar la tabla del PDF y el total de materiales.
+    const selectedRows = document.querySelectorAll('.necessary-material-row-emp');
+const selectedMaterials = []; 
+const selectedMaterialIds = []; 
+let resumenMaterialesBD = '';
+let pdfMaterialsRows = '';
+let totalMateriales = 0;
 
-    selectedMatNodes.forEach(cb => {
-        const matId = parseInt(cb.value);
-        const nombreMat = cb.getAttribute('data-name');
-        const cantidadStr = document.getElementById(`qty_${matId}`).value.trim();
-        const unidad = document.getElementById(`unit_${matId}`).value.trim();
+selectedRows.forEach(row => {
+    const matId = parseInt(row.id.replace('nec-emp-', ''));
+    const nombreMat = row.querySelector('div').textContent.trim();
 
-        const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
+    const priceMatch = row.textContent.match(/\$([\d.]+)/);
+    const precioUnit = priceMatch ? parseFloat(priceMatch[1]) || 0 : 0;
 
-        selectedMaterials.push({
-            materialId: matId,
-            quantity: cantidadNum,
-            unit: unidad || 'N/A'
-        });
-        
-        selectedMaterialIds.push(matId);
+    const qtyInput = row.querySelector('.nec-emp-qty');
+    const unitInput = row.querySelector('.nec-emp-unit');
+    const cantidadStr = qtyInput ? qtyInput.value.trim() : '';
+    const unidad = unitInput ? unitInput.value.trim() : '';
 
-        const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
-        selectedMaterialNames += `<li style="margin-bottom: 6px; color: #2E3238;"><strong>${nombreMat}</strong>: <span style="color: #12CFF4; font-weight: bold;">${textoCantidad}</span></li>`;
-        resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
+    const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
+    const subtotal = cantidadNum * precioUnit;
+    totalMateriales += subtotal;
+
+    selectedMaterials.push({
+        materialId: matId,
+        quantity: cantidadNum,
+        unit: unidad || 'N/A'
     });
+
+    selectedMaterialIds.push(matId);
+
+    const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
+    resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
+
+    pdfMaterialsRows += `
+        <tr>
+            <td style="padding: 8px; border: 1px solid #ddd; color: #2E3238;">${nombreMat}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #2E3238;">${textoCantidad}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #2E3238;">$${precioUnit.toFixed(2)}</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; color: #198754;">$${subtotal.toFixed(2)}</td>
+        </tr>
+    `;
+});
 
     if (resumenMaterialesBD !== '') {
         comment = `${comment}\n\n[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}`;
@@ -636,24 +801,28 @@ window.guardarReporteYPdf = async () => {
 
     Swal.fire({ title: 'Procesando...', text: 'Generando archivo PDF y guardando avance...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-    const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay).toFixed(2) : '0.00';
+    const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay) : 0;
 
     document.getElementById('pdfJobName').textContent = currentJobInfo.clientName || 'Sin asignar';
     document.getElementById('pdfAddress').textContent = currentJobInfo.address || 'Sin dirección';
     document.getElementById('pdfClientPhone').textContent = currentJobInfo.clientPhone || 'No registrado';
     document.getElementById('pdfEmployee').textContent = document.getElementById('employee-email-display').textContent;
-    document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF}`;
+    document.getElementById('pdfJobPay').textContent = `$${pagoSeguroPDF.toFixed(2)}`;
     document.getElementById('pdfStatus').textContent = status === 'COMPLETED' ? 'Completado' : 'En Progreso';
 
     const hoy = new Date();
-    document.getElementById('pdfDate').textContent = `${String(hoy.getDate()).padStart(2, '0')}/${String(hoy.getMonth() + 1).padStart(2, '0')}/${hoy.getFullYear()}`;
+    document.getElementById('pdfDate').textContent = `${String(hoy.getMonth() + 1).padStart(2, '0')}/${String(hoy.getDate()).padStart(2, '0')}/${hoy.getFullYear()}`;
     document.getElementById('pdfComment').textContent = comment;
 
-    if (selectedMaterialNames) {
-        document.getElementById('pdfMaterials').innerHTML = selectedMaterialNames;
-    } else {
-        document.getElementById('pdfMaterials').innerHTML = '<li>No se reportaron materiales.</li>';
-    }
+    // 🔥 NUEVO: llenamos la tabla de materiales del PDF + total materiales
+    document.getElementById('pdfMaterialsBody').innerHTML = pdfMaterialsRows !== ''
+        ? pdfMaterialsRows
+        : `<tr><td colspan="4" style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #666;">No se reportaron materiales.</td></tr>`;
+    document.getElementById('pdfTotalMateriales').textContent = `$${totalMateriales.toFixed(2)}`;
+
+    // 🔥 NUEVO: resumen final -> valor del trabajo + total general (materiales + trabajo)
+    document.getElementById('pdfValorTrabajoResumen').textContent = `$${pagoSeguroPDF.toFixed(2)}`;
+    document.getElementById('pdfTotalGeneral').textContent = `$${(totalMateriales + pagoSeguroPDF).toFixed(2)}`;
 
     document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
 
@@ -685,29 +854,42 @@ window.guardarReporteYPdf = async () => {
     const nombreArchivoPDF = `Reporte_${safeName}.pdf`;
 
     const opt = {
-        margin: [10, 10, 10, 10],
-        filename: nombreArchivoPDF,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+    margin: [10, 10, 10, 10],
+    filename: nombreArchivoPDF,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+        scale: 2, 
+        useCORS: true, 
+        logging: false, 
+        backgroundColor: '#ffffff'   // 🔥 evita el negro por transparencia
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { 
+        mode: ['css', 'legacy'], 
+        avoid: ['tr', 'h3', 'img', '.avoid-break']  // 🔥 evita cortar encabezados/tablas a la mitad
+    }
+};
 
     let pdfBlob;
-    try {
-        pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
-        
-        // 🔥 ESTO DESCARGA EL PDF EN TU COMPUTADORA
-        html2pdf().set(opt).from(pdfTemplate).save(); 
+try {
+    pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
 
-        // 🔥 ESTO ABRE EL PDF EN UNA NUEVA PESTAÑA AUTOMÁTICAMENTE
+    if (esIOS()) {
+        // 🔥 En iPhone/iPad NO abrimos el blob en pestaña nueva (causa el error al regresar).
+        // Usamos el flujo de descarga nativo, que abre el panel de Compartir/Guardar en Archivos.
+        await html2pdf().set(opt).from(pdfTemplate).save();
+    } else {
+        // Escritorio / Android: descarga + abre en pestaña nueva
+        html2pdf().set(opt).from(pdfTemplate).save();
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');
-
-    } catch (e) {
-        console.error("Error al hacer el PDF:", e);
-        pdfWrapper.style.display = 'none';
-        return Swal.fire({ icon: 'error', title: 'Error del PDF', text: 'No se pudo generar el documento PDF.'});
     }
+
+} catch (e) {
+    console.error("Error al hacer el PDF:", e);
+    pdfWrapper.style.display = 'none';
+    return Swal.fire({ icon: 'error', title: 'Error del PDF', text: 'No se pudo generar el documento PDF.'});
+}
 
     pdfWrapper.style.display = 'none';
     pdfWrapper.style.visibility = 'hidden';
@@ -742,15 +924,16 @@ window.guardarReporteYPdf = async () => {
 
         if (response.ok) {
             Swal.fire({ 
-                icon: 'success', 
-                title: '¡Éxito!', 
-                text: 'El reporte se subió y el PDF fue guardado.', 
-                confirmButtonColor: '#00B8A9' 
-            }).then(() => {
-                cerrarModalEvidence();
-                // 🔥 ESTO RECARGA LA PÁGINA PARA ACTUALIZAR LA VISTA AL INSTANTE
-                window.location.reload();
-            });
+    icon: 'success', 
+    title: '¡Éxito!', 
+    text: esIOS() 
+        ? 'El reporte se subió. El PDF se descargó — revísalo en tu app Archivos o en el selector de "Guardar".' 
+        : 'El reporte se subió y el PDF fue guardado.', 
+    confirmButtonColor: '#00B8A9' 
+}).then(() => {
+    cerrarModalEvidence();
+    window.location.reload();
+});
         } else {
             let errorText = await response.text();
             try {
@@ -766,6 +949,9 @@ window.guardarReporteYPdf = async () => {
         Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Verifica tu conexión a internet o el estado del servidor.', confirmButtonColor: '#00B8A9' });
     }
 };
+function esIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
 
 window.cerrarSesion = () => { 
     Swal.fire({

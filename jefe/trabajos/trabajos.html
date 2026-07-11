@@ -158,9 +158,42 @@
                         <select id="jobEmployee" class="input-field" required></select>
                     </div>
 
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Materiales</h4>
-                    <div id="materialsContainer" style="max-height: 140px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
+                    <!-- MATERIALES -->
+                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Materiales del Inventario
+                    </h4>
+
+                    <!-- BUSCADOR + FILTRO -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 220px;">
+                            <input type="text" id="searchMaterialInput"
+                                   class="input-field"
+                                   placeholder="🔍 Buscar material por nombre..."
+                                   style="width: 100%;">
+                        </div>
+                        <div style="width: 240px;">
+                            <select id="filterCategoryMaterial" class="input-field" style="width: 100%;">
+                                <option value="">Todas las Categorías</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="materialsContainer"
+                         style="max-height: 220px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
                         Cargando materiales...
+                    </div>
+
+                    <!-- MATERIALES NECESARIOS PARA ESTA OBRA -->
+                    <h4 style="margin-top: 25px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Materiales Necesarios para esta Obra
+                    </h4>
+
+                    <div id="necessaryMaterialsContainer"
+                        style="max-height: 180px; overflow-y: auto; background: #FFF3E0; padding: 12px; border: 1px solid #ffcc80; border-radius: 8px;">
+                    </div>
+
+                    <div style="margin-top: 8px; text-align: right; font-weight: bold; color: #d32f2f;">
+                        Total Estimado Necesarios: $<span id="totalNecessaryMaterials">0.00</span>
                     </div>
 
                     <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Datos del Trabajo</h4>
