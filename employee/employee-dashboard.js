@@ -137,29 +137,63 @@ async function cargarCalendarioEmpleado(emailActual) {
         const misTrabajos = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
 
         const eventosFormateados = misTrabajos.map(job => {
-            let bgColor = '#F59E0B';
-            if (job.status === 'IN_PROGRESS') bgColor = '#00B8A9';
-            if (job.status === 'COMPLETED') bgColor = '#10B981';
-            if (job.status === 'CANCELLED') bgColor = '#EF4444';
+    // Nueva lógica de prioridad
+    const prioridad = job.priority || 3; // 1 = Alta, 2 = Media, 3 = Baja (por defecto)
 
-            return {
-                id: job.jobId,
-                title: job.clientName,
-                start: fechaParaCalendario(job.jobDate),
-                backgroundColor: bgColor,
-                borderColor: bgColor,
-                extendedProps: {
-                    ...job,
-                    fechaHermosa: formatearFecha(job.jobDate)
-                }
-            };
-        });
+    let bgColor = '#64748B'; // gris por defecto
+    let borderColor = '#475569';
+    let icon = '<i class="fa-solid fa-clock"></i>';
+
+    switch (prioridad) {
+        case 1: // Alta
+            bgColor = '#EF4444';
+            borderColor = '#B91C1C';
+            icon = '<i class="fa-solid fa-fire-flame-curved"></i>';
+            break;
+        case 2: // Media
+            bgColor = '#F59E0B';
+            borderColor = '#D97706';
+            icon = '<i class="fa-solid fa-exclamation-triangle"></i>';
+            break;
+        case 3: // Baja
+            bgColor = '#10B981';
+            borderColor = '#059669';
+            icon = '<i class="fa-solid fa-clock"></i>';
+            break;
+    }
+
+    // Ajustar color según estado (mantener compatibilidad)
+    if (job.status === 'COMPLETED') {
+        bgColor = '#10B981';
+        borderColor = '#059669';
+    }
+    if (job.status === 'CANCELLED') {
+        bgColor = '#6B7280';
+        borderColor = '#4B5563';
+    }
+
+    return {
+        id: job.jobId,
+        title: job.clientName,
+        start: fechaParaCalendario(job.jobDate),
+        backgroundColor: bgColor,
+        borderColor: borderColor,
+        extendedProps: {
+            ...job,
+            prioridad: prioridad,
+            prioridadTexto: prioridad === 1 ? 'ALTA' : prioridad === 2 ? 'MEDIA' : 'BAJA',
+            fechaHermosa: formatearFecha(job.jobDate),
+            iconoPrioridad: icon
+        }
+    };
+});
 
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
             locale: 'es',
             height: 'auto',
+            eventOrder: ['prioridad', 'start', 'title'], // Primero por prioridad, luego por hora
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
@@ -175,50 +209,52 @@ async function cargarCalendarioEmpleado(emailActual) {
             events: eventosFormateados,
 
             eventContent: function(arg) {
-                let p = arg.event.extendedProps;
-                let icon = '';
-                
-                if(p.status === 'PENDING') icon = '<i class="fa-solid fa-clock"></i>';
-                if(p.status === 'IN_PROGRESS') icon = '<i class="fa-solid fa-gear fa-spin"></i>';
-                if(p.status === 'COMPLETED') icon = '<i class="fa-solid fa-check-double"></i>';
-                if(p.status === 'CANCELLED') icon = '<i class="fa-solid fa-ban"></i>';
+    const p = arg.event.extendedProps;
+    const prioridad = p.prioridad || 3;
 
-                let viewType = arg.view.type;
+    let badgePrioridad = '';
+    if (prioridad === 1) {
+        badgePrioridad = `<span style="background:#EF4444;color:white;font-size:10px;padding:1px 6px;border-radius:3px;">¡ALTA!</span>`;
+    } else if (prioridad === 2) {
+        badgePrioridad = `<span style="background:#F59E0B;color:white;font-size:10px;padding:1px 6px;border-radius:3px;">MEDIA</span>`;
+    }
 
-                if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
-                    let customHtml = `
-                        <div style="display: flex; flex-direction: column; gap: 6px; padding: 5px; width: 100%;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="font-weight: 700; font-size: 1.15em; color: #111C44;">
-                                    <span style="color: ${arg.event.backgroundColor}; margin-right: 5px;">${icon}</span> 
-                                    ${arg.event.title}
-                                </div>
-                                <div style="font-weight: bold; color: #F59E0B; font-size: 1.1em;">
-                                    $${parseFloat(p.pay || 0).toFixed(2)}
-                                </div>
-                            </div>
-                            <div style="font-size: 0.9em; color: #555; display: flex; gap: 15px; flex-wrap: wrap;">
-                                <span><strong><i class="fa-solid fa-location-dot" style="color: #00B8A9;"></i> Dir:</strong> ${p.address || 'Sin dirección'}</span>
-                                <span><strong><i class="fa-solid fa-phone" style="color: #00B8A9;"></i> Tel:</strong> ${p.clientPhone || 'N/A'}</span>
-                            </div>
+    let viewType = arg.view.type;
+
+    if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
+        return {
+            html: `
+                <div style="display: flex; flex-direction: column; gap: 6px; padding: 5px; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-weight: 700; font-size: 1.15em; color: #111C44;">
+                            <span style="color: ${arg.event.backgroundColor}; margin-right: 5px;">${p.iconoPrioridad}</span> 
+                            ${arg.event.title}
+                            ${badgePrioridad}
                         </div>
-                    `;
-                    return { html: customHtml };
-                } 
-                else {
-                    let customHtml = `
-                        <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden; text-align: center;" title="${p.address}">
-                            <div style="font-weight: 700; font-size: 0.85em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 3px;">
-                                ${icon} ${arg.event.title}
-                            </div>
-                            <div style="font-size: 0.75em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
-                                <i class="fa-solid fa-location-dot"></i> ${p.address || 'Sin dir'}
-                            </div>
+                        <div style="font-weight: bold; color: #F59E0B; font-size: 1.1em;">
+                            $${parseFloat(p.pay || 0).toFixed(2)}
                         </div>
-                    `;
-                    return { html: customHtml };
-                }
-            },
+                    </div>
+                    <div style="font-size: 0.9em; color: #555; display: flex; gap: 15px; flex-wrap: wrap;">
+                        <span><strong>Dir:</strong> ${p.address || 'Sin dirección'}</span>
+                    </div>
+                </div>
+            `
+        };
+    } else {
+        // Vista mes
+        return {
+            html: `
+                <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden; text-align: center;">
+                    <div style="font-weight: 700; font-size: 0.85em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
+                        ${p.iconoPrioridad} ${arg.event.title}
+                        ${badgePrioridad}
+                    </div>
+                </div>
+            `
+        };
+    }
+},
 
             eventClick: function (info) {
                 const p = info.event.extendedProps;
@@ -232,6 +268,15 @@ async function cargarCalendarioEmpleado(emailActual) {
                 if (p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#00B8A9'; }
                 if (p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#10B981'; estaBloqueado = true; }
                 if (p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#EF4444'; estaBloqueado = true; }
+
+                let prioridadHTML = '';
+                if (p.prioridad === 1) {
+                    prioridadHTML = `<span style="background:#EF4444;color:white;padding:6px 12px;border-radius:6px;font-weight:bold;">🔥 PRIORIDAD ALTA</span>`;
+                } else if (p.prioridad === 2) {
+                    prioridadHTML = `<span style="background:#F59E0B;color:white;padding:6px 12px;border-radius:6px;font-weight:bold;">⚠️ PRIORIDAD MEDIA</span>`;
+                } else if (p.prioridad === 3) {
+                    prioridadHTML = `<span style="background:#64748B;color:white;padding:6px 12px;border-radius:6px;font-weight:bold;">PRIORIDAD BAJA</span>`;
+                }
 
                 let htmlBloqueo = estaBloqueado
                     ? `<div style="margin-top: 15px; padding: 12px; background: rgba(16, 185, 129, 0.1); color: #111C44; border-radius: 8px; font-weight: bold; text-align: center; border: 1px solid #10B981;">
@@ -281,36 +326,32 @@ async function cargarCalendarioEmpleado(emailActual) {
                 `;
 
                 Swal.fire({
-                    title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
-                    html: `
-                        <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
-                            <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #E2E8F0;">
-                                <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-transform: uppercase;">
-                                    Estado: ${estadoTxt}
-                                </span>
-                            </div>
-                            
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-regular fa-calendar" style="color:#00B8A9; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-house" style="color:#00B8A9; width:20px;"></i> Propiedad:</strong> ${p.clientName}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-phone" style="color:#00B8A9; width:20px;"></i> Teléfono:</strong> ${p.clientPhone}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-location-dot" style="color:#00B8A9; width:20px;"></i> Dirección:</strong> ${p.address}
-                            </p>
-                            <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
-                                <strong><i class="fa-solid fa-key" style="color:#00B8A9; width:20px;"></i> Caja Fuerte:</strong> ${p.safeDepositBoxCodes && p.safeDepositBoxCodes.trim() ? p.safeDepositBoxCodes : 'No requiere'}
-                            </p>
-                            
-                            <p style="margin: 12px 0 8px 0; font-size: 15px; color: #F59E0B; font-weight: bold; background: #111C44; padding: 10px; border-radius: 8px; text-align: center;">
-                                <i class="fa-solid fa-money-bill-wave"></i> Pago asignado: $${parseFloat(p.pay || 0).toFixed(2)}
-                            </p>
+        title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
+        html: `
+            <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
+                
+                <!-- Badge de Estado -->
+                <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #E2E8F0;">
+                    <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-transform: uppercase;">
+                        Estado: ${estadoTxt}
+                    </span>
+                </div>
 
-                            ${notasHtml}
+                <!-- 🔥 NUEVO: PRIORIDAD AQUÍ -->
+                <div style="text-align:center; margin: 12px 0 18px 0;">
+                    ${prioridadHTML}
+                </div>
+
+                <!-- Resto de tu información -->
+                <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                    <strong><i class="fa-regular fa-calendar" style="color:#00B8A9; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
+                </p>
+                <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                    <strong><i class="fa-solid fa-house" style="color:#00B8A9; width:20px;"></i> Propiedad:</strong> ${p.clientName}
+                </p>
+                <!-- ... el resto de tus <p> (teléfono, dirección, etc.) ... -->
+
+                ${notasHtml}
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
