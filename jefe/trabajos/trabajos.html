@@ -1,22 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Trabajos - Rojas Remodeling</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="../../admin/admin.css">
     <link rel="stylesheet" href="../usuarios/usuarios.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 </head>
-
 <body>
 
     <div class="app-layout">
@@ -32,12 +27,12 @@
                 <a href="trabajos.html" class="active"><i class="fa-solid fa-hammer"></i> Mis Trabajos</a>
                 <a href="../evidencias/evidencias.html"><i class="fa-solid fa-camera"></i> Evidencias</a>
                 <a href="../calendario/calendario.html"><i class="fa-solid fa-calendar-days"></i> Calendario</a>
-                
             </nav>
 
             <div class="sidebar-footer">
-                <button class="btn-logout-sidebar" onclick="cerrarSesion()"><i
-                        class="fa-solid fa-right-from-bracket"></i> Salir</button>
+                <button class="btn-logout-sidebar" onclick="cerrarSesion()">
+                    <i class="fa-solid fa-right-from-bracket"></i> Salir
+                </button>
             </div>
         </aside>
 
@@ -54,20 +49,48 @@
                 <div class="usuarios-container" style="margin-top: 0;">
 
                     <div class="header-section">
-                        <h2 style="margin: 0; color: #2B3674;">Proyectos a mi Cargo</h2>
-                        <button class="btn-add" onclick="abrirModalCrearJob()" style="background: #e65100;">
-                            <i class="fa-solid fa-plus"></i> Nuevo Trabajo
-                        </button>
-                    </div>
+                        <h2 style="margin:0; color:#198754; white-space:nowrap;">Proyectos a mi Cargo</h2>
 
-                    <div class="table-container">
-                        <table class="user-table">
+                        <div style="display:flex; align-items:flex-end; gap:15px; flex:1; margin-left:30px;">
+                            <div style="flex:2;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                    Buscar por Cliente o Descripción
+                                </label>
+                                <input type="text" id="searchJobInput" class="input-field" placeholder="🔍 Escribe un nombre o descripción..." style="width:100%; margin:0;">
+                            </div>
+
+                            <div style="width:260px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                    Estado
+                                </label>
+                                <select id="filterStatusInput" class="input-field" style="width:100%; margin:0;">
+                                    <option value="ALL">Todos los Estados</option>
+                                    <option value="PENDING">Pendiente</option>
+                                    <option value="IN_PROGRESS">En Progreso</option>
+                                    <option value="COMPLETED">Completado</option>
+                                    <option value="CANCELLED">Cancelado</option>
+                                </select>
+                            </div>
+                            
+                            <div style="width:180px;">
+                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                    Prioridad
+                                </label>
+                                <input type="number" id="filterPriorityInput" class="input-field" placeholder="Ej: 1, 2, 3..." style="width:100%; margin:0;" min="0">
+                            </div>
+
+                            <button class="btn-add" onclick="abrirModalCrearJob()" style="background:#e65100; height:45px; white-space:nowrap;">
+                                <i class="fa-solid fa-plus"></i> Nuevo Trabajo
+                            </button>
+                        </div>
+                    </div> <div class="table-container" style="width: 100%; overflow-x: auto; margin-top: 20px;">
+                        <table class="user-table" style="width: 100%; min-width: 800px; border-collapse: collapse;">
                             <thead>
                                 <tr>
                                     <th>Cliente</th>
                                     <th>Dirección y Fecha</th>
                                     <th>Descripción</th>
-                                    <th>Empleado Asignado</th>
+                                    <th>Subcontratista Asignado</th>
                                     <th>Estado</th>
                                     <th>Pago ($)</th>
                                     <th>Acciones</th>
@@ -76,7 +99,9 @@
                             <tbody id="jobTableBody"></tbody>
                         </table>
                     </div>
+
                     <div class="mobile-cards" id="mobileCardsContainer"></div>
+
                 </div>
             </div>
         </main>
@@ -93,125 +118,74 @@
                 <form id="formJob">
                     <input type="hidden" id="jobId">
 
-                    <!-- DATOS DEL CLIENTE -->
-                    <h4
-                        style="margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                        Datos del Cliente
-                    </h4>
-
+                    <h4 style="margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Datos del Cliente</h4>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Nombre del Cliente</label>
-                            <input type="text" id="jobClientName" class="input-field" required
-                                placeholder="Ej: Familia Rojas">
+                            <input type="text" id="jobClientName" class="input-field" required placeholder="Ej: Familia Rojas">
                         </div>
-
                         <div class="form-group">
                             <label>Teléfono del Cliente</label>
-                            <input type="text" id="jobClientPhone" class="input-field" required
-                                placeholder="0999999999">
+                            <input type="text" id="jobClientPhone" class="input-field" required placeholder="0999999999">
                         </div>
                     </div>
 
-                    <!-- UBICACIÓN Y LOGÍSTICA -->
-                    <h4
-                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                        Ubicación y Logística
-                    </h4>
-
+                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Ubicación y Logística</h4>
                     <div class="form-group">
-                        <label>Dirección (Texto)</label>
-                        <input type="text" id="jobAddress" class="input-field" required
-                            placeholder="Dirección exacta o coordenadas (lat, lng)"
-                            onkeydown="if(event.key==='Enter'){event.preventDefault(); window.actualizarMapaDesdeDireccion();}">
+                        <label>Dirección</label>
+                        <input type="text" id="jobAddress" class="input-field" required placeholder="Dirección exacta">
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <label style="margin-bottom: 0;">Selecciona en el mapa</label>
-
-                            <button type="button" onclick="obtenerMiUbicacion()"
-                                style="background: #e65100; color: white; border: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <label>Selecciona en el mapa</label>
+                            <button type="button" onclick="obtenerMiUbicacion()" style="background:#e65100;color:white;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;">
                                 <i class="fa-solid fa-location-crosshairs"></i> Mi Ubicación
                             </button>
                         </div>
-
-                        <div id="jobMap"
-                            style="height: 250px; width: 100%; border-radius: 12px; border: 1px solid #E0E5F2; z-index: 1;">
-                        </div>
+                        <div id="jobMap" style="height: 250px; width: 100%; border-radius: 12px; border: 1px solid #E0E5F2;"></div>
                     </div>
 
-                    <div class="form-row" style="display: none;">
-                        <div class="form-group">
-                            <input type="number" id="jobLat" class="input-field" step="any" required readonly>
-                            <input type="number" id="jobLng" class="input-field" step="any" required readonly>
-                        </div>
+                    <div class="form-row" style="display:none;">
+                        <input type="number" id="jobLat" step="any" required>
+                        <input type="number" id="jobLng" step="any" required>
                     </div>
 
-                    <!-- ASIGNACIÓN DE PERSONAL -->
-                    <h4
-                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                        Asignación de Personal
-                    </h4>
+                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Asignación</h4>
+                    <div class="form-group">
+                        <label>Empleado Asignado</label>
+                        <select id="jobEmployee" class="input-field" required></select>
+                    </div>
+
+                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Materiales</h4>
+                    <div id="materialsContainer" style="max-height: 140px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
+                        Cargando materiales...
+                    </div>
+
+                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Datos del Trabajo</h4>
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="jobDesc" class="input-field" rows="3" required></textarea>
+                    </div>
 
                     <div class="form-row">
-                        <div class="form-group" style="width: 100%;">
-                            <label>Empleado Asignado</label>
-                            <select id="jobEmployee" class="input-field" required>
-                                <option value="">Cargando empleados...</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- MATERIALES -->
-                    <h4
-                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                        Materiales
-                    </h4>
-
-                    <div class="form-group">
-                        <label>Materiales (Opcional - El empleado también puede agregarlos en obra)</label>
-
-                        <div id="materialsContainer"
-                            style="max-height: 120px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
-                            Cargando materiales...
-                        </div>
-                    </div>
-
-                    <!-- DATOS DEL TRABAJO -->
-                    <h4
-                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                        Datos del Trabajo
-                    </h4>
-
-                    <div class="form-group">
-                        <label>Descripción del Trabajo</label>
-                        <textarea id="jobDesc" class="input-field" rows="2" required
-                            placeholder="Ej: Remodelación completa de cocina..."></textarea>
-                    </div>
-
-                    <div class="form-row" style="margin-top: 15px;">
                         <div class="form-group">
                             <label>Fecha de Ejecución</label>
                             <input type="date" id="jobDate" class="input-field" required>
                         </div>
-
                         <div class="form-group">
-                            <label>Pago Asignado ($)</label>
-                            <input type="number" id="jobPay" class="input-field" step="0.01" min="0" required
-                                placeholder="500.00">
+                            <label>Pago ($)</label>
+                            <input type="number" id="jobPay" class="input-field" step="0.01" required>
                         </div>
                     </div>
 
-                    <div class="form-row" style="margin-top: 15px;">
+                    <div class="form-row">
                         <div class="form-group">
                             <label>Código Caja de Seguridad (Opcional)</label>
-                            <input type="text" id="jobSafeBox" class="input-field" placeholder="Ej: 1234">
+                            <input type="text" id="jobSafeBox" class="input-field">
                         </div>
-
                         <div class="form-group">
-                            <label>Estado del Trabajo</label>
+                            <label>Estado</label>
                             <select id="jobStatus" class="input-field" required>
                                 <option value="PENDING">Pendiente</option>
                                 <option value="IN_PROGRESS">En Progreso</option>
@@ -220,19 +194,28 @@
                             </select>
                         </div>
                     </div>
-
                 </form>
             </div>
 
             <div class="modal-footer">
                 <button onclick="cerrarModalJob()" class="btn-secondary">Cancelar</button>
-                <button onclick="guardarTrabajo()" class="btn-primary" style="background: #e65100;">Guardar
-                    Trabajo</button>
+                <button onclick="guardarTrabajo()" class="btn-primary" style="background:#e65100;">Guardar Trabajo</button>
             </div>
         </div>
     </div>
 
     <script type="module" src="trabajos-jefe.js"></script>
+    <style>
+        .mobile-cards {
+            padding: 10px;
+        }
+        .mobile-cards .card {
+            transition: all 0.2s;
+        }
+        .mobile-cards .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        }
+    </style>
 </body>
-
 </html>

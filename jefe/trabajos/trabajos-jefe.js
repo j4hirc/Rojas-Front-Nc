@@ -5,6 +5,7 @@ const MATERIALS_URL = 'https://api-remomn.onrender.com/api/v1/materials/all';
 let userToken = '';
 let myManagerId = null;
 let mapa, marcador;
+let allJobsCache = [];
 
 // ==================================================
 // FUNCIONES DE APOYO (FECHAS)
@@ -43,18 +44,36 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_JEFE')) {
         Swal.fire({
-            icon: 'error', title: 'Acceso Denegado', text: 'Solo los Jefes pueden acceder a esta sección.', confirmButtonColor: '#198754'
+            icon: 'error', 
+            title: 'Acceso Denegado', 
+            text: 'Solo los Jefes pueden acceder a esta sección.', 
+            confirmButtonColor: '#198754'
         }).then(() => { window.location.href = '../../index.html'; });
         return;
     }
 
     document.getElementById('jefe-email-display').textContent = userEmail || 'Jefe';
 
-    Swal.fire({ title: 'Preparando tu área de trabajo...', text: 'Cargando personal y proyectos', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+    Swal.fire({ 
+        title: 'Preparando tu área de trabajo...', 
+        text: 'Cargando personal y proyectos', 
+        allowOutsideClick: false, 
+        didOpen: () => { Swal.showLoading(); } 
+    });
 
     await cargarUsuariosYMateriales(userEmail);
     await cargarTrabajos();
 
+    // ==================== EVENTOS DE FILTROS ====================
+    const searchInput = document.getElementById('searchJobInput');
+    const statusInput = document.getElementById('filterStatusInput');
+    const priorityInput = document.getElementById('filterPriorityInput');
+
+    if (searchInput) searchInput.addEventListener('input', filtrarTrabajosCombinados);
+    if (statusInput) statusInput.addEventListener('change', filtrarTrabajosCombinados);
+    if (priorityInput) priorityInput.addEventListener('input', filtrarTrabajosCombinados);
+
+    // Eventos del mapa (manténlos)
     const inputLat = document.getElementById('jobLat');
     const inputLng = document.getElementById('jobLng');
     const inputDireccion = document.getElementById('jobAddress');
@@ -76,6 +95,42 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     Swal.close();
 });
+
+window.filtrarTrabajosCombinados = () => {
+    const texto = (document.getElementById('searchJobInput')?.value || '').toLowerCase().trim();
+    const estado = (document.getElementById('filterStatusInput')?.value || 'ALL').trim();
+    const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
+
+    const trabajosFiltrados = allJobsCache.filter(job => {
+        // 1. Filtro de texto
+        const coincideTexto = 
+            (job.clientName || '').toLowerCase().includes(texto) ||
+            (job.description || '').toLowerCase().includes(texto) ||
+            (job.clientPhone || '').toLowerCase().includes(texto) ||
+            (job.nameEmployee || '').toLowerCase().includes(texto);
+
+        // 2. Filtro de estado
+        const coincideEstado = estado === 'ALL' || job.status === estado;
+
+        // 3. Filtro de prioridad (REPARADO Y SEGURO)
+        let coincidePrioridad = true;
+        if (prioridadInput !== '') {
+            const prioBuscada = parseInt(prioridadInput);
+            
+            // Si el trabajo no tiene prioridad o viene vacío, asumimos que es 2 (Igual que en la tabla)
+            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '') 
+                ? parseInt(job.priority) 
+                : 2;
+                
+            coincidePrioridad = prioJob === prioBuscada;
+        }
+
+        return coincideTexto && coincideEstado && coincidePrioridad;
+    });
+
+    renderizarTrabajos(trabajosFiltrados);
+};
+
 
 function inicializarMapa(lat, lng) {
     if (!mapa) {
@@ -186,7 +241,7 @@ window.actualizarMapaDesdeInputs = () => {
     if (!isNaN(latVal) && !isNaN(lngVal) && latVal >= -90 && latVal <= 90 && lngVal >= -180 && lngVal <= 180) {
         if (mapa && marcador) {
             marcador.setLatLng([latVal, lngVal]);
-            mapa.panTo([latVal, lngVal]); 
+            mapa.panTo([latVal, lngVal]);
         }
     }
 };
@@ -257,17 +312,15 @@ async function cargarUsuariosYMateriales(emailActual) {
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resUsers.ok) {
             const users = await resUsers.json();
+            const jefe = users.find(u => u.email === emailActual);
+            if (jefe) myManagerId = jefe.userId;
 
-            const jefeActual = users.find(u => u.email === emailActual);
-            if (jefeActual) {
-                myManagerId = jefeActual.userId;
-            }
-
-            const selectEmp = document.getElementById('jobEmployee');
-            if (selectEmp) {
-                selectEmp.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
-                const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
-                empleados.forEach(u => selectEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`);
+            const select = document.getElementById('jobEmployee');
+            if (select) {
+                select.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
+                users.filter(u => u.roles.some(r => r.name === 'ROLE_EMPLOYEE')).forEach(u => {
+                    select.innerHTML += `<option value="${u.userId}">${u.name}</option>`;
+                });
             }
         }
 
@@ -281,7 +334,7 @@ async function cargarUsuariosYMateriales(emailActual) {
                 containerMat.innerHTML = '<span style="color:#666;">No hay materiales en inventario.</span>';
             } else {
                 materials.forEach(mat => {
-                    const precioMat = mat.price || 0; 
+                    const precioMat = mat.price || 0;
                     containerMat.innerHTML += `
                     <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
                         <label style="display: flex; align-items: center; justify-content: space-between; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
@@ -316,13 +369,13 @@ async function cargarUsuariosYMateriales(emailActual) {
 
 async function cargarTrabajos() {
     try {
-        const response = await fetch(`${API_URL}/all`, { method: 'GET', headers: { 'Authorization': `Bearer ${userToken}` } });
-        if (response.ok) {
-            const todosLosTrabajos = await response.json();
-            const misTrabajos = todosLosTrabajos.filter(job => job.managerId === myManagerId);
-            renderizarTrabajos(misTrabajos);
+        const res = await fetch(`${API_URL}/all`, { headers: { 'Authorization': `Bearer ${userToken}` } });
+        if (res.ok) {
+            const todos = await res.json();
+            allJobsCache = todos.filter(j => j.managerId === myManagerId);
+            renderizarTrabajos(allJobsCache);
         }
-    } catch (error) { console.error("Error al cargar trabajos", error); }
+    } catch (e) { console.error(e); }
 }
 
 function renderizarTrabajos(trabajos) {
@@ -333,7 +386,7 @@ function renderizarTrabajos(trabajos) {
     if (mobileContainer) mobileContainer.innerHTML = '';
 
     if (trabajos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">No tienes trabajos asignados a tu cargo.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">No tienes trabajos asignados a tu cargo.</td></tr>`;
         if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No tienes trabajos asignados a tu cargo.</div>`;
         return;
     }
@@ -345,17 +398,18 @@ function renderizarTrabajos(trabajos) {
         else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
+        const priorityBadge = getPriorityBadge(job.priority);
         const empName = job.nameEmployee || 'Sin asignar';
         const fechaTxt = formatearFecha(job.jobDate);
         
-        // Limpiamos la descripción si trae datos viejos pegados
         let safeDesc = job.description ? job.description : 'Sin descripción';
         if (safeDesc.includes('[MATERIALES PRE-ASIGNADOS]:')) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
         }
-        
-        const mapsLink = `http://googleusercontent.com/maps.google.com/?q=${job.latitude},${job.longitude}`;
 
+        const mapsLink = `https://www.google.com/maps?q=${job.latitude},${job.longitude}`;
+
+        // === FILA DE TABLA DESKTOP ===
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -364,20 +418,16 @@ function renderizarTrabajos(trabajos) {
             </td>
             <td>
                 ${job.address}<br>
-                <small style="color:#198754; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small><br>
-                <a href="${mapsLink}" target="_blank" style="display: inline-block; margin-top: 5px; color: #198754; font-size: 11px; text-decoration: none; font-weight: bold; background: #E8F5E9; padding: 3px 8px; border-radius: 4px;">
-                    <i class="fa-solid fa-map-location-dot"></i> Ver Ruta
-                </a>
+                <small style="color:#198754; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small>
             </td>
             <td>
-                <div style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555; background: #f8faff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #198754;" title="${safeDesc.replace(/"/g, '&quot;')}">
+                <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555;" title="${safeDesc}">
                     ${safeDesc}
                 </div>
             </td>
-            <td>
-                <span style="color:#198754; font-weight: 600;"><i class="fa-solid fa-user-tie"></i> ${empName}</span>
-            </td>
+            <td><strong>${empName}</strong></td>
             <td>${statusBadge}</td>
+            <td>${priorityBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
                 <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
@@ -390,43 +440,30 @@ function renderizarTrabajos(trabajos) {
         `;
         tbody.appendChild(tr);
 
+        // === TARJETA MÓVIL OPTIMIZADA ===
         if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
-            card.style.flexDirection = 'column';
-            card.style.alignItems = 'flex-start';
-            card.style.padding = '20px';
-
+            // Se fuerza flex-direction: column para que todo vaya hacia abajo y no se desborde
+            card.style.cssText = 'padding: 20px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; width: 100%; margin-bottom: 15px;';
+            
             card.innerHTML = `
-                <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px;">
-                    <h3 style="margin:0; font-size:1.1rem; color:#198754;">${job.clientName}</h3>
-                    ${statusBadge}
-                </div>
-                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
-                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
-                <p style="margin: 3px 0; font-size: 13px; color:#198754; font-weight: 600;"><i class="fa-regular fa-calendar"></i> Fecha: ${fechaTxt}</p>
-                
-                <div style="margin: 15px 0; padding: 12px; background: #f8faff; border-left: 4px solid #198754; border-radius: 6px; width: 100%;">
-                    <strong style="color: #2B3674; font-size: 12px;"><i class="fa-solid fa-align-left"></i> Descripción del Trabajo:</strong>
-                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">
-                        "${safeDesc}"
-                    </p>
-                </div>
-
-                <div style="background: #F9FAFC; padding: 10px; border-radius: 8px; margin-top: 10px; width: 100%;">
-                    <p style="margin: 0; font-size: 13px; color:#198754;"><strong>Empleado Asignado:</strong> ${empName}</p>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 10px; margin-bottom:5px;">
+                    <h3 style="margin:0; color:#198754; font-size: 16px; word-break: break-word;">${job.clientName}</h3>
+                    <div style="display:flex; flex-direction: column; align-items: flex-end; gap:4px; flex-shrink: 0;">
+                        ${statusBadge} 
+                        ${priorityBadge}
+                    </div>
                 </div>
                 
-                <p style="margin: 10px 0 0 0; font-size: 15px; color:#2e7d32; font-weight: bold;">Pago: $${job.pay.toFixed(2)}</p>
+                <p style="margin:0; color:#666; font-size: 14px;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
+                <p style="margin:0; color:#666; font-size: 14px; word-break: break-word;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
+                <p style="margin:0; color:#198754; font-size: 14px;"><strong>Empleado:</strong> ${empName}</p>
+                <p style="margin:5px 0 0 0; font-weight:bold; color:#2e7d32; font-size: 15px;">Pago: $${job.pay.toFixed(2)}</p>
                 
-                <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 8px;">
-                    <a href="${mapsLink}" target="_blank" style="flex: 1; padding: 8px; border-radius: 8px; background: #E8F5E9; color: #198754; border: none; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; font-size: 13px;">
-                        <i class="fa-solid fa-map-location-dot"></i> Ruta
-                    </a>
-                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FFF3E0; color: #ff9800; border: none; font-weight: bold; cursor: pointer; font-size: 13px;">
-                        <i class="fa-solid fa-pen"></i> Editar
-                    </button>
-                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer; font-size: 13px;"><i class="fa-solid fa-trash"></i> Eliminar</button>
+                <div class="card-actions" style="margin-top:15px; display:flex; gap:10px; width: 100%;">
+                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold;">Editar</button>
+                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold;">Eliminar</button>
                 </div>
             `;
             mobileContainer.appendChild(card);
@@ -434,19 +471,30 @@ function renderizarTrabajos(trabajos) {
     });
 }
 
+function getPriorityBadge(priority) {
+    const p = (priority !== null && priority !== undefined) ? parseInt(priority) : 2;
+    
+    if (p === 0 || p === 1) {
+        return `<span style="background:#FBE9E7; color:#d32f2f; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${p} - Alta</span>`;
+    } else if (p === 2) {
+        return `<span style="background:#E8F5E9; color:#2e7d32; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${p} - Normal</span>`;
+    } else {
+        return `<span style="background:#ECEFF1; color:#546E7A; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${p} - Baja</span>`;
+    }
+}
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
-    
+
     document.querySelectorAll('input[name="jobMaterials"]').forEach(cb => {
         cb.checked = false;
         const divOpts = document.getElementById(`opts_${cb.value}`);
         if (divOpts) divOpts.style.display = 'none';
-        
+
         const qtyInput = document.getElementById(`qty_${cb.value}`);
         const unitInput = document.getElementById(`unit_${cb.value}`);
-        if(qtyInput) qtyInput.value = '';
-        if(unitInput) unitInput.value = '';
+        if (qtyInput) qtyInput.value = '';
+        if (unitInput) unitInput.value = '';
     });
     if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
 
@@ -467,8 +515,8 @@ window.abrirModalEditarJob = async (id) => {
         if (divOpts) divOpts.style.display = 'none';
         const qtyInput = document.getElementById(`qty_${cb.value}`);
         const unitInput = document.getElementById(`unit_${cb.value}`);
-        if(qtyInput) qtyInput.value = '';
-        if(unitInput) unitInput.value = '';
+        if (qtyInput) qtyInput.value = '';
+        if (unitInput) unitInput.value = '';
     });
     if (document.getElementById('granTotalMateriales')) document.getElementById('granTotalMateriales').textContent = '0.00';
 
@@ -507,13 +555,13 @@ window.abrirModalEditarJob = async (id) => {
                         cb.checked = true;
                         const divOpts = document.getElementById(`opts_${cb.value}`);
                         if (divOpts) divOpts.style.display = 'flex';
-                        
+
                         const qtyInput = document.getElementById(`qty_${cb.value}`);
                         const unitInput = document.getElementById(`unit_${cb.value}`);
-                        
+
                         // Traemos los números reales de Java
-                        if(qtyInput && matGuardado.quantity !== null) qtyInput.value = matGuardado.quantity;
-                        if(unitInput && matGuardado.unit !== null) unitInput.value = matGuardado.unit;
+                        if (qtyInput && matGuardado.quantity !== null) qtyInput.value = matGuardado.quantity;
+                        if (unitInput && matGuardado.unit !== null) unitInput.value = matGuardado.unit;
                     }
                 });
                 window.calcularCostoMateriales();
@@ -570,8 +618,8 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: myManagerId, 
-        materials: selectedMaterials 
+        managerId: myManagerId,
+        materials: selectedMaterials
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
@@ -675,10 +723,10 @@ window.toggleMaterialOpciones = (matId) => {
 
     if (checkbox.checked) {
         divOpts.style.display = 'flex';
-        if (!inputQty.value) inputQty.value = 1; 
+        if (!inputQty.value) inputQty.value = 1;
     } else {
         divOpts.style.display = 'none';
-        inputQty.value = ''; 
+        inputQty.value = '';
     }
     window.calcularCostoMateriales();
 };
