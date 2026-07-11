@@ -721,24 +721,6 @@ window.eliminarTrabajo = async (id) => {
     });
 };
 
-window.cerrarSesion = () => {
-    Swal.fire({
-        title: "¿Cerrar sesión?",
-        text: "¿Estás seguro que deseas salir del portal?",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#198754",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Sí, salir",
-        cancelButtonText: "Cancelar"
-    }).then((result) => {
-        if (result.isConfirmed) {
-            localStorage.clear();
-            window.location.href = '../../index.html';
-        }
-    });
-};
-
 // =========================================================
 // UTILIDADES PARA EL CÁLCULO DE MATERIALES
 // =========================================================
@@ -776,4 +758,112 @@ window.calcularCostoMateriales = () => {
     if (txtGranTotal) {
         txtGranTotal.textContent = granTotal.toFixed(2);
     }
+};
+
+window.cerrarSesion = () => {
+    const rolesString = localStorage.getItem('user_roles');
+    let userRoles = [];
+    if (rolesString) { 
+        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    }
+
+    if (userRoles.length > 1) {
+        Swal.fire({
+            title: "¿Qué deseas hacer?",
+            text: "Selecciona si deseas salir del portal o cambiar tu rol de trabajo.",
+            icon: "question",
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: "#198754",
+            denyButtonColor: "#00B8A9",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            denyButtonText: "Cambiar de Rol",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = '../../index.html';
+            } else if (result.isDenied) {
+                mostrarSelectorDeRolesDesdeJefe(userRoles, true);
+            }
+        });
+    } else {
+        Swal.fire({
+            title: "¿Cerrar sesión?",
+            text: "¿Estás seguro que deseas salir del portal?",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#198754",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Sí, salir",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.clear();
+                window.location.href = '../../index.html';
+            }
+        });
+    }
+};
+
+window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
+    if (typeof cerrarModalPerfil === 'function') {
+        cerrarModalPerfil(); 
+    } else {
+        const modales = document.querySelectorAll('.modal-overlay');
+        modales.forEach(m => m.style.display = 'none');
+    }
+
+    const prefijoRaiz = esSubcarpeta ? '../../' : '../';
+    const prefijoJefe = esSubcarpeta ? '../' : '';
+
+    const contenedor = document.createElement('div');
+    contenedor.style.display = 'flex';
+    contenedor.style.flexDirection = 'column';
+    contenedor.style.gap = '10px';
+    contenedor.style.marginTop = '15px';
+
+    roles.forEach(rol => {
+        let nombreRol = '';
+        let url = '';
+        
+        if (rol === 'ROLE_ADMIN') { 
+            nombreRol = 'Acceder como Administrador'; 
+            url = `${prefijoRaiz}admin/admin-dashboard.html`; 
+        }
+        if (rol === 'ROLE_JEFE') { 
+            nombreRol = 'Acceder como Jefe'; 
+            url = `${prefijoJefe}jefe-dashboard.html`; 
+        }
+        if (rol === 'ROLE_EMPLOYEE') { 
+            nombreRol = 'Acceder como Subcontratista'; 
+            url = `${prefijoRaiz}employee/employee-dashboard.html`; 
+        }
+
+        if (nombreRol) {
+            const boton = document.createElement('button');
+            boton.className = 'swal2-confirm swal2-styled';
+            boton.style.width = '100%';
+            boton.style.margin = '0';
+            boton.style.backgroundColor = '#00B8A9';
+            boton.style.cursor = 'pointer';
+            boton.textContent = nombreRol;
+            
+            boton.addEventListener('click', () => {
+                window.location.href = url;
+            });
+
+            contenedor.appendChild(boton);
+        }
+    });
+
+    Swal.fire({
+        title: 'Selecciona tu área de trabajo',
+        html: contenedor, 
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'Cancelar',
+        cancelButtonColor: '#2E3238'
+    });
 };
