@@ -29,7 +29,7 @@ function formatearFecha(fecha) {
         const dia = String(fecha[2]).padStart(2, '0');
         const mes = String(fecha[1]).padStart(2, '0');
         const anio = fecha[0];
-        return `${mes}-${dia}-${anio}`; 
+        return `${mes}-${dia}-${anio}`;
     } else if (typeof fecha === 'string') {
         const partes = fecha.split('-');
         if (partes.length === 3) return `${partes[1]}-${partes[2]}-${partes[0]}`;
@@ -53,16 +53,16 @@ function extraerDatosMaterialesFallback(texto) {
     const datos = {};
     if (!texto) return datos;
     const lineas = texto.split('\n');
-    
+
     lineas.forEach(linea => {
         if (linea.includes(':') && (linea.includes('•') || linea.includes('📦') || linea.includes('-'))) {
             const partes = linea.split(':');
             const nombreMat = partes[0].replace(/[•📦\-*]/g, '').trim().toLowerCase();
-            const valorStr = partes[1].trim(); 
-            
+            const valorStr = partes[1].trim();
+
             let qty = '';
             let unit = '';
-            
+
             const numMatch = valorStr.match(/^(\d+(?:\.\d+)?)\s*(.*)/);
             if (numMatch) {
                 qty = numMatch[1];
@@ -70,7 +70,7 @@ function extraerDatosMaterialesFallback(texto) {
             } else if (valorStr.toLowerCase() !== 'asignado' && !valorStr.toLowerCase().includes('no especificada')) {
                 unit = valorStr;
             }
-            
+
             datos[nombreMat] = { qty, unit };
         }
     });
@@ -112,14 +112,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const priceContainer = document.getElementById('newPriceContainer');
         if (e.target.checked) {
             priceContainer.style.display = 'block';
-            
+
             const inputPrice = document.getElementById('evNewPrice');
             inputPrice.value = 'Requiere autorización del Jefe';
-            inputPrice.readOnly = true; 
-            inputPrice.style.backgroundColor = '#f3f4f6'; 
-            inputPrice.style.color = '#dc2626'; 
+            inputPrice.readOnly = true;
+            inputPrice.style.backgroundColor = '#f3f4f6';
+            inputPrice.style.color = '#dc2626';
             inputPrice.style.fontWeight = 'bold';
-            
+
         } else {
             priceContainer.style.display = 'none';
         }
@@ -147,56 +147,56 @@ async function cargarCalendarioEmpleado(emailActual) {
         const misTrabajos = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
 
         const eventosFormateados = misTrabajos.map(job => {
-    // Nueva lógica de prioridad
-    const prioridad = job.priority || 3; // 1 = Alta, 2 = Media, 3 = Baja (por defecto)
+            // Nueva lógica de prioridad
+            const prioridad = job.priority || 3; // 1 = Alta, 2 = Media, 3 = Baja (por defecto)
 
-    let bgColor = '#64748B'; // gris por defecto
-    let borderColor = '#475569';
-    let icon = '<i class="fa-solid fa-clock"></i>';
+            let bgColor = '#64748B'; // gris por defecto
+            let borderColor = '#475569';
+            let icon = '<i class="fa-solid fa-clock"></i>';
 
-    switch (prioridad) {
-        case 1: // Alta
-            bgColor = '#EF4444';
-            borderColor = '#B91C1C';
-            icon = '<i class="fa-solid fa-fire-flame-curved"></i>';
-            break;
-        case 2: // Media
-            bgColor = '#F59E0B';
-            borderColor = '#D97706';
-            icon = '<i class="fa-solid fa-exclamation-triangle"></i>';
-            break;
-        case 3: // Baja
-            bgColor = '#10B981';
-            borderColor = '#059669';
-            icon = '<i class="fa-solid fa-clock"></i>';
-            break;
-    }
+            switch (prioridad) {
+                case 1: // Alta
+                    bgColor = '#EF4444';
+                    borderColor = '#B91C1C';
+                    icon = '<i class="fa-solid fa-fire-flame-curved"></i>';
+                    break;
+                case 2: // Media
+                    bgColor = '#F59E0B';
+                    borderColor = '#D97706';
+                    icon = '<i class="fa-solid fa-exclamation-triangle"></i>';
+                    break;
+                case 3: // Baja
+                    bgColor = '#10B981';
+                    borderColor = '#059669';
+                    icon = '<i class="fa-solid fa-clock"></i>';
+                    break;
+            }
 
-    // Ajustar color según estado (mantener compatibilidad)
-    if (job.status === 'COMPLETED') {
-        bgColor = '#10B981';
-        borderColor = '#059669';
-    }
-    if (job.status === 'CANCELLED') {
-        bgColor = '#6B7280';
-        borderColor = '#4B5563';
-    }
+            // Ajustar color según estado (mantener compatibilidad)
+            if (job.status === 'COMPLETED') {
+                bgColor = '#10B981';
+                borderColor = '#059669';
+            }
+            if (job.status === 'CANCELLED') {
+                bgColor = '#6B7280';
+                borderColor = '#4B5563';
+            }
 
-    return {
-        id: job.jobId,
-        title: job.clientName,
-        start: fechaParaCalendario(job.jobDate),
-        backgroundColor: bgColor,
-        borderColor: borderColor,
-        extendedProps: {
-            ...job,
-            prioridad: prioridad,
-            prioridadTexto: prioridad === 1 ? 'ALTA' : prioridad === 2 ? 'MEDIA' : 'BAJA',
-            fechaHermosa: formatearFecha(job.jobDate),
-            iconoPrioridad: icon
-        }
-    };
-});
+            return {
+                id: job.jobId,
+                title: job.clientName,
+                start: fechaParaCalendario(job.jobDate),
+                backgroundColor: bgColor,
+                borderColor: borderColor,
+                extendedProps: {
+                    ...job,
+                    prioridad: prioridad,
+                    prioridadTexto: prioridad === 1 ? 'ALTA' : prioridad === 2 ? 'MEDIA' : 'BAJA',
+                    fechaHermosa: formatearFecha(job.jobDate),
+                    iconoPrioridad: icon
+                }
+            };
+        });
 
         var calendarEl = document.getElementById('calendar');
         var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -218,22 +218,22 @@ async function cargarCalendarioEmpleado(emailActual) {
             noEventsContent: 'No tienes trabajos asignados por el momento.',
             events: eventosFormateados,
 
-            eventContent: function(arg) {
-    const p = arg.event.extendedProps;
-    const prioridad = p.prioridad || 3;
+            eventContent: function (arg) {
+                const p = arg.event.extendedProps;
+                const prioridad = p.prioridad || 3;
 
-    let badgePrioridad = '';
-    if (prioridad === 1) {
-        badgePrioridad = `<span style="background:#EF4444;color:white;font-size:10px;padding:1px 6px;border-radius:3px;">¡ALTA!</span>`;
-    } else if (prioridad === 2) {
-        badgePrioridad = `<span style="background:#F59E0B;color:white;font-size:10px;padding:1px 6px;border-radius:3px;">MEDIA</span>`;
-    }
+                let badgePrioridad = '';
+                if (prioridad === 1) {
+                    badgePrioridad = `<span style="background:#EF4444;color:white;font-size:10px;padding:1px 6px;border-radius:3px;">¡ALTA!</span>`;
+                } else if (prioridad === 2) {
+                    badgePrioridad = `<span style="background:#F59E0B;color:white;font-size:10px;padding:1px 6px;border-radius:3px;">MEDIA</span>`;
+                }
 
-    let viewType = arg.view.type;
+                let viewType = arg.view.type;
 
-    if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
-        return {
-            html: `
+                if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
+                    return {
+                        html: `
                 <div style="display: flex; flex-direction: column; gap: 6px; padding: 5px; width: 100%;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <div style="font-weight: 700; font-size: 1.15em; color: #111C44;">
@@ -250,11 +250,11 @@ async function cargarCalendarioEmpleado(emailActual) {
                     </div>
                 </div>
             `
-        };
-    } else {
-        // Vista mes
-        return {
-            html: `
+                    };
+                } else {
+                    // Vista mes
+                    return {
+                        html: `
                 <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden; text-align: center;">
                     <div style="font-weight: 700; font-size: 0.85em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
                         ${p.iconoPrioridad} ${arg.event.title}
@@ -262,9 +262,9 @@ async function cargarCalendarioEmpleado(emailActual) {
                     </div>
                 </div>
             `
-        };
-    }
-},
+                    };
+                }
+            },
 
             eventClick: function (info) {
                 const p = info.event.extendedProps;
@@ -307,7 +307,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                         let cantidadStr = (m.quantity && m.quantity > 0) ? m.quantity : '';
                         let unidadStr = (m.unit && m.unit !== 'N/A') ? m.unit : '';
                         let textMat = cantidadStr || unidadStr ? `${cantidadStr} ${unidadStr}`.trim() : 'Asignado';
-                        
+
                         return `
                         <li style="margin-bottom: 8px; font-size: 13px; color: #2B3674; list-style: none; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-circle-check" style="color:#00B8A9; font-size: 14px;"></i> 
@@ -336,8 +336,8 @@ async function cargarCalendarioEmpleado(emailActual) {
                 `;
 
                 Swal.fire({
-        title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
-        html: `
+                    title: `<h3 style="color:#111C44; margin:0; font-weight:700; text-align:center;">Detalles de la Orden</h3>`,
+                    html: `
             <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
                 
                 <!-- Badge de Estado -->
@@ -584,35 +584,35 @@ window.abrirModalEvidence = (jobId) => {
     limpiarFirmaSub();
 
     const datosMaterialesGuardadosFallback = currentJobInfo.description ? extraerDatosMaterialesFallback(currentJobInfo.description) : {};
-    
-    document.getElementById('evComment').value = ""; 
+
+    document.getElementById('evComment').value = "";
 
     // 🔥 NUEVO: reseteamos filtros y estado de materiales, y reconstruimos desde el trabajo actual
     materialesEstadoEmpleado = {};
-if (document.getElementById('searchMaterialInput')) document.getElementById('searchMaterialInput').value = '';
-if (document.getElementById('filterCategoryMaterial')) document.getElementById('filterCategoryMaterial').value = '';
+    if (document.getElementById('searchMaterialInput')) document.getElementById('searchMaterialInput').value = '';
+    if (document.getElementById('filterCategoryMaterial')) document.getElementById('filterCategoryMaterial').value = '';
 
-limpiarMaterialesNecesariosEmpleado();
+    limpiarMaterialesNecesariosEmpleado();
 
-allMaterialsCache.forEach(mat => {
-    const matId = mat.materialId;
-    const matGuardado = (currentJobInfo && currentJobInfo.materials) ? currentJobInfo.materials.find(m => m.materialId == matId) : null;
-    const nombreMat = (mat.name || '').toLowerCase().trim();
-    const fallbackInfo = datosMaterialesGuardadosFallback[nombreMat];
+    allMaterialsCache.forEach(mat => {
+        const matId = mat.materialId;
+        const matGuardado = (currentJobInfo && currentJobInfo.materials) ? currentJobInfo.materials.find(m => m.materialId == matId) : null;
+        const nombreMat = (mat.name || '').toLowerCase().trim();
+        const fallbackInfo = datosMaterialesGuardadosFallback[nombreMat];
 
-    if (matGuardado || fallbackInfo) {
-        let finalQty = (matGuardado && matGuardado.quantity != null) ? matGuardado.quantity : (fallbackInfo ? fallbackInfo.qty : '');
-        let finalUnit = (matGuardado && matGuardado.unit != null) ? matGuardado.unit : (fallbackInfo ? fallbackInfo.unit : '');
+        if (matGuardado || fallbackInfo) {
+            let finalQty = (matGuardado && matGuardado.quantity != null) ? matGuardado.quantity : (fallbackInfo ? fallbackInfo.qty : '');
+            let finalUnit = (matGuardado && matGuardado.unit != null) ? matGuardado.unit : (fallbackInfo ? fallbackInfo.unit : '');
 
-        if (finalUnit === 'N/A' || finalUnit === 'undefined') finalUnit = '';
-        if (finalQty === 'undefined' || finalQty == 0) finalQty = '';
+            if (finalUnit === 'N/A' || finalUnit === 'undefined') finalUnit = '';
+            if (finalQty === 'undefined' || finalQty == 0) finalQty = '';
 
-        materialesEstadoEmpleado[matId] = { checked: true };
-        agregarMaterialNecesarioEmpleado(matId, mat.name, mat.price || 0, finalQty, finalUnit);
-    }
-});
+            materialesEstadoEmpleado[matId] = { checked: true };
+            agregarMaterialNecesarioEmpleado(matId, mat.name, mat.price || 0, finalQty, finalUnit);
+        }
+    });
 
-renderizarMaterialesEmpleado(allMaterialsCache);
+    renderizarMaterialesEmpleado(allMaterialsCache);
 
     document.getElementById('modalEvidence').style.display = 'flex';
 
@@ -733,7 +733,7 @@ window.guardarReporteYPdf = async () => {
     if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
 
     const hasModifications = document.getElementById('evModifications').checked;
-    
+
     let nuevoPrecioValor = null;
 
     if (hasModifications) {
@@ -741,7 +741,7 @@ window.guardarReporteYPdf = async () => {
         if (!inputNuevoPrecio || isNaN(parseFloat(inputNuevoPrecio))) {
             return Swal.fire({ icon: 'warning', title: 'Falta el Precio', text: 'Marcaste la alerta de oficina. Debes ingresar un nuevo precio sugerido.', confirmButtonColor: '#00B8A9' });
         }
-        nuevoPrecioValor = parseFloat(inputNuevoPrecio); 
+        nuevoPrecioValor = parseFloat(inputNuevoPrecio);
         comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones a la orden original que requieren ajuste de precio por parte del Jefe.\n\n` + comment;
         document.getElementById('pdfNewPriceRow').style.display = 'table-row';
         document.getElementById('pdfNewPrice').textContent = `REQUIERE AUTORIZACIÓN DEL JEFE`;
@@ -752,40 +752,40 @@ window.guardarReporteYPdf = async () => {
     // 🔥 NUEVO: recorremos los materiales marcados, calculando subtotal (cantidad x precio unitario)
     // para armar la tabla del PDF y el total de materiales.
     const selectedRows = document.querySelectorAll('.necessary-material-row-emp');
-const selectedMaterials = []; 
-const selectedMaterialIds = []; 
-let resumenMaterialesBD = '';
-let pdfMaterialsRows = '';
-let totalMateriales = 0;
+    const selectedMaterials = [];
+    const selectedMaterialIds = [];
+    let resumenMaterialesBD = '';
+    let pdfMaterialsRows = '';
+    let totalMateriales = 0;
 
-selectedRows.forEach(row => {
-    const matId = parseInt(row.id.replace('nec-emp-', ''));
-    const nombreMat = row.querySelector('div').textContent.trim();
+    selectedRows.forEach(row => {
+        const matId = parseInt(row.id.replace('nec-emp-', ''));
+        const nombreMat = row.querySelector('div').textContent.trim();
 
-    const priceMatch = row.textContent.match(/\$([\d.]+)/);
-    const precioUnit = priceMatch ? parseFloat(priceMatch[1]) || 0 : 0;
+        const priceMatch = row.textContent.match(/\$([\d.]+)/);
+        const precioUnit = priceMatch ? parseFloat(priceMatch[1]) || 0 : 0;
 
-    const qtyInput = row.querySelector('.nec-emp-qty');
-    const unitInput = row.querySelector('.nec-emp-unit');
-    const cantidadStr = qtyInput ? qtyInput.value.trim() : '';
-    const unidad = unitInput ? unitInput.value.trim() : '';
+        const qtyInput = row.querySelector('.nec-emp-qty');
+        const unitInput = row.querySelector('.nec-emp-unit');
+        const cantidadStr = qtyInput ? qtyInput.value.trim() : '';
+        const unidad = unitInput ? unitInput.value.trim() : '';
 
-    const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
-    const subtotal = cantidadNum * precioUnit;
-    totalMateriales += subtotal;
+        const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 0;
+        const subtotal = cantidadNum * precioUnit;
+        totalMateriales += subtotal;
 
-    selectedMaterials.push({
-        materialId: matId,
-        quantity: cantidadNum,
-        unit: unidad || 'N/A'
-    });
+        selectedMaterials.push({
+            materialId: matId,
+            quantity: cantidadNum,
+            unit: unidad || 'N/A'
+        });
 
-    selectedMaterialIds.push(matId);
+        selectedMaterialIds.push(matId);
 
-    const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
-    resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
+        const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
+        resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
 
-    pdfMaterialsRows += `
+        pdfMaterialsRows += `
         <tr>
             <td style="padding: 8px; border: 1px solid #ddd; color: #2E3238;">${nombreMat}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #2E3238;">${textoCantidad}</td>
@@ -793,7 +793,7 @@ selectedRows.forEach(row => {
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; color: #198754;">$${subtotal.toFixed(2)}</td>
         </tr>
     `;
-});
+    });
 
     if (resumenMaterialesBD !== '') {
         comment = `${comment}\n\n[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}`;
@@ -834,21 +834,23 @@ selectedRows.forEach(row => {
 
     const imgFirma = document.getElementById('pdfSignatureSubImg');
     imgFirma.src = canvasSub.toDataURL("image/png");
-    imgFirma.style.width = "250px"; 
+    imgFirma.style.width = "250px";
     imgFirma.style.height = "75px";
 
     const pdfWrapper = document.getElementById('pdfWrapper');
     const pdfTemplate = document.getElementById('pdfTemplate');
 
-    pdfWrapper.style.display = 'block';
-    pdfWrapper.style.position = 'absolute';
-    pdfWrapper.style.top = '-10000px'; 
-    pdfWrapper.style.left = '0';
-    pdfWrapper.style.width = '750px';
-    pdfWrapper.style.zIndex = '-9999';
-    pdfWrapper.style.visibility = 'visible'; 
+    window.scrollTo(0, 0); // 🔥 evita offsets raros de captura en iOS
 
-    await new Promise(r => setTimeout(r, 600)); 
+    pdfWrapper.style.display = 'block';
+    pdfWrapper.style.position = 'fixed';
+    pdfWrapper.style.top = '0';
+    pdfWrapper.style.left = '-9999px';   // 🔥 fuera de pantalla por la izquierda, no por arriba
+    pdfWrapper.style.width = '750px';
+    pdfWrapper.style.zIndex = '-1';
+    pdfWrapper.style.visibility = 'visible';
+
+    await new Promise(r => setTimeout(r, 600));
 
     const safeName = (currentJobInfo.clientName || 'Trabajo').replace(/[^a-zA-Z0-9]/g, '_');
     const nombreArchivoPDF = `Reporte_${safeName}.pdf`;
@@ -861,12 +863,14 @@ selectedRows.forEach(row => {
         scale: 2, 
         useCORS: true, 
         logging: false, 
-        backgroundColor: '#ffffff'   // 🔥 evita el negro por transparencia
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0            // 🔥 clave para que no capture mal en iOS
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { 
         mode: ['css', 'legacy'], 
-        avoid: ['tr', 'h3', 'img', '.avoid-break']  // 🔥 evita cortar encabezados/tablas a la mitad
+        avoid: ['tr', 'h3', 'img', '.avoid-break']
     }
 };
 
@@ -875,11 +879,9 @@ try {
     pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
 
     if (esIOS()) {
-        // 🔥 En iPhone/iPad NO abrimos el blob en pestaña nueva (causa el error al regresar).
-        // Usamos el flujo de descarga nativo, que abre el panel de Compartir/Guardar en Archivos.
-        await html2pdf().set(opt).from(pdfTemplate).save();
+        // 🔥 Ya NO usamos html2pdf().save() en iOS, causa el mismo bug de navegación
+        await manejarDescargaPDF(pdfBlob, nombreArchivoPDF);
     } else {
-        // Escritorio / Android: descarga + abre en pestaña nueva
         html2pdf().set(opt).from(pdfTemplate).save();
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');
@@ -902,8 +904,8 @@ try {
         materials: selectedMaterials,
         materialIds: selectedMaterialIds
     };
-    
-    if(nuevoPrecioValor !== null) {
+
+    if (nuevoPrecioValor !== null) {
         dtoObject.newPrice = nuevoPrecioValor;
     }
 
@@ -923,24 +925,23 @@ try {
         });
 
         if (response.ok) {
-            Swal.fire({ 
-    icon: 'success', 
-    title: '¡Éxito!', 
-    text: esIOS() 
-        ? 'El reporte se subió. El PDF se descargó — revísalo en tu app Archivos o en el selector de "Guardar".' 
-        : 'El reporte se subió y el PDF fue guardado.', 
-    confirmButtonColor: '#00B8A9' 
-}).then(() => {
-    cerrarModalEvidence();
-    window.location.reload();
-});
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: 'El reporte se subió y el PDF fue guardado.',
+                confirmButtonColor: '#00B8A9'
+            }).then(() => {
+                cerrarModalEvidence();
+                // 🔥 ESTO RECARGA LA PÁGINA PARA ACTUALIZAR LA VISTA AL INSTANTE
+                window.location.reload();
+            });
         } else {
             let errorText = await response.text();
             try {
                 const jsonError = JSON.parse(errorText);
                 errorText = jsonError.message || 'Error del servidor';
-            } catch(e) {}
-            
+            } catch (e) { }
+
             console.error("Error exacto del servidor:", errorText);
             Swal.fire({ icon: 'error', title: 'Fallo al Guardar', html: `Java respondió: <br> ${errorText}`, confirmButtonColor: '#00B8A9' });
         }
@@ -953,7 +954,38 @@ function esIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
 
-window.cerrarSesion = () => { 
+async function manejarDescargaPDF(pdfBlob, nombreArchivo) {
+    if (esIOS()) {
+        try {
+            const file = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: nombreArchivo });
+                return; // 🔥 éxito: el usuario elige Guardar en Archivos / Enviar, sin navegar
+            }
+        } catch (e) {
+            // El usuario canceló el panel de compartir, o el navegador no soporta archivos
+            console.warn('No se pudo compartir el PDF:', e);
+        }
+
+        // Fallback si no hay soporte de Share API: abrir en la MISMA pestaña (no window.open)
+        // Esto evita crear una pestaña "fantasma" de la que no se puede salir.
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = pdfUrl;
+        a.target = '_self';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    } else {
+        // Escritorio / Android: funciona bien como está
+        html2pdf().set(opt).from(pdfTemplate).save();
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        window.open(pdfUrl, '_blank');
+    }
+}
+
+window.cerrarSesion = () => {
     Swal.fire({
         title: "¿Cerrar sesión?",
         text: "¿Estás seguro que deseas salir del portal?",
@@ -971,7 +1003,7 @@ window.cerrarSesion = () => {
     });
 };
 
-window.abrirModalPerfil = () => { 
+window.abrirModalPerfil = () => {
     if (!miUsuarioActual) { return Swal.fire('Error', 'Cargando datos...', 'error'); }
     document.getElementById('perfilFirstName').value = miUsuarioActual.firstName || '';
     document.getElementById('perfilLastName').value = miUsuarioActual.lastName || '';
@@ -984,7 +1016,7 @@ window.abrirModalPerfil = () => {
 
 window.cerrarModalPerfil = () => { document.getElementById('modalPerfil').style.display = 'none'; };
 
-window.guardarPerfil = async () => { 
+window.guardarPerfil = async () => {
     const payload = {
         firstName: document.getElementById('perfilFirstName').value.trim(),
         middleName: miUsuarioActual.middleName || "",
