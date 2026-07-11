@@ -3,6 +3,8 @@ const USERS_URL = 'https://api-remomn.onrender.com/api/v1/user/all-users';
 
 let userToken = '';
 let myManagerId = null;
+let allJobs = [];           // Guardará todos los trabajos
+let calendarInstance = null; // Guardará la instancia del calendario
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -26,39 +28,22 @@ async function cargarDatosYCronograma(emailActual) {
 
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         const users = await resUsers.json();
+        
         const jefeActual = users.find(u => u.email === emailActual);
         if (jefeActual) myManagerId = jefeActual.userId;
 
         const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
-        const todosLosTrabajos = await resJobs.json();
+        allJobs = await resJobs.json();
         
-        const misTrabajos = todosLosTrabajos.filter(job => job.managerId === myManagerId);
+        const misTrabajos = allJobs.filter(job => job.managerId === myManagerId);
 
-        const eventosFormateados = misTrabajos.map(job => {
-            let bgColor = '#ff9800'; 
-            if(job.status === 'IN_PROGRESS') bgColor = '#1e88e5'; 
-            else if(job.status === 'COMPLETED') bgColor = '#2e7d32'; 
-            else if(job.status === 'CANCELLED') bgColor = '#d32f2f'; 
+        // Cargar filtro
+        await cargarFiltroEmpleados(misTrabajos, users);
 
-            return {
-                id: job.jobId,
-                title: job.clientName,
-                start: job.jobDate ? job.jobDate : new Date().toISOString().split('T')[0], 
-                backgroundColor: bgColor,
-                borderColor: bgColor,
-                extendedProps: {
-                    address: job.address,
-                    description: job.description || 'Sin descripción',
-                    status: job.status,
-                    pay: job.pay,
-                    employee: job.nameEmployee || 'Sin asignar',
-                    clientPhone: job.clientPhone
-                }
-            };
-        });
+        const eventosFormateados = crearEventos(misTrabajos);
 
         var calendarEl = document.getElementById('calendar');
-        var calendar = new FullCalendar.Calendar(calendarEl, {
+        calendarInstance = new FullCalendar.Calendar(calendarEl, {
             initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth', 
             locale: 'es',
             height: 'auto', 
@@ -75,7 +60,6 @@ async function cargarDatosYCronograma(emailActual) {
             },
             events: eventosFormateados,
             
-            // LA MAGIA: Renderizado condicional según la vista
             eventContent: function(arg) {
                 let p = arg.event.extendedProps;
                 let icon = '';
@@ -87,36 +71,29 @@ async function cargarDatosYCronograma(emailActual) {
 
                 let viewType = arg.view.type;
 
-                // SI ESTAMOS EN VISTA AGENDA (LISTA)
                 if (viewType === 'listWeek' || viewType === 'listMonth' || viewType === 'listDay') {
                     let customHtml = `
                         <div style="display: flex; flex-direction: column; gap: 6px; padding: 5px; width: 100%;">
-                            
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <div style="font-weight: 700; font-size: 1.15em; color: #0f4c81;">
                                     <span style="color: ${arg.event.backgroundColor}; margin-right: 5px;">${icon}</span> 
                                     ${arg.event.title}
                                 </div>
                                 <div style="font-weight: bold; color: #2e7d32; font-size: 1.1em;">
-                                    $${p.pay.toFixed(2)}
+                                    $${parseFloat(p.pay || 0).toFixed(2)}
                                 </div>
                             </div>
-                            
                             <div style="font-size: 0.9em; color: #555; display: flex; gap: 15px; flex-wrap: wrap;">
                                 <span><strong><i class="fa-solid fa-user-tie" style="color: #198754;"></i> Emp:</strong> ${p.employee}</span>
                                 <span><strong><i class="fa-solid fa-location-dot" style="color: #198754;"></i> Dir:</strong> ${p.address}</span>
                             </div>
-                            
                             <div style="font-size: 0.9em; color: #444; font-style: italic; background: #F9FAFC; padding: 10px; border-left: 4px solid ${arg.event.backgroundColor}; border-radius: 6px; margin-top: 5px;">
                                 "${p.description}"
                             </div>
-                            
                         </div>
                     `;
                     return { html: customHtml };
-                } 
-                // SI ESTAMOS EN VISTA MES (CUADRITOS)
-                else {
+                } else {
                     let customHtml = `
                         <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden;" title="Obra: ${p.description}">
                             <div style="font-weight: 700; font-size: 0.85em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 2px; margin-bottom: 3px;">
@@ -125,16 +102,12 @@ async function cargarDatosYCronograma(emailActual) {
                             <div style="font-size: 0.75em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">
                                 <i class="fa-solid fa-user-tie"></i> ${p.employee}
                             </div>
-                            <div style="font-size: 0.7em; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; font-style: italic; opacity: 0.9; margin-top: 2px;">
-                                "${p.description}"
-                            </div>
                         </div>
                     `;
                     return { html: customHtml };
                 }
             },
 
-            // Popup al hacer clic (Igual de elegante que antes)
             eventClick: function(info) {
                 const p = info.event.extendedProps;
                 
@@ -154,7 +127,7 @@ async function cargarDatosYCronograma(emailActual) {
                                 <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold;">
                                     ${estadoTxt}
                                 </span>
-                                <span style="font-weight: bold; color: #2e7d32; font-size: 1.2rem;">$${p.pay.toFixed(2)}</span>
+                                <span style="font-weight: bold; color: #2e7d32; font-size: 1.2rem;">$${parseFloat(p.pay || 0).toFixed(2)}</span>
                             </div>
                             <div style="padding-left: 5px;">
                                 <p style="margin: 8px 0; font-size: 14px; color: #444;">
@@ -177,14 +150,12 @@ async function cargarDatosYCronograma(emailActual) {
                     `,
                     confirmButtonColor: '#12CFF4',
                     confirmButtonText: 'Cerrar detalle',
-                    width: '450px',
-                    showClass: { popup: 'animate__animated animate__fadeInUp animate__faster' },
-                    hideClass: { popup: 'animate__animated animate__fadeOutDown animate__faster' }
+                    width: '450px'
                 });
             }
         });
 
-        calendar.render();
+        calendarInstance.render();
         Swal.close();
 
     } catch (error) {
@@ -193,6 +164,78 @@ async function cargarDatosYCronograma(emailActual) {
         Swal.fire('Error', 'No se pudieron cargar los datos del calendario.', 'error');
     }
 }
+
+function cargarFiltroEmpleados(misTrabajos, allUsers) {
+    const select = document.getElementById('filterEmployee');
+    select.innerHTML = '<option value="">Todos los Subcontratistas</option>';
+
+    const empleadosMap = new Map();
+
+    misTrabajos.forEach(job => {
+        if (job.employeeId) {
+            const empleado = allUsers.find(u => u.userId === job.employeeId);
+            if (empleado) {
+                empleadosMap.set(job.employeeId, `${empleado.firstName} ${empleado.lastName}`);
+            }
+        }
+    });
+
+    empleadosMap.forEach((nombre, id) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = nombre;
+        select.appendChild(option);
+    });
+
+    select.addEventListener('change', filtrarCalendario);
+}
+
+function crearEventos(trabajosFiltrados) {
+    return trabajosFiltrados.map(job => {
+        let bgColor = '#ff9800'; 
+        if(job.status === 'IN_PROGRESS') bgColor = '#1e88e5'; 
+        else if(job.status === 'COMPLETED') bgColor = '#2e7d32'; 
+        else if(job.status === 'CANCELLED') bgColor = '#d32f2f'; 
+
+        return {
+            id: job.jobId,
+            title: job.clientName,
+            start: job.jobDate ? job.jobDate.split('T')[0] : new Date().toISOString().split('T')[0], 
+            backgroundColor: bgColor,
+            borderColor: bgColor,
+            extendedProps: {
+                address: job.address,
+                description: job.description || 'Sin descripción',
+                status: job.status,
+                pay: job.pay,
+                employee: job.nameEmployee || 'Sin asignar',
+                clientPhone: job.clientPhone,
+                employeeId: job.employeeId
+            }
+        };
+    });
+}
+
+function filtrarCalendario() {
+    const employeeIdSeleccionado = document.getElementById('filterEmployee').value;
+    
+    let trabajosFiltrados = allJobs.filter(job => job.managerId === myManagerId);
+
+    if (employeeIdSeleccionado) {
+        trabajosFiltrados = trabajosFiltrados.filter(job => job.employeeId == employeeIdSeleccionado);
+    }
+
+    const nuevosEventos = crearEventos(trabajosFiltrados);
+    
+    if (calendarInstance) {
+        calendarInstance.removeAllEvents();
+        calendarInstance.addEventSource(nuevosEventos);
+    }
+}
+window.resetFilter = () => {
+    document.getElementById('filterEmployee').value = '';
+    filtrarCalendario();
+};
 
 window.cerrarSesion = () => {
     const rolesString = localStorage.getItem('user_roles');

@@ -157,6 +157,19 @@
 
             <div class="content-body">
                 <div class="calendario-wrapper">
+                    <!-- === FILTRO POR SUBCONTRATISTA === -->
+                    <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <label style="font-weight: 600; color: #0F2D4A; white-space: nowrap;">
+                            <i class="fa-solid fa-user-tie"></i> Filtrar por Subcontratista:
+                        </label>
+                        <select id="filterEmployee" style="padding: 10px 14px; border-radius: 8px; border: 1px solid #E2E8F0; background: white; font-size: 1rem; min-width: 280px;">
+                            <option value="">Todos los Subcontratistas</option>
+                        </select>
+                        
+                        <button onclick="resetFilter()" style="padding: 10px 16px; background: #0F2D4A; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            <i class="fa-solid fa-rotate-right"></i> Mostrar Todos
+                        </button>
+                    </div>
                     <div id='calendar'></div>
                 </div>
             </div>
