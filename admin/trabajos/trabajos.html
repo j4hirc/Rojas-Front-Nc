@@ -57,83 +57,84 @@
 
                     <div class="header-section">
 
-    <h2 style="margin:0; color:#2B3674; white-space:nowrap;">
-        Proyectos Asignados
-    </h2>
+                        <h2 style="margin:0; color:#2B3674; white-space:nowrap;">
+                            Proyectos Asignados
+                        </h2>
 
-    <div style="display:flex; align-items:flex-end; gap:15px; flex:1; margin-left:30px;">
+                        <div style="display:flex; align-items:flex-end; gap:15px; flex:1; margin-left:30px;">
 
-        <div style="flex:2;">
-            <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
-                Buscar por Cliente o Descripción
-            </label>
+                            <div style="flex:2;">
+                                <label
+                                    style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Buscar por Cliente o Descripción
+                                </label>
 
-            <input
-                type="text"
-                id="searchJobInput"
-                class="input-field"
-                placeholder="🔍 Escribe un nombre o descripción..."
-                style="width:100%; margin:0;">
-        </div>
+                                <input type="text" id="searchJobInput" class="input-field"
+                                    placeholder="🔍 Escribe un nombre o descripción..." style="width:100%; margin:0;">
+                            </div>
 
-        <div style="width:260px;">
-            <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
-                Estado
-            </label>
+                            <div style="width:260px;">
+                                <label
+                                    style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Estado
+                                </label>
 
-            <select id="filterStatusInput" class="input-field" style="width:100%; margin:0;">
-                <option value="ALL">Todos los Estados</option>
-                <option value="PENDING">Pendiente</option>
-                <option value="IN_PROGRESS">En Progreso</option>
-                <option value="COMPLETED">Completado</option>
-                <option value="CANCELLED">Cancelado</option>
-            </select>
-        </div>
-        <div style="width:180px;">
-            <label style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
-                Prioridad
-            </label>
-            <input type="number" id="filterPriorityInput" class="input-field" placeholder="Ej: 0, 1, 2, 3..." style="width:100%; margin:0;" min="0">
-        </div>
+                                <select id="filterStatusInput" class="input-field" style="width:100%; margin:0;">
+                                    <option value="ALL">Todos los Estados</option>
+                                    <option value="PENDING">Pendiente</option>
+                                    <option value="IN_PROGRESS">En Progreso</option>
+                                    <option value="COMPLETED">Completado</option>
+                                    <option value="CANCELLED">Cancelado</option>
+                                </select>
+                            </div>
+                            <div style="width:180px;">
+                                <label
+                                    style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Prioridad
+                                </label>
+                                <input type="number" id="filterPriorityInput" class="input-field"
+                                    placeholder="Ej: 0, 1, 2, 3..." style="width:100%; margin:0;" min="0">
+                            </div>
 
-        <button class="btn-add"
-                onclick="abrirModalCrearJob()"
-                style="background:#e65100; height:45px; white-space:nowrap;">
-            <i class="fa-solid fa-plus"></i>
-            Nuevo Trabajo
-        </button>
+                            <button class="btn-add" onclick="abrirModalCrearJob()"
+                                style="background:#e65100; height:45px; white-space:nowrap;">
+                                <i class="fa-solid fa-plus"></i>
+                                Nuevo Trabajo
+                            </button>
 
-    </div>
+                        </div>
 
-</div>
-
-                    <div class="filters-bar" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 15px;">
-                        
-                        
-
-
-                    <div class="table-container" style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px;">
-    <table class="user-table" style="width: 100%; min-width: 600px; border-collapse: collapse;">
-                            <thead>
-                                <tr>
-                                    <th>Cliente</th>
-                                    <th>Dirección y Fecha</th>
-                                    <th>Descripción</th>
-                                    <th>Subcontratista / Manager</th>
-                                    <th>Estado</th>
-                                    <th>Prioridad</th>
-                                    <th>Pago ($)</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="jobTableBody"></tbody>
-                        </table>
                     </div>
 
-                    <div class="mobile-cards" id="mobileCardsContainer"></div>
+                    <div class="filters-bar"
+                        style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 15px;">
 
+
+
+
+                        <div class="table-container"
+                            style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px;">
+                            <table class="user-table" style="width: 100%; min-width: 600px; border-collapse: collapse;">
+                                <thead>
+                                    <tr>
+                                        <th>Cliente</th>
+                                        <th>Dirección y Fecha</th>
+                                        <th>Descripción</th>
+                                        <th>Subcontratista / Manager</th>
+                                        <th>Estado</th>
+                                        <th>Prioridad</th>
+                                        <th>Pago ($)</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="jobTableBody"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="mobile-cards" id="mobileCardsContainer"></div>
+
+                    </div>
                 </div>
-            </div>
         </main>
     </div>
 
@@ -225,18 +226,43 @@
                     </div>
 
                     <!-- MATERIALES -->
+
+                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+    Materiales del Inventario
+</h4>
+
+<!-- BUSCADOR + FILTRO -->
+<div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+    <div style="flex: 1; min-width: 220px;">
+        <input type="text" id="searchMaterialInput" 
+               class="input-field" 
+               placeholder="🔍 Buscar material por nombre..." 
+               style="width: 100%;">
+    </div>
+    <div style="width: 240px;">
+        <select id="filterCategoryMaterial" class="input-field" style="width: 100%;">
+            <option value="">Todas las Categorías</option>
+        </select>
+    </div>
+</div>
+
+<div id="materialsContainer" 
+     style="max-height: 280px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
+    Cargando materiales...
+</div>
+
+                    <!-- MATERIALES NECESARIOS PARA ESTA OBRA -->
                     <h4
-                        style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-                        Materiales
+                        style="margin-top: 25px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Materiales Necesarios para esta Obra
                     </h4>
 
-                    <div class="form-group">
-                        <label>Materiales (Opcional - El empleado también puede agregarlos en obra)</label>
+                    <div id="necessaryMaterialsContainer"
+                        style="max-height: 180px; overflow-y: auto; background: #FFF3E0; padding: 12px; border: 1px solid #ffcc80; border-radius: 8px;">
+                    </div>
 
-                        <div id="materialsContainer"
-                            style="max-height: 120px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
-                            Cargando materiales...
-                        </div>
+                    <div style="margin-top: 8px; text-align: right; font-weight: bold; color: #d32f2f;">
+                        Total Estimado Necesarios: $<span id="totalNecessaryMaterials">0.00</span>
                     </div>
 
                     <!-- DATOS DEL TRABAJO -->
@@ -252,11 +278,10 @@
                     </div>
 
                     <div class="form-group">
-                            <label>Prioridad del Trabajo (Número)</label>
-                            <input type="number" id="jobPriority" class="input-field" 
-                                min="1" value="2" step="1" required
-                                style="text-align: center;" placeholder="Ej: 0, 1, 2, 3...">
-                        </div>
+                        <label>Prioridad del Trabajo (Número)</label>
+                        <input type="number" id="jobPriority" class="input-field" min="1" value="2" step="1" required
+                            style="text-align: center;" placeholder="Ej: 0, 1, 2, 3...">
+                    </div>
 
                     <div class="form-row" style="margin-top:15px;">
                         <div class="form-group">

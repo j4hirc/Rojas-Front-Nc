@@ -533,6 +533,36 @@ window.abrirModalEditarJob = async (id) => {
                 window.calcularCostoMateriales();
             }
 
+                        // === CARGAR MATERIALES NECESARIOS AL EDITAR ===
+            limpiarMaterialesNecesarios();
+            if (data.necessaryMaterials && Array.isArray(data.necessaryMaterials) && data.necessaryMaterials.length > 0) {
+                data.necessaryMaterials.forEach(mat => {
+                    const container = document.getElementById('necessaryMaterialsContainer');
+                    
+                    const rowHTML = `
+                        <div class="necessary-material-row" id="nec-${mat.materialId}" 
+                             style="display: grid; grid-template-columns: 2.2fr 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #e65100;">
+                            
+                            <div style="font-weight: 500; color:#2B3674;">${mat.name || 'Material'}</div>
+                            
+                            <input type="number" class="input-field nec-qty" value="${mat.quantity || 1}" min="1" 
+                                   style="margin:0; text-align:center;" oninput="calcularTotalMaterialesNecesarios()" data-matid="${mat.materialId}">
+                            
+                            <div style="text-align: right; font-weight: bold; color: #198754;">
+                                $${(mat.estimatedPrice || mat.price || 0).toFixed(2)}
+                            </div>
+                            
+                            <button type="button" onclick="eliminarMaterialNecesarioPorId(${mat.materialId})" 
+                                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('beforeend', rowHTML);
+                });
+                calcularTotalMaterialesNecesarios();
+            }
+
             Swal.close();
             document.getElementById('modalJob').style.display = 'flex';
             inicializarMapa(data.latitude, data.longitude);
@@ -542,6 +572,11 @@ window.abrirModalEditarJob = async (id) => {
         console.error("Error al obtener trabajo:", error);
     }
 };
+
+function limpiarMaterialesNecesarios() {
+    document.getElementById('necessaryMaterialsContainer').innerHTML = '';
+    document.getElementById('totalNecessaryMaterials').textContent = '0.00';
+}
 
 window.cerrarModalJob = () => {
     document.getElementById('modalJob').style.display = 'none';
@@ -590,6 +625,21 @@ window.guardarTrabajo = async () => {
         prioridadSeleccionada = 2; 
     }
 
+    const necessaryMaterials = [];
+    document.querySelectorAll('.necessary-material-row').forEach(row => {
+        const matId = row.id.replace('nec-', '');
+        const name = row.querySelector('div').textContent.trim();
+        const qty = parseFloat(row.querySelector('.nec-qty').value) || 1;
+        const price = parseFloat(row.querySelector('.nec-price').value) || 0;
+
+        necessaryMaterials.push({
+            materialId: parseInt(matId),
+            name: name,
+            quantity: qty,
+            estimatedPrice: price
+        });
+    });
+
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
@@ -604,7 +654,10 @@ window.guardarTrabajo = async () => {
         employeeId: parseInt(document.getElementById('jobEmployee').value),
         managerId: parseInt(document.getElementById('jobManager').value),
         materials: selectedMaterials,
+        necessaryMaterials: necessaryMaterials,
         priority: prioridadSeleccionada // 🔥 Enviado como número entero sin restricciones máximas hacia Spring Boot
+        
+        
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
@@ -772,17 +825,17 @@ function mostrarSelectorDeRolesEnSubcarpeta(roles) {
 
 window.toggleMaterialOpciones = (matId) => {
     const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
-    const divOpts = document.getElementById(`opts_${matId}`);
-    const inputQty = document.getElementById(`qty_${matId}`);
+    const matName = checkbox.getAttribute('data-name');
+    const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
 
     if (checkbox.checked) {
-        divOpts.style.display = 'flex';
-        if (!inputQty.value) inputQty.value = 1; 
+        // Mover a la sección de Necesarios
+        agregarMaterialNecesarioDesdeInventario(matId, matName, matPrice);
     } else {
-        divOpts.style.display = 'none';
-        inputQty.value = ''; 
+        // Quitar de Necesarios si se desmarca
+        eliminarMaterialNecesarioPorId(matId);
     }
-    window.calcularCostoMateriales();
+    window.calcularCostoMateriales(); // Total inventario
 };
 
 window.calcularCostoMateriales = () => {
@@ -802,6 +855,75 @@ window.calcularCostoMateriales = () => {
     const txtGranTotal = document.getElementById('granTotalMateriales');
     if (txtGranTotal) {
         txtGranTotal.textContent = granTotal.toFixed(2);
+    }
+};
+
+// Agregar material desde inventario a la sección Necesarios
+window.agregarMaterialNecesarioDesdeInventario = (matId, name, price) => {
+    const container = document.getElementById('necessaryMaterialsContainer');
+
+    if (document.getElementById(`nec-${matId}`)) return;
+
+    const rowHTML = `
+        <div class="necessary-material-row" id="nec-${matId}" 
+             style="display: grid; grid-template-columns: 2.2fr 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #e65100;">
+            
+            <div style="font-weight: 500; color:#2B3674;">${name}</div>
+            
+            <input type="number" class="input-field nec-qty" value="1" min="1" 
+                   style="margin:0; text-align:center;" 
+                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}">
+            
+            <div style="text-align: right; font-weight: bold; color: #198754;">
+                $${price.toFixed(2)}
+            </div>
+            
+            <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})" 
+                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+    `;
+
+    container.insertAdjacentHTML('beforeend', rowHTML);
+    calcularTotalMaterialesNecesarios();   // ← Forzar cálculo inmediato
+};
+
+// Eliminar material necesario
+window.eliminarMaterialNecesarioPorId = (matId) => {
+    const row = document.getElementById(`nec-${matId}`);
+    if (row) row.remove();
+    calcularTotalMaterialesNecesarios();   // ← Importante
+};
+
+window.calcularTotalMaterialesNecesarios = () => {
+    let total = 0;
+    
+    document.querySelectorAll('.necessary-material-row').forEach(row => {
+        const qtyInput = row.querySelector('.nec-qty');
+        const priceInput = row.querySelector('.nec-price') || row.querySelector('div[style*="color: #198754"]'); // por si es texto
+
+        let qty = 0;
+        let price = 0;
+
+        if (qtyInput) qty = parseFloat(qtyInput.value) || 0;
+        
+        // Si el precio está en input
+        if (row.querySelector('.nec-price')) {
+            price = parseFloat(row.querySelector('.nec-price').value) || 0;
+        } 
+        // Si el precio está como texto fijo (como en la versión actual)
+        else {
+            const priceText = row.textContent.match(/\$([\d.]+)/);
+            if (priceText) price = parseFloat(priceText[1]) || 0;
+        }
+
+        total += qty * price;
+    });
+
+    const totalElement = document.getElementById('totalNecessaryMaterials');
+    if (totalElement) {
+        totalElement.textContent = total.toFixed(2);
     }
 };
 
