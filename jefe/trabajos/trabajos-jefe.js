@@ -666,7 +666,6 @@ window.guardarTrabajo = async () => {
         const matId = parseInt(cb.value);
         const nombreMat = cb.getAttribute('data-name');
 
-        // 🔥 La cantidad y unidad se toman de su fila en "Materiales Necesarios para esta Obra"
         const filaNecesaria = document.getElementById(`nec-${matId}`);
         const qtyInput = filaNecesaria ? filaNecesaria.querySelector('.nec-qty') : null;
         const unitInput = filaNecesaria ? filaNecesaria.querySelector('.nec-unit') : null;
@@ -694,7 +693,6 @@ window.guardarTrabajo = async () => {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
-    // 🔥 Capturamos la prioridad. Si está vacía o es inválida, mandamos 2 por defecto.
     let prioridadSeleccionada = parseInt(document.getElementById('jobPriority').value);
     if (isNaN(prioridadSeleccionada)) {
         prioridadSeleccionada = 2;
@@ -717,8 +715,15 @@ window.guardarTrabajo = async () => {
         priority: prioridadSeleccionada
     };
 
-    if (!payload.clientName || !payload.employeeId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
-        return Swal.fire('Error', 'Por favor llena todos los campos obligatorios, incluyendo la fecha.', 'error');
+    // ✅ Validación sin requerir descripción
+    if (!payload.clientName || !payload.employeeId || !payload.jobDate || 
+        isNaN(payload.latitude) || isNaN(payload.pay)) {
+        return Swal.fire({
+            icon: 'error', 
+            title: 'Campos incompletos', 
+            text: 'Por favor completa: Cliente, Empleado, Fecha, Ubicación y Pago.', 
+            confirmButtonColor: '#198754'
+        });
     }
 
     Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });

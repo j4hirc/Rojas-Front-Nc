@@ -726,9 +726,10 @@ window.guardarTrabajo = async () => {
 
     };
 
-    if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude) || isNaN(payload.pay)) {
-        return Swal.fire('Error', 'Por favor llena todos los campos obligatorios.', 'error');
-    }
+    if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || 
+    isNaN(payload.latitude)){
+    return Swal.fire('Error', 'Por favor completa los campos obligatorios (Cliente, Empleado, Manager, Fecha, Ubicación y Pago).', 'error');
+}
 
     Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
