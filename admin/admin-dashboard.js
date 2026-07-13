@@ -287,7 +287,7 @@ window.verNominaSemanalGlobal = async () => {
             html: '<div id="nomina-contenedor-admin">Generando reporte...</div>',
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
-            width: '600px',
+            width: window.innerWidth < 768 ? '95%' : '600px',
             background: '#FFFFFF'
         });
 
@@ -356,8 +356,8 @@ function renderizarNominaAdmin(offset) {
     const strFin = formatMDY(finSemana);
 
     let htmlContent = `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
-            <button onclick="cambiarSemanaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+            <button onclick="cambiarSemanaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; display: flex; align-items: center; gap: 6px;">
                 <i class="fa-solid fa-chevron-left"></i> Anterior
             </button>
             <div style="text-align: center; font-family: 'Poppins', sans-serif;">
@@ -367,7 +367,7 @@ function renderizarNominaAdmin(offset) {
             <button type="button" onclick="exportarNominaSemanalAPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar a PDF">
                 <i class="fa-solid fa-file-pdf"></i> PDF
             </button>
-            <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+            <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; display: flex; align-items: center; gap: 6px;">
                 Siguiente <i class="fa-solid fa-chevron-right"></i>
             </button>
         </div>
@@ -505,7 +505,7 @@ window.verBodegaGlobal = async () => {
             html: '<div id="bodega-admin-contenedor">Generando reporte...</div>',
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
-            width: '800px',
+            width: window.innerWidth < 768 ? '95%' : '800px',
             background: '#FFFFFF'
         });
 
