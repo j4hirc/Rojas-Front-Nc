@@ -271,6 +271,7 @@ function poblarCategoriasMateriales(materials) {
 
 // 🔥 pinta la lista de materiales: solo checkbox + nombre + precio unitario.
 // Ya NO muestra cantidad/unidad aquí — eso se maneja en "Materiales Necesarios para esta Obra".
+// 🔥 pinta la lista de materiales: checkbox + nombre + precio unitario + UNIDAD
 function renderizarMateriales(materials) {
     const containerMat = document.getElementById('materialsContainer');
     if (!containerMat) return;
@@ -286,13 +287,18 @@ function renderizarMateriales(materials) {
         const precioMat = mat.price || 0;
         const estado = materialesEstado[mat.materialId] || {};
         const checkedAttr = estado.checked ? 'checked' : '';
+        
+        // 🔥 Capturamos la unidad de la Base de Datos para esconderla en el checkbox
+        const safeUnit = mat.unit ? mat.unit.replace(/'/g, "\\'") : '';
+        const displayUnit = mat.unit ? ` ${mat.unit}` : '';
 
         containerMat.innerHTML += `
         <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
             <label style="display: flex; align-items: center; justify-content: space-between; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" onchange="toggleMaterialOpciones(${mat.materialId})" ${checkedAttr}>
-                    ${mat.name}
+                    <!-- 🔥 Agregamos data-unit="${safeUnit}" aquí -->
+                    <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" data-unit="${safeUnit}" onchange="toggleMaterialOpciones(${mat.materialId})" ${checkedAttr}>
+                    ${mat.name} <span style="font-size: 0.8rem; font-weight: normal; color: #666;">(Disp: ${mat.count || 0}${displayUnit})</span>
                 </div>
                 <span style="color: #198754; font-size: 12px; background: #e8f5e9; padding: 2px 6px; border-radius: 4px;">$${precioMat.toFixed(2)} c/u</span>
             </label>
@@ -894,6 +900,9 @@ window.toggleMaterialOpciones = (matId) => {
     const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
     const matName = checkbox.getAttribute('data-name');
     const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
+    
+    // 🔥 Leemos la unidad que guardamos en el checkbox
+    const matUnit = checkbox.getAttribute('data-unit') || '';
 
     // Guardamos el estado (checked) para que sobreviva a un re-render por filtro
     if (!materialesEstado[matId]) materialesEstado[matId] = {};
@@ -901,8 +910,8 @@ window.toggleMaterialOpciones = (matId) => {
 
     if (checkbox.checked) {
         // Al marcar, se agrega directo a "Materiales Necesarios para esta Obra"
-        // (ahí es donde se define la cantidad, ya no aquí en el inventario)
-        agregarMaterialNecesarioDesdeInventario(matId, matName, matPrice);
+        // 🔥 Le pasamos "1" como cantidad inicial y "matUnit" como unidad inicial
+        agregarMaterialNecesarioDesdeInventario(matId, matName, matPrice, 1, matUnit);
     } else {
         // Al desmarcar, se quita de Necesarios
         eliminarMaterialNecesarioPorId(matId);
@@ -912,6 +921,8 @@ window.toggleMaterialOpciones = (matId) => {
 
 // Agregar material desde inventario a la sección Necesarios
 // 🔥 Crea el HTML de una fila de "Materiales Necesarios" (nombre, cantidad, unidad, precio, borrar)
+// Agregar material desde inventario a la sección Necesarios
+// 🔥 Crea el HTML de una fila bloqueando Precio y Unidad
 function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial) {
     const qty = (qtyInicial !== undefined && qtyInicial !== null) ? qtyInicial : 1;
     const unit = (unitInicial !== undefined && unitInicial !== null) ? unitInicial : '';
@@ -920,21 +931,24 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
         <div class="necessary-material-row" id="nec-${matId}"
              style="display: grid; grid-template-columns: 1.8fr 70px 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #e65100;">
 
-            <div style="font-weight: 500; color:#2B3674;">${name}</div>
+            <div style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
 
+            <!-- ✅ CANTIDAD (El único que se puede editar) -->
             <input type="number" class="input-field nec-qty" value="${qty}" min="1"
-                   style="margin:0; text-align:center;"
-                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}">
+                   style="margin:0; text-align:center; padding:6px; border: 1px solid #e65100;"
+                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
 
-            <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}"
-                   style="margin:0; text-align:center;" data-matid="${matId}">
+            <!-- 🚫 UNIDAD (Bloqueado) -->
+            <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}" readonly
+                   style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
 
-            <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0"
-                   style="margin:0; text-align:right; font-weight: bold; color: #198754;"
-                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}">
+            <!-- 🚫 PRECIO (Bloqueado) -->
+            <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0" readonly
+                   style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
 
+            <!-- BOTÓN ELIMINAR -->
             <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
-                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
+                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
