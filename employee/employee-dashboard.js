@@ -23,6 +23,19 @@ let drawingSub = false;
 // ==================================================
 // FUNCIONES DE APOYO Y FALLBACK SEGURO
 // ==================================================
+
+function calcularTotalMaterialesOriginales(jobInfo) {
+    if (!jobInfo || !jobInfo.materials || jobInfo.materials.length === 0) return 0;
+    let total = 0;
+    jobInfo.materials.forEach(m => {
+        const matInfo = allMaterialsCache.find(x => x.materialId == m.materialId);
+        const price = matInfo ? (matInfo.price || 0) : (m.price || 0);
+        const qty = m.quantity || 0;
+        total += qty * price;
+    });
+    return total;
+}
+
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
     if (Array.isArray(fecha)) {
@@ -110,19 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('evModifications').addEventListener('change', (e) => {
         const priceContainer = document.getElementById('newPriceContainer');
-        if (e.target.checked) {
-            priceContainer.style.display = 'block';
-
-            const inputPrice = document.getElementById('evNewPrice');
-            inputPrice.value = 'Requiere autorización del Jefe';
-            inputPrice.readOnly = true;
-            inputPrice.style.backgroundColor = '#f3f4f6';
-            inputPrice.style.color = '#dc2626';
-            inputPrice.style.fontWeight = 'bold';
-
-        } else {
-            priceContainer.style.display = 'none';
-        }
+        priceContainer.style.display = e.target.checked ? 'block' : 'none';
     });
 });
 
@@ -319,6 +320,18 @@ async function cargarCalendarioEmpleado(emailActual) {
                     listaMaterialesHtml = `<li style="font-size: 13px; color: #666; list-style: none;">No hay materiales registrados en la orden.</li>`;
                 }
 
+                const urlPlano = p.blueprintUrl || p.blueprint_url;
+                let planoHtml = '';
+                if (urlPlano) {
+                    planoHtml = `
+                        <div style="text-align:center; margin: 15px 0;">
+                            <a href="${urlPlano}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:#E8F5E9; color:#10B981; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:13px; box-shadow: 0 2px 6px rgba(16,185,129,0.15);">
+                                <i class="fa-solid fa-file-pdf"></i> Ver Plano / Documento
+                            </a>
+                        </div>
+                    `;
+                }
+
                 let notasHtml = `
                     <div style="margin-top: 20px; text-align: left;">
                         <h4 style="margin: 0 0 8px 0; font-size: 14px; color: #111C44; border-bottom: 2px solid #F4F7FE; padding-bottom: 5px;">
@@ -359,7 +372,17 @@ async function cargarCalendarioEmpleado(emailActual) {
                 <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
                     <strong><i class="fa-solid fa-house" style="color:#00B8A9; width:20px;"></i> Propiedad:</strong> ${p.clientName}
                 </p>
-                <!-- ... el resto de tus <p> (teléfono, dirección, etc.) ... -->
+                <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                    <strong><i class="fa-solid fa-phone" style="color:#00B8A9; width:20px;"></i> Teléfono:</strong> ${p.clientPhone || 'No registrado'}
+                </p>
+                <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                    <strong><i class="fa-solid fa-location-dot" style="color:#00B8A9; width:20px;"></i> Dirección:</strong> ${p.address || 'Sin dirección'}
+                </p>
+                <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                    <strong><i class="fa-solid fa-sack-dollar" style="color:#00B8A9; width:20px;"></i> Pago:</strong> $${parseFloat(p.pay || 0).toFixed(2)}
+                </p>
+
+                ${planoHtml}
 
                 ${notasHtml}
                             
@@ -732,31 +755,17 @@ window.guardarReporteYPdf = async () => {
     if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#00B8A9' });
     if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
 
-    const hasModifications = document.getElementById('evModifications').checked;
+    // 🔥 Recorremos los materiales marcados, calculando subtotal (cantidad x precio unitario)
+    // 🔥 IDs de los materiales que ya venían asignados originalmente (por el admin)
+    const idsOriginales = (currentJobInfo.materials || []).map(m => m.materialId);
 
-    let nuevoPrecioValor = null;
-
-    if (hasModifications) {
-        const inputNuevoPrecio = document.getElementById('evNewPrice').value;
-        if (!inputNuevoPrecio || isNaN(parseFloat(inputNuevoPrecio))) {
-            return Swal.fire({ icon: 'warning', title: 'Falta el Precio', text: 'Marcaste la alerta de oficina. Debes ingresar un nuevo precio sugerido.', confirmButtonColor: '#00B8A9' });
-        }
-        nuevoPrecioValor = parseFloat(inputNuevoPrecio);
-        comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones a la orden original que requieren ajuste de precio por parte del Jefe.\n\n` + comment;
-        document.getElementById('pdfNewPriceRow').style.display = 'table-row';
-        document.getElementById('pdfNewPrice').textContent = `REQUIERE AUTORIZACIÓN DEL JEFE`;
-    } else {
-        document.getElementById('pdfNewPriceRow').style.display = 'none';
-    }
-
-    // 🔥 NUEVO: recorremos los materiales marcados, calculando subtotal (cantidad x precio unitario)
-    // para armar la tabla del PDF y el total de materiales.
     const selectedRows = document.querySelectorAll('.necessary-material-row-emp');
     const selectedMaterials = [];
     const selectedMaterialIds = [];
     let resumenMaterialesBD = '';
     let pdfMaterialsRows = '';
     let totalMateriales = 0;
+    let materialesNuevos = [];
 
     selectedRows.forEach(row => {
         const matId = parseInt(row.id.replace('nec-emp-', ''));
@@ -779,15 +788,23 @@ window.guardarReporteYPdf = async () => {
             quantity: cantidadNum,
             unit: unidad || 'N/A'
         });
-
         selectedMaterialIds.push(matId);
 
+        const esNuevo = !idsOriginales.includes(matId);
         const textoCantidad = cantidadStr ? `${cantidadStr} ${unidad}`.trim() : 'Asignado';
-        resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
+
+        if (esNuevo) {
+            materialesNuevos.push(`${nombreMat} (${textoCantidad})`);
+            resumenMaterialesBD += `• 🆕 ${nombreMat}: ${textoCantidad} [MATERIAL NUEVO]\n`;
+        } else {
+            resumenMaterialesBD += `• ${nombreMat}: ${textoCantidad}\n`;
+        }
 
         pdfMaterialsRows += `
-        <tr>
-            <td style="padding: 8px; border: 1px solid #ddd; color: #2E3238;">${nombreMat}</td>
+        <tr style="${esNuevo ? 'background: #FFF3CD;' : ''}">
+            <td style="padding: 8px; border: 1px solid #ddd; color: #2E3238; ${esNuevo ? 'font-weight:bold; color:#92400E;' : ''}">
+                ${esNuevo ? '🆕 ' : ''}${nombreMat}
+            </td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #2E3238;">${textoCantidad}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #2E3238;">$${precioUnit.toFixed(2)}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; color: #198754;">$${subtotal.toFixed(2)}</td>
@@ -795,13 +812,26 @@ window.guardarReporteYPdf = async () => {
     `;
     });
 
-    if (resumenMaterialesBD !== '') {
-        comment = `${comment}\n\n[MATERIALES REPORTADOS]:\n${resumenMaterialesBD}`;
+    // 🔥 El precio a pagar SIEMPRE es el total de materiales reportados
+    const nuevoPrecioValor = totalMateriales;
+
+    const hasModifications = document.getElementById('evModifications').checked;
+
+    if (materialesNuevos.length > 0) {
+        comment = `⚠️ [ALERTA DE OFICINA]: Se agregaron materiales nuevos no asignados originalmente: ${materialesNuevos.join(', ')}.\n\n` + comment;
+        document.getElementById('pdfNewPriceRow').style.display = 'table-row';
+        document.getElementById('pdfNewPrice').textContent = `Materiales nuevos: ${materialesNuevos.join(', ')}`;
+    } else if (hasModifications) {
+        comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones a la orden original que requieren revisión del Jefe.\n\n` + comment;
+        document.getElementById('pdfNewPriceRow').style.display = 'table-row';
+        document.getElementById('pdfNewPrice').textContent = `REQUIERE REVISIÓN DEL JEFE`;
+    } else {
+        document.getElementById('pdfNewPriceRow').style.display = 'none';
     }
 
     Swal.fire({ title: 'Procesando...', text: 'Generando archivo PDF y guardando avance...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-    const pagoSeguroPDF = currentJobInfo.pay ? parseFloat(currentJobInfo.pay) : 0;
+    const pagoSeguroPDF = nuevoPrecioValor;
 
     document.getElementById('pdfJobName').textContent = currentJobInfo.clientName || 'Sin asignar';
     document.getElementById('pdfAddress').textContent = currentJobInfo.address || 'Sin dirección';
@@ -821,8 +851,7 @@ window.guardarReporteYPdf = async () => {
     document.getElementById('pdfTotalMateriales').textContent = `$${totalMateriales.toFixed(2)}`;
 
     // 🔥 NUEVO: resumen final -> valor del trabajo + total general (materiales + trabajo)
-    document.getElementById('pdfValorTrabajoResumen').textContent = `$${pagoSeguroPDF.toFixed(2)}`;
-    document.getElementById('pdfTotalGeneral').textContent = `$${(totalMateriales + pagoSeguroPDF).toFixed(2)}`;
+    document.getElementById('pdfTotalGeneral').textContent = `$${pagoSeguroPDF.toFixed(2)}`;
 
     document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
 
@@ -902,9 +931,9 @@ try {
         employeeId: myEmployeeId,
         status: status,
         materials: selectedMaterials,
-        materialIds: selectedMaterialIds
+        materialIds: selectedMaterialIds,
+        newPrice: nuevoPrecioValor
     };
-
     if (nuevoPrecioValor !== null) {
         dtoObject.newPrice = nuevoPrecioValor;
     }
