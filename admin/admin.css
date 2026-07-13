@@ -239,3 +239,58 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
         flex-shrink: 0; /* Evita que se reduzca el ancho del label */
     }
 }
+
+.user-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.user-table th,
+.user-table td {
+    box-sizing: border-box;
+    padding: 10px 8px;
+    vertical-align: middle;
+    overflow: hidden;
+}
+
+.user-table th {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Texto largo: hace salto de línea y crece la FILA, no la columna */
+.cell-wrap {
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.35;
+}
+
+/* Acciones: los botones no se encogen ni se salen */
+.acciones-cell {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+#jobTableBody tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+#jobTableBody tr:nth-child(even) {
+    background-color: #EAF6FE; /* Celeste pastel suave, combina con tu --cyan */
+}
+
+#jobTableBody tr {
+    border-left: 3px solid transparent;
+    transition: background-color 0.15s ease, border-left-color 0.15s ease;
+}
+
+#jobTableBody tr:hover {
+    background-color: #D9EFFC; /* Un toque más marcado al pasar el mouse */
+    border-left-color: var(--cyan);
+}

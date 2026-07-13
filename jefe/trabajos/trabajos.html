@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mis Trabajos - Rojas Remodeling</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -12,6 +14,7 @@
     <link rel="stylesheet" href="../../admin/admin.css">
     <link rel="stylesheet" href="../usuarios/usuarios.css">
 </head>
+
 <body>
 
     <div class="app-layout">
@@ -53,14 +56,17 @@
 
                         <div style="display:flex; align-items:flex-end; gap:15px; flex:1; margin-left:30px;">
                             <div style="flex:2;">
-                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                <label
+                                    style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
                                     Buscar por Cliente o Descripción
                                 </label>
-                                <input type="text" id="searchJobInput" class="input-field" placeholder="🔍 Escribe un nombre o descripción..." style="width:100%; margin:0;">
+                                <input type="text" id="searchJobInput" class="input-field"
+                                    placeholder="🔍 Escribe un nombre o descripción..." style="width:100%; margin:0;">
                             </div>
 
                             <div style="width:260px;">
-                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                <label
+                                    style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
                                     Estado
                                 </label>
                                 <select id="filterStatusInput" class="input-field" style="width:100%; margin:0;">
@@ -71,20 +77,34 @@
                                     <option value="CANCELLED">Cancelado</option>
                                 </select>
                             </div>
-                            
+
                             <div style="width:180px;">
-                                <label style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
+                                <label
+                                    style="display:block; font-size:.85rem; font-weight:bold; color:#198754; margin-bottom:5px;">
                                     Prioridad
                                 </label>
-                                <input type="number" id="filterPriorityInput" class="input-field" placeholder="Ej: 1, 2, 3..." style="width:100%; margin:0;" min="0">
+                                <input type="number" id="filterPriorityInput" class="input-field"
+                                    placeholder="Ej: 1, 2, 3..." style="width:100%; margin:0;" min="0">
                             </div>
 
-                            <button class="btn-add" onclick="abrirModalCrearJob()" style="background:#e65100; height:45px; white-space:nowrap;">
+                            <button class="btn-add" onclick="abrirModalCrearJob()"
+                                style="background:#e65100; height:45px; white-space:nowrap;">
                                 <i class="fa-solid fa-plus"></i> Nuevo Trabajo
                             </button>
                         </div>
-                    </div> <div class="table-container" style="width: 100%; overflow-x: auto; margin-top: 20px;">
-                        <table class="user-table" style="width: 100%; min-width: 800px; border-collapse: collapse;">
+                    </div>
+                    <div class="table-container" style="width: 100%; margin-top: 20px;">
+                        <table class="user-table" style="width: 100%; table-layout: fixed; border-collapse: collapse;">
+                            <colgroup>
+                                    <col style="width: 13%;">
+                                    <col style="width: 15%;">
+                                    <col style="width: 17%;">
+                                    <col style="width: 14%;">
+                                    <col style="width: 10%;">
+                                    <col style="width: 11%;">
+                                    <col style="width: 8%;">
+                                    <col style="width: 12%;">
+                                </colgroup>
                             <thead>
                                 <tr>
                                     <th>Cliente</th>
@@ -119,32 +139,41 @@
                 <form id="formJob">
                     <input type="hidden" id="jobId">
 
-                    <h4 style="margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Datos del Cliente</h4>
+                    <h4
+                        style="margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Datos del Cliente</h4>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Nombre del Cliente</label>
-                            <input type="text" id="jobClientName" class="input-field" required placeholder="Ej: Familia Rojas">
+                            <input type="text" id="jobClientName" class="input-field" required
+                                placeholder="Ej: Familia Rojas">
                         </div>
                         <div class="form-group">
                             <label>Teléfono del Cliente</label>
-                            <input type="text" id="jobClientPhone" class="input-field" required placeholder="0999999999">
+                            <input type="text" id="jobClientPhone" class="input-field" required
+                                placeholder="0999999999">
                         </div>
                     </div>
 
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Ubicación y Logística</h4>
+                    <h4
+                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Ubicación y Logística</h4>
                     <div class="form-group">
                         <label>Dirección</label>
                         <input type="text" id="jobAddress" class="input-field" required placeholder="Dirección exacta">
                     </div>
 
                     <div class="form-group" style="margin-top: 15px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <label>Selecciona en el mapa</label>
-                            <button type="button" onclick="obtenerMiUbicacion()" style="background:#e65100;color:white;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;">
+                            <button type="button" onclick="obtenerMiUbicacion()"
+                                style="background:#e65100;color:white;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;">
                                 <i class="fa-solid fa-location-crosshairs"></i> Mi Ubicación
                             </button>
                         </div>
-                        <div id="jobMap" style="height: 250px; width: 100%; border-radius: 12px; border: 1px solid #E0E5F2;"></div>
+                        <div id="jobMap"
+                            style="height: 250px; width: 100%; border-radius: 12px; border: 1px solid #E0E5F2;"></div>
                     </div>
 
                     <div class="form-row" style="display:none;">
@@ -152,24 +181,25 @@
                         <input type="number" id="jobLng" step="any" required>
                     </div>
 
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Asignación</h4>
+                    <h4
+                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Asignación</h4>
                     <div class="form-group">
                         <label>Empleado Asignado</label>
                         <select id="jobEmployee" class="input-field" required></select>
                     </div>
 
                     <!-- MATERIALES -->
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                    <h4
+                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
                         Materiales del Inventario
                     </h4>
 
                     <!-- BUSCADOR + FILTRO -->
                     <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
                         <div style="flex: 1; min-width: 220px;">
-                            <input type="text" id="searchMaterialInput"
-                                   class="input-field"
-                                   placeholder="🔍 Buscar material por nombre..."
-                                   style="width: 100%;">
+                            <input type="text" id="searchMaterialInput" class="input-field"
+                                placeholder="🔍 Buscar material por nombre..." style="width: 100%;">
                         </div>
                         <div style="width: 240px;">
                             <select id="filterCategoryMaterial" class="input-field" style="width: 100%;">
@@ -179,12 +209,13 @@
                     </div>
 
                     <div id="materialsContainer"
-                         style="max-height: 220px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
+                        style="max-height: 220px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
                         Cargando materiales...
                     </div>
 
                     <!-- MATERIALES NECESARIOS PARA ESTA OBRA -->
-                    <h4 style="margin-top: 25px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                    <h4
+                        style="margin-top: 25px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
                         Materiales Necesarios para esta Obra
                     </h4>
 
@@ -196,15 +227,16 @@
                         Total Estimado Necesarios: $<span id="totalNecessaryMaterials">0.00</span>
                     </div>
 
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">Datos del Trabajo</h4>
+                    <h4
+                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Datos del Trabajo</h4>
                     <div class="form-group">
                         <label>Descripción</label>
                         <textarea id="jobDesc" class="input-field" rows="3" required></textarea>
                     </div>
                     <div class="form-group">
                         <label>Prioridad del Trabajo (Número)</label>
-                        <input type="number" id="jobPriority" class="input-field" 
-                            min="1" value="2" step="1" required
+                        <input type="number" id="jobPriority" class="input-field" min="1" value="2" step="1" required
                             style="text-align: center;" placeholder="Ej: 0, 1, 2, 3...">
                     </div>
 
@@ -236,19 +268,23 @@
                     </div>
 
                     <!-- 🔥 NUEVO: SUBIR PLANOS PARA EL JEFE -->
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                    <h4
+                        style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
                         Documentos Adjuntos
                     </h4>
                     <div class="form-group">
                         <label><i class="fa-solid fa-file-pdf"></i> Planos del Trabajo (Imagen o PDF)</label>
-                        <input type="file" id="jobBlueprint" class="input-field" accept="image/*,application/pdf" style="padding: 5px;">
+                        <input type="file" id="jobBlueprint" class="input-field" accept="image/*,application/pdf"
+                            style="padding: 5px;">
                         <small style="color: #666;">Opcional. Puedes subir un plano inicial para la obra.</small>
-                        
+
                         <!-- Aquí mostraremos el link si ya hay un plano guardado -->
-                        <div id="currentBlueprintContainer" style="display:none; margin-top:8px; padding: 10px; background: #e8f5e9; border-radius: 6px; border: 1px dashed #4caf50;">
-                            <i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i> 
+                        <div id="currentBlueprintContainer"
+                            style="display:none; margin-top:8px; padding: 10px; background: #e8f5e9; border-radius: 6px; border: 1px dashed #4caf50;">
+                            <i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i>
                             <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">Plano actual:</span>
-                            <a id="currentBlueprintLink" href="#" target="_blank" style="color: #198754; font-weight: bold; font-size: 13px; margin-left: 5px; text-decoration: underline;">
+                            <a id="currentBlueprintLink" href="#" target="_blank"
+                                style="color: #198754; font-weight: bold; font-size: 13px; margin-left: 5px; text-decoration: underline;">
                                 Ver Documento
                             </a>
                         </div>
@@ -259,7 +295,8 @@
 
             <div class="modal-footer">
                 <button onclick="cerrarModalJob()" class="btn-secondary">Cancelar</button>
-                <button onclick="guardarTrabajo()" class="btn-primary" style="background:#e65100;">Guardar Trabajo</button>
+                <button onclick="guardarTrabajo()" class="btn-primary" style="background:#e65100;">Guardar
+                    Trabajo</button>
             </div>
         </div>
     </div>
@@ -269,13 +306,16 @@
         .mobile-cards {
             padding: 10px;
         }
+
         .mobile-cards .card {
             transition: all 0.2s;
         }
+
         .mobile-cards .card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
         }
     </style>
 </body>
+
 </html>

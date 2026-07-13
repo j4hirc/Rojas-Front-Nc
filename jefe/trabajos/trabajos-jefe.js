@@ -446,7 +446,7 @@ function renderizarTrabajos(trabajos) {
 
         if (urlPlano) {
             btnPlanoTable = `
-                <a href="${urlPlano}" target="_blank" class="btn-edit" style="background: #198754; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-right: 5px;" title="Ver Plano/Documento">
+                <a href="${urlPlano}" target="_blank" class="btn-edit" style="background: #198754; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Plano/Documento">
                     <i class="fa-solid fa-file-pdf"></i>
                 </a>
             `;
@@ -461,38 +461,46 @@ function renderizarTrabajos(trabajos) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
-                <strong>${job.clientName}</strong><br>
-                <small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small>
+                <div class="cell-wrap">
+                    <strong>${job.clientName}</strong><br>
+                    <small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small>
+                </div>
             </td>
             <td>
-                ${job.address}<br>
-                <small style="color:#198754; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small>
+                <div class="cell-wrap">
+                    ${job.address}<br>
+                    <small style="color:#198754; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small>
+                </div>
             </td>
             <td>
-                <div style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555;" title="${safeDesc.replace(/"/g, '&quot;')}">
+                <div class="cell-wrap" title="${safeDesc.replace(/"/g, '&quot;')}">
                     ${safeDesc}
                 </div>
             </td>
-            <td><strong>${empName}</strong></td>
+            <td>
+                <div class="cell-wrap"><strong>${empName}</strong></div>
+            </td>
             <td>${statusBadge}</td>
             <td>${priorityBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
-                ${btnPlanoTable} <!-- 🔥 PLANO EN LA TABLA -->
-                <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #155e75; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
-                    <i class="fa-solid fa-camera"></i>
-                </a>
-                <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
-                    <i class="fa-solid fa-pen"></i>
-                </button>
-                <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
+                <div class="acciones-cell">
+                    ${btnPlanoTable}
+                    <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #155e75; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
+                        <i class="fa-solid fa-camera"></i>
+                    </a>
+                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
 
-        // === TARJETA MÓVIL ===
+        // === TARJETA MÓVIL === (sin cambios)
         if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
@@ -513,7 +521,7 @@ function renderizarTrabajos(trabajos) {
                 <p style="margin:5px 0 0 0; font-weight:bold; color:#2e7d32; font-size: 15px;">Pago: $${job.pay.toFixed(2)}</p>
                 
                 <div class="card-actions" style="margin-top:15px; display:flex; gap:8px; width: 100%; flex-wrap: wrap;">
-                    ${btnPlanoCard} <!-- 🔥 PLANO EN TARJETA MÓVIL -->
+                    ${btnPlanoCard}
                     <a href="../evidencias/evidencias.html?jobId=${job.jobId}" style="flex: 1; padding: 8px; border-radius: 4px; background: #155e75; color: white; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;">
                         <i class="fa-solid fa-camera"></i> Evidencias
                     </a>

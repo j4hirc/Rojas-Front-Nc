@@ -406,39 +406,46 @@ function renderizarTrabajos(trabajos) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>
-                <strong>${job.clientName}</strong><br>
-                <small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small>
-            </td>
-            <td>
-                ${job.address}<br>
-                <small style="color:#0f4c81; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small>
-            </td>
-            <td>
-                <div style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: #555; background: #f8faff; padding: 6px 10px; border-radius: 6px; border-left: 3px solid #0f4c81;" title="${safeDesc.replace(/"/g, '&quot;')}">
-                    ${safeDesc}
-                </div>
-            </td>
-            <td>
-                <span style="color:#0f4c81; font-weight: 500;">E: ${empName}</span><br>
-                <span style="color:#546e7a; font-size: 13px;">M: ${manName}</span>
-            </td>
-            <td>${statusBadge}</td>
-            <td>${priorityBadge}</td>
-            <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
-            <td>
-                ${btnPlanoTable}
-                <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #0f4c81; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
-                    <i class="fa-solid fa-camera"></i>
-                </a>
-                <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
-                    <i class="fa-solid fa-pen"></i>
-                </button>
-                <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </td>
-        `;
+    <td>
+        <div class="cell-wrap">
+            <strong>${job.clientName}</strong><br>
+            <small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small>
+        </div>
+    </td>
+    <td>
+        <div class="cell-wrap">
+            ${job.address}<br>
+            <small style="color:#0f4c81; font-weight: 500;"><i class="fa-regular fa-calendar"></i> ${fechaTxt}</small>
+        </div>
+    </td>
+    <td>
+        <div class="cell-wrap" title="${safeDesc.replace(/"/g, '&quot;')}">
+            ${safeDesc}
+        </div>
+    </td>
+    <td>
+        <div class="cell-wrap">
+            <span style="color:#0f4c81; font-weight: 500;">E: ${empName}</span><br>
+            <span style="color:#546e7a; font-size: 13px;">M: ${manName}</span>
+        </div>
+    </td>
+    <td>${statusBadge}</td>
+    <td>${priorityBadge}</td>
+    <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
+    <td>
+        <div class="acciones-cell">
+            ${btnPlanoTable}
+            <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #0f4c81; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
+                <i class="fa-solid fa-camera"></i>
+            </a>
+            <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+            <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+    `;
         tbody.appendChild(tr);
 
         if (mobileContainer) {

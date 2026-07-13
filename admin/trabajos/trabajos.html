@@ -112,9 +112,19 @@
 
 
 
-                        <div class="table-container"
-                            style="width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 20px;">
-                            <table class="user-table" style="width: 100%; min-width: 600px; border-collapse: collapse;">
+                        <div class="table-container" style="width: 100%; margin-top: 20px;">
+                            <table class="user-table"
+                                style="width: 100%; table-layout: fixed; border-collapse: collapse;">
+                                <colgroup>
+                                    <col style="width: 13%;">
+                                    <col style="width: 15%;">
+                                    <col style="width: 17%;">
+                                    <col style="width: 14%;">
+                                    <col style="width: 10%;">
+                                    <col style="width: 11%;">
+                                    <col style="width: 8%;">
+                                    <col style="width: 12%;">
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th>Cliente</th>
@@ -123,7 +133,7 @@
                                         <th>Subcontratista / Manager</th>
                                         <th>Estado</th>
                                         <th>Prioridad</th>
-                                        <th>Pago ($)</th>
+                                        <th>Pago</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -227,29 +237,28 @@
 
                     <!-- MATERIALES -->
 
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">
-    Materiales del Inventario
-</h4>
+                    <h4
+                        style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Materiales del Inventario
+                    </h4>
 
-<!-- BUSCADOR + FILTRO -->
-<div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
-    <div style="flex: 1; min-width: 220px;">
-        <input type="text" id="searchMaterialInput" 
-               class="input-field" 
-               placeholder="🔍 Buscar material por nombre..." 
-               style="width: 100%;">
-    </div>
-    <div style="width: 240px;">
-        <select id="filterCategoryMaterial" class="input-field" style="width: 100%;">
-            <option value="">Todas las Categorías</option>
-        </select>
-    </div>
-</div>
+                    <!-- BUSCADOR + FILTRO -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 220px;">
+                            <input type="text" id="searchMaterialInput" class="input-field"
+                                placeholder="🔍 Buscar material por nombre..." style="width: 100%;">
+                        </div>
+                        <div style="width: 240px;">
+                            <select id="filterCategoryMaterial" class="input-field" style="width: 100%;">
+                                <option value="">Todas las Categorías</option>
+                            </select>
+                        </div>
+                    </div>
 
-<div id="materialsContainer" 
-     style="max-height: 280px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
-    Cargando materiales...
-</div>
+                    <div id="materialsContainer"
+                        style="max-height: 280px; overflow-y: auto; background: #F9FAFC; padding: 10px; border: 1px solid #E0E5F2; border-radius: 8px;">
+                        Cargando materiales...
+                    </div>
 
                     <!-- MATERIALES NECESARIOS PARA ESTA OBRA -->
                     <h4
@@ -314,19 +323,23 @@
                     </div>
 
                     <!-- 🔥 NUEVO: SUBIR PLANOS -->
-                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                    <h4
+                        style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">
                         Documentos Adjuntos
                     </h4>
                     <div class="form-group">
                         <label><i class="fa-solid fa-file-pdf"></i> Planos del Trabajo (Imagen o PDF)</label>
-                        <input type="file" id="jobBlueprint" class="input-field" accept="image/*,application/pdf" style="padding: 5px;">
+                        <input type="file" id="jobBlueprint" class="input-field" accept="image/*,application/pdf"
+                            style="padding: 5px;">
                         <small style="color: #666;">Opcional. Puedes subir un plano inicial para la obra.</small>
-                        
+
                         <!-- Aquí mostraremos el link si ya hay un plano guardado -->
-                        <div id="currentBlueprintContainer" style="display:none; margin-top:8px; padding: 10px; background: #e8f5e9; border-radius: 6px; border: 1px dashed #4caf50;">
-                            <i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i> 
+                        <div id="currentBlueprintContainer"
+                            style="display:none; margin-top:8px; padding: 10px; background: #e8f5e9; border-radius: 6px; border: 1px dashed #4caf50;">
+                            <i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i>
                             <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">Plano actual:</span>
-                            <a id="currentBlueprintLink" href="#" target="_blank" style="color: #0f4c81; font-weight: bold; font-size: 13px; margin-left: 5px; text-decoration: underline;">
+                            <a id="currentBlueprintLink" href="#" target="_blank"
+                                style="color: #0f4c81; font-weight: bold; font-size: 13px; margin-left: 5px; text-decoration: underline;">
                                 Ver Documento
                             </a>
                         </div>
