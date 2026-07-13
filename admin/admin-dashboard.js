@@ -287,7 +287,7 @@ window.verNominaSemanalGlobal = async () => {
             html: '<div id="nomina-contenedor-admin">Generando reporte...</div>',
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
-            width: window.innerWidth < 768 ? '95%' : '600px',
+            width: '600px',
             background: '#FFFFFF'
         });
 
@@ -505,7 +505,7 @@ window.verBodegaGlobal = async () => {
             html: '<div id="bodega-admin-contenedor">Generando reporte...</div>',
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
-            width: window.innerWidth < 768 ? '95%' : '800px',
+            width: '800px',
             background: '#FFFFFF'
         });
 

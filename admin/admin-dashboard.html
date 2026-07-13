@@ -14,6 +14,7 @@
 
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="usuarios/usuarios.css">
+
 </head>
 
 <body>
@@ -196,6 +197,23 @@
                 <button type="button" id="btnCerrarModalBot" class="btn-secondary">
                     Cancelar
                 </button>
+            </div>
+        </div>
+    </div>
+    <!-- VENTANA GLOBAL RESPONSIVE -->
+    <div id="modalGlobal" class="modal-overlay">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h2 id="modalTitle">Título</h2>
+                <button class="close-btn" onclick="cerrarModalGlobal()">✕</button>
+            </div>
+
+            <div class="modal-body" id="modalBody">
+                <!-- Contenido dinámico -->
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-primary" onclick="cerrarModalGlobal()">Cerrar</button>
             </div>
         </div>
     </div>
