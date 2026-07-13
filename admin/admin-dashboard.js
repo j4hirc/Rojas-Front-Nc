@@ -649,7 +649,7 @@ function renderizarBodegaAdmin(offset) {
             htmlContent += `
                 <div style="padding: 14px; border-bottom: 1px solid #eee; background: #f8faff;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
-                        <strong style="color: #0F2D4A;">${job.clientName || 'Cliente sin nombre'}</strong>
+                        <strong style="color: #0F2D4A; word-break: break-word;">${job.clientName || 'Cliente sin nombre'}</strong>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             ${statusBadge}
                             <span style="color: #F4A300; font-weight: bold;">${nombreEmpleado}</span>
