@@ -75,15 +75,27 @@ document.addEventListener("DOMContentLoaded", async () => {
             .swal2-popup {
                 width: 94vw !important;
                 max-width: 94vw !important;
+                max-height: 88vh !important;
                 padding: 14px !important;
                 box-sizing: border-box !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
             }
             .swal2-popup * {
                 max-width: 100% !important;
                 box-sizing: border-box !important;
             }
             .swal2-html-container {
-                overflow-x: hidden !important;
+                max-height: none !important;
+                overflow-y: visible !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            #nomina-contenedor-admin,
+            #bodega-admin-contenedor,
+            #tabla-exportar-pdf-container,
+            #bodega-admin-lista-dia {
+                max-width: 100% !important;
+                -webkit-overflow-scrolling: touch !important;
             }
         }
     `;
