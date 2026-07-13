@@ -82,6 +82,8 @@ function renderizarMateriales(materiales) {
     materiales.forEach(mat => {
         const safeName = mat.name ? mat.name.replace(/'/g, "\\'") : '';
         const safeCategory = mat.categoryName ? mat.categoryName.replace(/'/g, "\\'") : '';
+        const safeUnit = mat.unit ? mat.unit.replace(/'/g, "\\'") : ''; // 🔥 Escapamos unidad para pasar por onclick
+        const displayUnit = mat.unit ? ` ${mat.unit}` : ''; // Texto bonito para mostrar
         
         // Asignamos 0 si viene null o indefinido desde la base de datos
         const safeCount = mat.count || 0;
@@ -94,14 +96,15 @@ function renderizarMateriales(materiales) {
         <div style="display: flex; align-items: center; gap: 12px;">
             <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-box"></i></div>
             <div>
-                ${mat.name} <span style="font-size: 0.8rem; font-weight: normal; color: var(--primary);">($${safePrice} - Disp: ${safeCount})</span><br>
+                ${mat.name} <span style="font-size: 0.8rem; font-weight: normal; color: var(--primary);">($${safePrice.toFixed(2)} - Disp: ${safeCount}${displayUnit})</span><br>
                 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">Cat: ${mat.categoryName || 'Sin categoría'}</span>
             </div>
         </div>
     </td>
     <td style="text-align: center;">
         <div class="action-btns">
-            <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}', ${safeCount}, ${safePrice})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+            <!-- 🔥 Se agregó el parámetro safeUnit a la función -->
+            <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}', ${safeCount}, ${safePrice}, '${safeUnit}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
             <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
         </div>
     </td>
@@ -116,12 +119,13 @@ function renderizarMateriales(materiales) {
             <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(0, 184, 169, 0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.1rem;"><i class="fa-solid fa-box"></i></div>
             <div>
                 <strong style="color: var(--navy); font-size: 1.1rem; display: block;">${mat.name}</strong> 
-                <span style="font-size: 0.8rem; color: var(--text-muted);">ID: #${mat.materialId} | Cat: ${mat.categoryName || 'N/A'}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted);">ID: #${mat.materialId} | Cat: ${mat.categoryName || 'N/A'}</span><br>
+                <span style="font-size: 0.85rem; color: var(--primary); font-weight: bold;"> Disp: ${safeCount}${displayUnit} | Precio: $${safePrice.toFixed(2)} </span>
             </div>
         </div>
     </div>
     <div class="card-actions">
-        <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}', ${safeCount}, ${safePrice})"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn-icon icon-edit" onclick="abrirModalEditarMat(${mat.materialId}, '${safeName}', '${safeCategory}', ${safeCount}, ${safePrice}, '${safeUnit}')"><i class="fa-solid fa-pen"></i></button>
         <button class="btn-icon icon-delete" onclick="eliminarMaterial(${mat.materialId})"><i class="fa-solid fa-trash"></i></button>
     </div>
 `;
@@ -159,18 +163,25 @@ window.abrirModalCrearMat = () => {
     
     if(document.getElementById('materialCount')) document.getElementById('materialCount').value = '';
     if(document.getElementById('materialPrice')) document.getElementById('materialPrice').value = '';
+    if(document.getElementById('materialUnit')) document.getElementById('materialUnit').value = ''; // 🔥 Limpiar unidad
 
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-box-open" style="color: var(--primary);"></i> Nuevo Material';
     document.getElementById('modalMaterial').style.display = 'flex';
 };
 
-window.abrirModalEditarMat = (id, name, categoryName, count, price) => {
+// 🔥 Se añadió el parámetro "unit" al final
+window.abrirModalEditarMat = (id, name, categoryName, count, price, unit) => {
     document.getElementById('formMaterial').reset();
     document.getElementById('materialId').value = id;
     document.getElementById('materialName').value = name;
     
     if(document.getElementById('materialCount')) document.getElementById('materialCount').value = count;
     if(document.getElementById('materialPrice')) document.getElementById('materialPrice').value = price;
+    
+    // 🔥 Seteamos la unidad
+    if(document.getElementById('materialUnit')) {
+        document.getElementById('materialUnit').value = (unit && unit !== 'undefined' && unit !== 'N/A') ? unit : '';
+    }
 
     const select = document.getElementById('matCategory');
     for (let i = 0; i < select.options.length; i++) {
@@ -197,20 +208,24 @@ window.guardarMaterial = async () => {
     
     const countInput = document.getElementById('materialCount');
     const priceInput = document.getElementById('materialPrice');
+    const unitInput = document.getElementById('materialUnit'); // 🔥 Rescatamos la unidad
     
     // Si están vacíos, mandamos un 0 por defecto para que el backend no falle
     const count = (countInput && countInput.value !== '') ? countInput.value : '0';
     const price = (priceInput && priceInput.value !== '') ? priceInput.value : '0';
+    const unit = (unitInput && unitInput.value !== '') ? unitInput.value.trim() : '';
 
     if (!name || !categoryId) {
         return Swal.fire('Atención', 'El Nombre y la Categoría son obligatorios.', 'warning');
     }
 
+    // 🔥 Agregamos "unit" al Payload que mandaremos al servidor
     const payload = {
         name: name,
         count: parseInt(count),      
         price: parseFloat(price),    
-        categoryId: parseInt(categoryId)
+        categoryId: parseInt(categoryId),
+        unit: unit 
     };
 
     const url = isEditing ? `${API_URL}/update/${id}` : `${API_URL}/create`;
@@ -288,7 +303,7 @@ window.cerrarSesion = () => {
             showCancelButton: true,
             showDenyButton: true,
             confirmButtonColor: '#00B8A9',
-            denyButtonColor: '#0f4c81', // Cambiamos a tu azul como secundario aquí
+            denyButtonColor: '#0f4c81', 
             cancelButtonColor: '#111C44',
             confirmButtonText: "Sí, salir",
             denyButtonText: "Cambiar de Rol",
