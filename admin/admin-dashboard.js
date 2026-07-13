@@ -98,6 +98,51 @@ function cerrarModalPerfil() {
     document.getElementById("modalPerfil").style.display = "none";
 }
 
+function esIOSAdmin() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+// 🔥 Genera el PDF como blob y lo entrega de forma segura en iOS (sin romper el "atrás")
+async function generarYEntregarPDF(opciones, elementoHtml, nombreArchivo) {
+    const pdfBlob = await html2pdf().set(opciones).from(elementoHtml).output('blob');
+
+    if (esIOSAdmin()) {
+        try {
+            const file = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file], title: nombreArchivo });
+                return;
+            }
+        } catch (e) {
+            console.warn('No se pudo compartir el PDF:', e);
+        }
+
+        // Fallback: mostramos un botón, el usuario decide abrirlo en pestaña NUEVA
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        Swal.fire({
+            icon: 'success',
+            title: '¡PDF generado!',
+            text: 'Toca el botón para ver o guardar tu documento.',
+            confirmButtonText: 'Abrir PDF',
+            confirmButtonColor: '#12CFF4'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.open(pdfUrl, '_blank');
+            }
+        });
+    } else {
+        // Escritorio / Android: comportamiento normal
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        const a = document.createElement('a');
+        a.href = pdfUrl;
+        a.download = nombreArchivo;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        Swal.close();
+    }
+}
+
 async function guardarPerfil() {
     // ESTOS SON TODOS LOS DATOS QUE TU BACKEND ESPERA (Incluyendo ocultos)
     const payload = {
@@ -423,11 +468,7 @@ window.exportarNominaSemanalAPdf = () => {
         didOpen: () => { Swal.showLoading(); }
     });
 
-    html2pdf()
-        .set(opcionesConfiguracion)
-        .from(contenedorImpresion)
-        .save()
-        .then(() => { Swal.close(); })
+    generarYEntregarPDF(opcionesConfiguracion, contenedorImpresion, `Nomina_Quincenal_${nombreArchivoClean}.pdf`)
         .catch(err => {
             console.error("Fallo al exportar reporte PDF:", err);
             Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
@@ -657,8 +698,7 @@ window.exportarBodegaAdminPdf = () => {
 
     Swal.fire({ title: 'Generando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-    html2pdf().set(opt).from(contenedorImpresion).save()
-        .then(() => Swal.close())
+    generarYEntregarPDF(opt, contenedorImpresion, `Ordenes_Bodega_Global_${nombreArchivoClean}.pdf`)
         .catch(() => Swal.fire('Error', 'No se pudo generar el PDF', 'error'));
 };
 
