@@ -304,9 +304,11 @@ function renderizarNominaAdmin(offset) {
         }
     });
 
-    const formatD = (d) => `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth() + 1).toString().padStart(2,'0')}/${d.getFullYear()}`;
-    const strInicio = formatD(inicioSemana);
-    const strFin = formatD(finSemana);
+    // ✅ CAMBIO: Formato Mes/Día/Año (MM/DD/YYYY)
+    const formatMDY = (d) => `${(d.getMonth() + 1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}/${d.getFullYear()}`;
+
+    const strInicio = formatMDY(inicioSemana);
+    const strFin = formatMDY(finSemana);
 
     let htmlContent = `
         <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
@@ -366,6 +368,7 @@ function renderizarNominaAdmin(offset) {
 }
 
 // 3. FUNCIÓN CORREGIDA DE DESCARGA PDF
+
 window.exportarNominaSemanalAPdf = () => {
     const lblRango = document.getElementById('lblRangoSemanas');
     const textoRango = lblRango ? lblRango.textContent.trim() : "Reporte_Nomina";
@@ -430,7 +433,6 @@ window.exportarNominaSemanalAPdf = () => {
             Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
         });
 };
-
 // --- LOGOUT NORMAL ---
 // 1. Modificamos la función de cerrar sesión para que sea la que controle el flujo
 function cerrarSesion() {
