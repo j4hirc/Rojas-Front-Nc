@@ -433,6 +433,235 @@ window.exportarNominaSemanalAPdf = () => {
             Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
         });
 };
+
+
+
+// =================================================================================
+// --- RESUMEN DE BODEGA GLOBAL (Todos los Jefes / Todos los Managers) ---
+// =================================================================================
+window.bodegaAdminJobsCache = null;
+window.bodegaAdminUsersCache = null;
+window.bodegaAdminDiaOffset = 0;
+
+window.verBodegaGlobal = async () => {
+    Swal.fire({ title: 'Cargando ordenes de bodega globales...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
+
+        const [jobsRes, usersRes] = await Promise.all([
+            fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        window.bodegaAdminJobsCache = await jobsRes.json();
+        window.bodegaAdminUsersCache = await usersRes.json();
+
+        window.bodegaAdminDiaOffset = 0;
+
+        Swal.fire({
+            title: '<i class="fa-solid fa-truck-fast" style="color:#F4A300;"></i> Ordenes de Bodega (Global)',
+            html: '<div id="bodega-admin-contenedor">Generando reporte...</div>',
+            confirmButtonColor: '#12CFF4',
+            confirmButtonText: 'Cerrar',
+            width: '800px',
+            background: '#FFFFFF'
+        });
+
+        renderizarBodegaAdmin(window.bodegaAdminDiaOffset);
+
+    } catch (e) {
+        console.error(e);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la bodega global.', confirmButtonColor: '#12CFF4' });
+    }
+};
+
+window.cambiarDiaBodegaAdmin = (delta) => {
+    window.bodegaAdminDiaOffset += delta;
+    renderizarBodegaAdmin(window.bodegaAdminDiaOffset);
+};
+
+function getFechaStrLocalAdmin(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function formatMDYBodegaAdmin(date) {
+    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
+}
+
+function renderizarBodegaAdmin(offset) {
+    const fechaObjetivo = new Date();
+    fechaObjetivo.setDate(fechaObjetivo.getDate() + offset);
+    fechaObjetivo.setHours(12, 0, 0, 0);
+
+    const fechaStrFiltro = getFechaStrLocalAdmin(fechaObjetivo);
+    const fechaStrDisplay = formatMDYBodegaAdmin(fechaObjetivo);
+
+    let etiquetaDia = '';
+    if (offset === 0) etiquetaDia = 'Hoy';
+    else if (offset === 1) etiquetaDia = 'Mañana';
+    else if (offset === -1) etiquetaDia = 'Ayer';
+    else etiquetaDia = fechaObjetivo.toLocaleDateString('es-ES', { weekday: 'long' });
+    etiquetaDia = etiquetaDia.charAt(0).toUpperCase() + etiquetaDia.slice(1);
+
+    let htmlContent = `
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+        <button onclick="cambiarDiaBodegaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
+            <i class="fa-solid fa-chevron-left"></i> Anterior
+        </button>
+
+        <div style="text-align: center; flex: 1; min-width: 140px;">
+            <span style="display: block; font-size: 10px; color: #2E3238; text-transform: uppercase; font-weight: bold;">${etiquetaDia}</span>
+            <span id="lblFechaBodegaAdmin" style="font-size: 13px; color: #0F2D4A;"><b>${fechaStrDisplay}</b></span>
+        </div>
+
+        <button type="button" onclick="exportarBodegaAdminPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px;">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+        </button>
+
+        <button onclick="cambiarDiaBodegaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
+            Siguiente <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>`;
+
+    // 🔑 DIFERENCIA CLAVE: NO filtramos por jefe. Todos los trabajos entran.
+    const itemsDelDia = window.bodegaAdminJobsCache.filter(job => {
+        if (!['PENDING', 'IN_PROGRESS'].includes(job.status)) return false;
+
+        let jobDateStr = Array.isArray(job.jobDate)
+            ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
+            : job.jobDate;
+
+        return jobDateStr === fechaStrFiltro;
+    });
+
+    if (itemsDelDia.length === 0) {
+        htmlContent += `<p style="color:#888; font-style:italic; padding:10px; text-align:center;">No hay trabajos programados para este día.</p>`;
+    } else {
+        htmlContent += `<div id="bodega-admin-lista-dia" style="max-height: 450px; overflow-y: auto; border: 1px solid #D4D4D4; border-radius: 8px;">`;
+
+        itemsDelDia.forEach(job => {
+            const empleado = window.bodegaAdminUsersCache.find(u => u.userId == job.employeeId);
+            const nombreEmpleado = empleado ? `${empleado.firstName} ${empleado.lastName}` : `ID: ${job.employeeId}`;
+
+            // 🔑 Nombre del Manager/Jefe a cargo, para que el admin sepa de quién es cada obra
+            const nombreManager = job.nameManager || 'Sin manager asignado';
+
+            let statusBadge = '';
+            if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Pendiente</span>`;
+            else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">En Progreso</span>`;
+
+            let descBodega = job.description ? job.description : '';
+            if (descBodega.includes('[MATERIALES PRE-ASIGNADOS]:')) {
+                descBodega = descBodega.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+            }
+
+            // Combinamos materiales pre-asignados + necesarios (agregados por subcontratista)
+            const materialesCombinados = {};
+            (job.materials || []).forEach(mat => {
+                materialesCombinados[mat.materialId] = {
+                    name: mat.name || mat.material || 'Material',
+                    quantity: parseFloat(mat.quantity || mat.cant || 1),
+                    unit: mat.unit || '',
+                    origen: 'Pre-asignado'
+                };
+            });
+            (job.necessaryMaterials || []).forEach(mat => {
+                const id = mat.materialId;
+                if (materialesCombinados[id]) {
+                    materialesCombinados[id].quantity = parseFloat(mat.quantity || 1);
+                    materialesCombinados[id].unit = mat.unit || materialesCombinados[id].unit;
+                } else {
+                    materialesCombinados[id] = {
+                        name: mat.name || 'Material',
+                        quantity: parseFloat(mat.quantity || 1),
+                        unit: mat.unit || '',
+                        origen: 'Agregado por subcontratista'
+                    };
+                }
+            });
+            const listaMateriales = Object.values(materialesCombinados);
+
+            htmlContent += `
+                <div style="padding: 14px; border-bottom: 1px solid #eee; background: #f8faff;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+                        <strong style="color: #0F2D4A;">${job.clientName || 'Cliente sin nombre'}</strong>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            ${statusBadge}
+                            <span style="color: #F4A300; font-weight: bold;">${nombreEmpleado}</span>
+                        </div>
+                    </div>
+                    <p style="margin: 0 0 6px 0; font-size: 12px; color: #0f4c81; font-weight: 600;">
+                        <i class="fa-solid fa-user-shield"></i> Manager: ${nombreManager}
+                    </p>
+                    ${descBodega ? `<p style="margin: 0 0 8px 0; font-size: 12px; color: #777; font-style: italic;">${descBodega}</p>` : ''}`;
+
+            if (listaMateriales.length > 0) {
+                htmlContent += `<ul style="padding-left: 20px; margin: 6px 0;">`;
+                listaMateriales.forEach(mat => {
+                    const etiquetaOrigen = mat.origen === 'Agregado por subcontratista'
+                        ? `<span style="color:#e65100; font-size:11px; font-weight:600;"> (agregado por subcontratista)</span>`
+                        : '';
+                    htmlContent += `<li><strong>${mat.name}</strong> — ${mat.quantity} ${mat.unit}${etiquetaOrigen}</li>`;
+                });
+                htmlContent += `</ul>`;
+            } else {
+                htmlContent += `<p style="color:#999; font-size:13px;">Sin materiales registrados</p>`;
+            }
+
+            htmlContent += `</div>`;
+        });
+
+        htmlContent += `</div>`;
+    }
+
+    const contenedor = document.getElementById('bodega-admin-contenedor');
+    if (contenedor) contenedor.innerHTML = htmlContent;
+}
+
+window.exportarBodegaAdminPdf = () => {
+    const listaDia = document.getElementById('bodega-admin-lista-dia');
+    if (!listaDia) return Swal.fire('Error', 'No hay trabajos para exportar en este día.', 'error');
+
+    const lblFecha = document.getElementById('lblFechaBodegaAdmin');
+    const textoFecha = lblFecha ? lblFecha.textContent.trim() : new Date().toISOString().split('T')[0];
+    const nombreArchivoClean = textoFecha.replace(/[\/]/g, '-');
+
+    const contenedorImpresion = document.createElement('div');
+    contenedorImpresion.style.padding = "30px";
+    contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
+    contenedorImpresion.style.background = "#ffffff";
+
+    contenedorImpresion.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #12CFF4; padding-bottom: 15px;">
+            <h1 style="color: #0B0B0D; margin: 0;">ORDENES DE BODEGA — GLOBAL</h1>
+            <p style="margin: 8px 0 0 0; color: #12CFF4; font-weight: bold;">Todos los proyectos activos de la empresa</p>
+            <p style="margin: 5px 0 0 0; color: #555;">${textoFecha}</p>
+        </div>
+        ${listaDia.innerHTML}
+        <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #888;">
+            Reporte generado por el Portal RemoMN — Panel de Administración
+        </div>
+    `;
+
+    const opt = {
+        margin: [15, 15, 15, 15],
+        filename: `Ordenes_Bodega_Global_${nombreArchivoClean}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    Swal.fire({ title: 'Generando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    html2pdf().set(opt).from(contenedorImpresion).save()
+        .then(() => Swal.close())
+        .catch(() => Swal.fire('Error', 'No se pudo generar el PDF', 'error'));
+};
+
 // --- LOGOUT NORMAL ---
 // 1. Modificamos la función de cerrar sesión para que sea la que controle el flujo
 function cerrarSesion() {
