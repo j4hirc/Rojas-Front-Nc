@@ -467,17 +467,19 @@ function renderizarMaterialesEmpleado(materials) {
         const estado = materialesEstadoEmpleado[mat.materialId] || {};
         const checkedAttr = estado.checked ? 'checked' : '';
 
+        const safeUnit = mat.unit ? mat.unit.replace(/'/g, "\\'") : '';
+
         containerMat.innerHTML += `
-            <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                <label style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; color: #2B3674; font-weight: bold; cursor: pointer;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" onchange="toggleMaterialEmpleado(${mat.materialId})" ${checkedAttr}>
-                        ${mat.name}
-                    </div>
-                    <span style="color: #198754; font-size: 12px; background: #e8f5e9; padding: 2px 6px; border-radius: 4px;">$${precioMat.toFixed(2)} c/u</span>
-                </label>
+    <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+        <label style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; color: #2B3674; font-weight: bold; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" data-unit="${safeUnit}" onchange="toggleMaterialEmpleado(${mat.materialId})" ${checkedAttr}>
+                ${mat.name}
             </div>
-        `;
+            <span style="color: #198754; font-size: 12px; background: #e8f5e9; padding: 2px 6px; border-radius: 4px;">$${precioMat.toFixed(2)} c/u</span>
+        </label>
+    </div>
+`;
     });
 }
 
@@ -513,17 +515,32 @@ window.toggleMaterialEmpleado = (matId) => {
     const checkbox = document.querySelector(`input[name="empMaterials"][value="${matId}"]`);
     const matName = checkbox.getAttribute('data-name');
     const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
+    const matUnit = checkbox.getAttribute('data-unit') || '';
 
     if (!materialesEstadoEmpleado[matId]) materialesEstadoEmpleado[matId] = {};
     materialesEstadoEmpleado[matId].checked = checkbox.checked;
 
     if (checkbox.checked) {
-        agregarMaterialNecesarioEmpleado(matId, matName, matPrice);
+        agregarMaterialNecesarioEmpleado(matId, matName, matPrice, 1, matUnit);
+
+        // 🔥 Si el material NO estaba asignado originalmente, marcamos la alerta automáticamente
+        const idsOriginales = (currentJobInfo && currentJobInfo.materials)
+            ? currentJobInfo.materials.map(m => m.materialId) : [];
+        const esNuevo = !idsOriginales.includes(matId);
+
+        if (esNuevo) {
+            const alertCheckbox = document.getElementById('evModifications');
+            if (alertCheckbox && !alertCheckbox.checked) {
+                alertCheckbox.checked = true;
+                document.getElementById('newPriceContainer').style.display = 'block';
+            }
+        }
     } else {
         eliminarMaterialNecesarioEmpleadoPorId(matId);
         delete materialesEstadoEmpleado[matId];
     }
 };
+
 
 function crearFilaMaterialNecesarioEmpleado(matId, name, price, qtyInicial, unitInicial) {
     const qty = (qtyInicial !== undefined && qtyInicial !== null && qtyInicial !== '') ? qtyInicial : 1;
@@ -885,42 +902,42 @@ window.guardarReporteYPdf = async () => {
     const nombreArchivoPDF = `Reporte_${safeName}.pdf`;
 
     const opt = {
-    margin: [10, 10, 10, 10],
-    filename: nombreArchivoPDF,
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { 
-        scale: 2, 
-        useCORS: true, 
-        logging: false, 
-        backgroundColor: '#ffffff',
-        scrollX: 0,
-        scrollY: 0            // 🔥 clave para que no capture mal en iOS
-    },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    pagebreak: { 
-        mode: ['css', 'legacy'], 
-        avoid: ['tr', 'h3', 'img', '.avoid-break']
-    }
-};
+        margin: [10, 10, 10, 10],
+        filename: nombreArchivoPDF,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            scrollX: 0,
+            scrollY: 0            // 🔥 clave para que no capture mal en iOS
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: {
+            mode: ['css', 'legacy'],
+            avoid: ['tr', 'h3', 'img', '.avoid-break']
+        }
+    };
 
     let pdfBlob;
-try {
-    pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
+    try {
+        pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
 
-    if (esIOS()) {
-        // 🔥 Ya NO usamos html2pdf().save() en iOS, causa el mismo bug de navegación
-        await manejarDescargaPDF(pdfBlob, nombreArchivoPDF);
-    } else {
-        html2pdf().set(opt).from(pdfTemplate).save();
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        window.open(pdfUrl, '_blank');
+        if (esIOS()) {
+            // 🔥 Ya NO usamos html2pdf().save() en iOS, causa el mismo bug de navegación
+            await manejarDescargaPDF(pdfBlob, nombreArchivoPDF);
+        } else {
+            html2pdf().set(opt).from(pdfTemplate).save();
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            window.open(pdfUrl, '_blank');
+        }
+
+    } catch (e) {
+        console.error("Error al hacer el PDF:", e);
+        pdfWrapper.style.display = 'none';
+        return Swal.fire({ icon: 'error', title: 'Error del PDF', text: 'No se pudo generar el documento PDF.' });
     }
-
-} catch (e) {
-    console.error("Error al hacer el PDF:", e);
-    pdfWrapper.style.display = 'none';
-    return Swal.fire({ icon: 'error', title: 'Error del PDF', text: 'No se pudo generar el documento PDF.'});
-}
 
     pdfWrapper.style.display = 'none';
     pdfWrapper.style.visibility = 'hidden';
@@ -989,23 +1006,26 @@ async function manejarDescargaPDF(pdfBlob, nombreArchivo) {
             const file = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({ files: [file], title: nombreArchivo });
-                return; // 🔥 éxito: el usuario elige Guardar en Archivos / Enviar, sin navegar
+                return; // 🔥 éxito: compartido sin abrir nada más
             }
         } catch (e) {
-            // El usuario canceló el panel de compartir, o el navegador no soporta archivos
             console.warn('No se pudo compartir el PDF:', e);
         }
 
-        // Fallback si no hay soporte de Share API: abrir en la MISMA pestaña (no window.open)
-        // Esto evita crear una pestaña "fantasma" de la que no se puede salir.
+        // 🔥 Fallback: NO navegamos la pestaña actual. Mostramos un botón
+        // y el usuario decide si lo quiere abrir (en pestaña NUEVA, no en la misma).
         const pdfUrl = URL.createObjectURL(pdfBlob);
-        const a = document.createElement('a');
-        a.href = pdfUrl;
-        a.target = '_self';
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        Swal.fire({
+            icon: 'success',
+            title: '¡Reporte generado!',
+            text: 'Toca el botón para ver o guardar tu PDF.',
+            confirmButtonText: 'Abrir PDF',
+            confirmButtonColor: '#00B8A9'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.open(pdfUrl, '_blank'); // 🔥 pestaña nueva, no reemplaza tu app
+            }
+        });
     } else {
         // Escritorio / Android: funciona bien como está
         html2pdf().set(opt).from(pdfTemplate).save();
