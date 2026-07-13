@@ -68,6 +68,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const btnSalir = document.getElementById("btnSalir");
     if (btnSalir) btnSalir.addEventListener("click", cerrarSesion);
+
+    const swalMobileFix = document.createElement('style');
+    swalMobileFix.textContent = `
+        @media (max-width: 768px) {
+            .swal2-popup {
+                width: 94vw !important;
+                max-width: 94vw !important;
+                padding: 14px !important;
+                box-sizing: border-box !important;
+            }
+            .swal2-popup * {
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            .swal2-html-container {
+                overflow-x: hidden !important;
+            }
+        }
+    `;
+    document.head.appendChild(swalMobileFix);
 });
 
 // --- FUNCIONES PARA EDITAR EL PERFIL ---
