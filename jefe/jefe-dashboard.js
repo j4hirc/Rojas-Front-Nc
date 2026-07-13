@@ -121,8 +121,8 @@ async function guardarPerfil() {
 function cerrarSesion() {
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) { 
-        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    if (rolesString) {
+        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
     }
 
     if (userRoles.length > 1) {
@@ -167,7 +167,7 @@ function cerrarSesion() {
 // Declararla en window asegura que esté disponible globalmente en todo el script
 window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
@@ -185,18 +185,18 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
-        if (rol === 'ROLE_ADMIN') { 
-            nombreRol = 'Acceder como Administrador'; 
-            url = `${prefijoRaiz}admin/admin-dashboard.html`; 
+
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = 'Acceder como Administrador';
+            url = `${prefijoRaiz}admin/admin-dashboard.html`;
         }
-        if (rol === 'ROLE_JEFE') { 
-            nombreRol = 'Acceder como Jefe'; 
-            url = `${prefijoJefe}jefe-dashboard.html`; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = 'Acceder como Jefe';
+            url = `${prefijoJefe}jefe-dashboard.html`;
         }
-        if (rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = 'Acceder como Subcontratista'; 
-            url = `${prefijoRaiz}employee/employee-dashboard.html`; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = 'Acceder como Subcontratista';
+            url = `${prefijoRaiz}employee/employee-dashboard.html`;
         }
 
         if (nombreRol) {
@@ -207,7 +207,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
             boton.style.backgroundColor = '#00B8A9';
             boton.style.cursor = 'pointer';
             boton.textContent = nombreRol;
-            
+
             boton.addEventListener('click', () => {
                 window.location.href = url;
             });
@@ -218,7 +218,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
 
     Swal.fire({
         title: 'Selecciona tu área de trabajo',
-        html: contenedor, 
+        html: contenedor,
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
@@ -226,58 +226,241 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     });
 };
 
-// --- RESUMEN DE BODEGA ---
+// --- RESUMEN DE BODEGA (Con navegación día por día, igual que Nómina) ---
+let bodegaJobsCache = null;
+let bodegaUsersCache = null;
+let bodegaDiaOffset = 0;
+
 window.verBodegaHoy = async () => {
-    Swal.fire({ title: 'Calculando materiales...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+    Swal.fire({ title: 'Cargando ordenes de bodega...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
     try {
         const token = localStorage.getItem('jwt_token');
-        const JOBS_URL = 'https://api-remomn.onrender.com/api/v1/jobs/all';
-        const response = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${token}` } });
-        const jobs = await response.json();
 
-        const hoy = new Date();
-        const strHoy = hoy.toISOString().split('T')[0];
-        const manana = new Date(hoy);
-        manana.setDate(manana.getDate() + 1);
-        const strManana = manana.toISOString().split('T')[0];
+        const [jobsRes, usersRes] = await Promise.all([
+            fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
 
-        const jefeNombreCompleto = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase();
-        let materialesRequeridos = {};
+        bodegaJobsCache = await jobsRes.json();
+        bodegaUsersCache = await usersRes.json();
 
-        jobs.forEach(job => {
-            const jobManagerName = (job.nameManager || "").trim().toLowerCase();
-            const esDeEsteJefe = (jobManagerName === jefeNombreCompleto) || (job.managerId == miUsuarioActual.userId);
-
-            if (!esDeEsteJefe) return;
-
-            let jobDateStr = Array.isArray(job.jobDate) ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}` : job.jobDate;
-            if ((jobDateStr === strHoy || jobDateStr === strManana) && (job.status === 'PENDING' || job.status === 'IN_PROGRESS')) {
-                if (job.materials && job.materials.length > 0) {
-                    job.materials.forEach(mat => {
-                        materialesRequeridos[mat.name] = (materialesRequeridos[mat.name] || 0) + 1;
-                    });
-                }
-            }
-        });
-
-        let htmlContent = '<ul style="text-align: left; font-size: 14px; color: #444; background: #f8faff; padding: 15px 30px; border-radius: 8px;">';
-        if (Object.keys(materialesRequeridos).length === 0) {
-            htmlContent += '<li>No tienes materiales agendados para obras de hoy o mañana.</li>';
-        } else {
-            for (let mat in materialesRequeridos) {
-                htmlContent += `<li style="margin-bottom: 5px;"><strong>${mat}</strong> (Requerido en ${materialesRequeridos[mat]} de tus obras)</li>`;
-            }
-        }
-        htmlContent += '</ul>';
+        bodegaDiaOffset = 0; // Reiniciamos al día actual cada vez que se abre
 
         Swal.fire({
-            title: '<i class="fa-solid fa-boxes-stacked" style="color:#d32f2f;"></i> Mi Bodega',
-            html: `<p style="font-size: 14px;">Materiales que tus cuadrillas necesitan recoger:</p>${htmlContent}`,
-            confirmButtonColor: '#12CFF4'
+            title: '<i class="fa-solid fa-truck-fast" style="color:#F4A300;"></i> Ordenes de Bodega',
+            html: '<div id="bodega-contenedor">Generando reporte...</div>',
+            confirmButtonColor: '#12CFF4',
+            confirmButtonText: 'Cerrar',
+            width: '750px',
+            background: '#FFFFFF'
         });
+
+        renderizarBodega(bodegaDiaOffset);
+
     } catch (e) {
+        console.error(e);
         Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la bodega.', confirmButtonColor: '#12CFF4' });
     }
+};
+
+window.cambiarDiaBodega = (delta) => {
+    bodegaDiaOffset += delta;
+    renderizarBodega(bodegaDiaOffset);
+};
+
+// Helpers de fecha (mismos criterios que la nómina)
+function getFechaStrLocal(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+function formatMDYBodega(date) {
+    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
+}
+
+function renderizarBodega(offset) {
+    const fechaObjetivo = new Date();
+    fechaObjetivo.setDate(fechaObjetivo.getDate() + offset);
+    fechaObjetivo.setHours(12, 0, 0, 0);
+
+    const fechaStrFiltro = getFechaStrLocal(fechaObjetivo);
+    const fechaStrDisplay = formatMDYBodega(fechaObjetivo);
+
+    let etiquetaDia = '';
+    if (offset === 0) etiquetaDia = 'Hoy';
+    else if (offset === 1) etiquetaDia = 'Mañana';
+    else if (offset === -1) etiquetaDia = 'Ayer';
+    else etiquetaDia = fechaObjetivo.toLocaleDateString('es-ES', { weekday: 'long' });
+    etiquetaDia = etiquetaDia.charAt(0).toUpperCase() + etiquetaDia.slice(1);
+
+    const jefeNombreCompleto = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase();
+
+    let htmlContent = `
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+        <button onclick="cambiarDiaBodega(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
+            <i class="fa-solid fa-chevron-left"></i> Anterior
+        </button>
+
+        <div style="text-align: center; flex: 1; min-width: 140px;">
+            <span style="display: block; font-size: 10px; color: #2E3238; text-transform: uppercase; font-weight: bold;">${etiquetaDia}</span>
+            <span id="lblFechaBodega" style="font-size: 13px; color: #0F2D4A;"><b>${fechaStrDisplay}</b></span>
+        </div>
+
+        <button type="button" onclick="exportarBodegaPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px;">
+            <i class="fa-solid fa-file-pdf"></i> PDF
+        </button>
+
+        <button onclick="cambiarDiaBodega(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
+            Siguiente <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>`;
+
+    const itemsDelDia = bodegaJobsCache.filter(job => {
+        const jobManagerName = (job.nameManager || "").trim().toLowerCase();
+        const esDeEsteJefe = (jobManagerName === jefeNombreCompleto) || (job.managerId == miUsuarioActual.userId);
+
+        if (!esDeEsteJefe || !['PENDING', 'IN_PROGRESS'].includes(job.status)) return false;
+
+        let jobDateStr = Array.isArray(job.jobDate)
+            ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
+            : job.jobDate;
+
+        return jobDateStr === fechaStrFiltro;
+    });
+
+    if (itemsDelDia.length === 0) {
+        htmlContent += `<p style="color:#888; font-style:italic; padding:10px; text-align:center;">No hay trabajos programados para este día.</p>`;
+    } else {
+        htmlContent += `<div id="bodega-lista-dia" style="max-height: 420px; overflow-y: auto; border: 1px solid #D4D4D4; border-radius: 8px;">`;
+
+        itemsDelDia.forEach(job => {
+            const empleado = bodegaUsersCache.find(u => u.userId == job.employeeId);
+            const nombreEmpleado = empleado
+                ? `${empleado.firstName} ${empleado.lastName}`
+                : `ID: ${job.employeeId}`;
+
+            // --- Estado del proyecto (mismo estilo que las otras vistas) ---
+            let statusBadge = '';
+            if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Pendiente</span>`;
+            else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">En Progreso</span>`;
+            else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Completado</span>`;
+            else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Cancelado</span>`;
+
+            // --- Descripción limpia (sin el bloque de materiales pre-asignados en texto) ---
+            let descBodega = job.description ? job.description : '';
+            if (descBodega.includes('[MATERIALES PRE-ASIGNADOS]:')) {
+                descBodega = descBodega.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+            }
+
+            // --- Combinamos materiales pre-asignados (jefe/admin) + necesarios (puede agregar el subcontratista) ---
+            const materialesCombinados = {};
+
+            (job.materials || []).forEach(mat => {
+                const id = mat.materialId;
+                materialesCombinados[id] = {
+                    name: mat.name || mat.material || 'Material',
+                    quantity: parseFloat(mat.quantity || mat.cant || 1),
+                    unit: mat.unit || '',
+                    origen: 'Pre-asignado'
+                };
+            });
+
+            (job.necessaryMaterials || []).forEach(mat => {
+                const id = mat.materialId;
+                if (materialesCombinados[id]) {
+                    // Si ya existía, actualizamos cantidad por si el subcontratista la cambió
+                    materialesCombinados[id].quantity = parseFloat(mat.quantity || 1);
+                    materialesCombinados[id].unit = mat.unit || materialesCombinados[id].unit;
+                } else {
+                    materialesCombinados[id] = {
+                        name: mat.name || 'Material',
+                        quantity: parseFloat(mat.quantity || 1),
+                        unit: mat.unit || '',
+                        origen: 'Agregado por subcontratista'
+                    };
+                }
+            });
+
+            const listaMateriales = Object.values(materialesCombinados);
+
+            htmlContent += `
+        <div style="padding: 14px; border-bottom: 1px solid #eee; background: #f8faff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+                <strong style="color: #0F2D4A;">${job.clientName || 'Cliente sin nombre'}</strong>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    ${statusBadge}
+                    <span style="color: #F4A300; font-weight: bold;">${nombreEmpleado}</span>
+                </div>
+            </div>
+            ${descBodega ? `<p style="margin: 0 0 8px 0; font-size: 12px; color: #777; font-style: italic;">${descBodega}</p>` : ''}`;
+
+            if (listaMateriales.length > 0) {
+                htmlContent += `<ul style="padding-left: 20px; margin: 6px 0;">`;
+                listaMateriales.forEach(mat => {
+                    const etiquetaOrigen = mat.origen === 'Agregado por subcontratista'
+                        ? `<span style="color:#e65100; font-size:11px; font-weight:600;"> (agregado por subcontratista)</span>`
+                        : '';
+                    htmlContent += `<li><strong>${mat.name}</strong> — ${mat.quantity} ${mat.unit}${etiquetaOrigen}</li>`;
+                });
+                htmlContent += `</ul>`;
+            } else {
+                htmlContent += `<p style="color:#999; font-size:13px;">Sin materiales registrados</p>`;
+            }
+
+            htmlContent += `</div>`;
+        });
+
+        htmlContent += `</div>`;
+    }
+
+    const contenedor = document.getElementById('bodega-contenedor');
+    if (contenedor) contenedor.innerHTML = htmlContent;
+}
+
+// ==================== EXPORTAR PDF ====================
+window.exportarBodegaPdf = () => {
+    const listaDia = document.getElementById('bodega-lista-dia');
+    if (!listaDia) return Swal.fire('Error', 'No hay trabajos para exportar en este día.', 'error');
+
+    const lblFecha = document.getElementById('lblFechaBodega');
+    const textoFecha = lblFecha ? lblFecha.textContent.trim() : new Date().toISOString().split('T')[0];
+    const nombreArchivoClean = textoFecha.replace(/[\/]/g, '-');
+
+    const nombreJefe = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`;
+
+    const contenedorImpresion = document.createElement('div');
+    contenedorImpresion.style.padding = "30px";
+    contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
+    contenedorImpresion.style.background = "#ffffff";
+
+    contenedorImpresion.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #12CFF4; padding-bottom: 15px;">
+            <h1 style="color: #0B0B0D; margin: 0;">ORDENES DE BODEGA</h1>
+            <p style="margin: 8px 0 0 0; color: #12CFF4; font-weight: bold;">Jefe: ${nombreJefe}</p>
+            <p style="margin: 5px 0 0 0; color: #555;">${textoFecha}</p>
+        </div>
+        ${listaDia.innerHTML}
+        <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #888;">
+            Reporte generado por el Portal RemoMN
+        </div>
+    `;
+
+    const opt = {
+        margin: [15, 15, 15, 15],
+        filename: `Ordenes_Bodega_${nombreArchivoClean}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    Swal.fire({ title: 'Generando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    html2pdf().set(opt).from(contenedorImpresion).save()
+        .then(() => Swal.close())
+        .catch(() => Swal.fire('Error', 'No se pudo generar el PDF', 'error'));
 };
 
 // =================================================================================
@@ -358,7 +541,7 @@ function renderizarNomina(offset) {
 
         if (!esDeEsteJefe || job.status !== 'COMPLETED' || !job.employeeId) return;
 
-        let jobDateStr = Array.isArray(job.jobDate) 
+        let jobDateStr = Array.isArray(job.jobDate)
             ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
             : job.jobDate;
 
@@ -496,12 +679,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. Leer los roles del localStorage
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    
+
     if (rolesString) {
-        try { 
-            userRoles = JSON.parse(rolesString); 
-        } catch(e) { 
-            console.error("Error al leer roles"); 
+        try {
+            userRoles = JSON.parse(rolesString);
+        } catch (e) {
+            console.error("Error al leer roles");
         }
     }
 
@@ -520,7 +703,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function mostrarSelectorDeRoles(roles) {
     // Cerramos el modal del perfil si existe la función
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         // Fallback genérico por si la función tiene otro nombre en otra vista
         const modales = document.querySelectorAll('.modal-overlay');
@@ -529,30 +712,30 @@ function mostrarSelectorDeRoles(roles) {
 
     // Armamos los botones según los roles que tenga
     let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
-    
+
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
+
         // Asignamos las URLs relativas (funcionan porque todos los dashboards están a 1 carpeta de distancia de la raíz)
-        if(rol === 'ROLE_ADMIN') { 
-            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
-            url = '../admin/admin-dashboard.html'; 
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador';
+            url = '../admin/admin-dashboard.html';
         }
-        if(rol === 'ROLE_JEFE') { 
-            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Jefe'; 
-            url = '../jefe/jefe-dashboard.html'; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Jefe';
+            url = '../jefe/jefe-dashboard.html';
         }
-        if(rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista'; 
-            url = '../employee/employee-dashboard.html'; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista';
+            url = '../employee/employee-dashboard.html';
         }
 
-        if(nombreRol) {
+        if (nombreRol) {
             opcionesHTML += `<button class="swal2-confirm swal2-styled" style="width: 100%; margin: 0; background-color: #00B8A9;" onclick="window.location.href='${url}'">${nombreRol}</button>`;
         }
     });
-    
+
     opcionesHTML += '</div>';
 
     Swal.fire({
