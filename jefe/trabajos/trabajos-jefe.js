@@ -7,13 +7,9 @@ let myManagerId = null;
 let mapa, marcador;
 let allJobsCache = [];
 
-// 🔥 NUEVO: cache de materiales + estado de selección (persiste aunque filtres)
 let allMaterialsCache = [];
-let materialesEstado = {}; // { [materialId]: { checked: bool } }
+let materialesEstado = {}; 
 
-// ==================================================
-// FUNCIONES DE APOYO (FECHAS)
-// ==================================================
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
     if (Array.isArray(fecha)) {
@@ -68,7 +64,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarUsuariosYMateriales(userEmail);
     await cargarTrabajos();
 
-    // ==================== EVENTOS DE FILTROS DE TRABAJOS ====================
     const searchInput = document.getElementById('searchJobInput');
     const statusInput = document.getElementById('filterStatusInput');
     const priorityInput = document.getElementById('filterPriorityInput');
@@ -77,13 +72,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (statusInput) statusInput.addEventListener('change', filtrarTrabajosCombinados);
     if (priorityInput) priorityInput.addEventListener('input', filtrarTrabajosCombinados);
 
-    // 🔥 NUEVO: Filtros de Materiales (buscador + categoría) dentro del modal
     const matSearchIn = document.getElementById('searchMaterialInput');
     const matCatIn = document.getElementById('filterCategoryMaterial');
     if (matSearchIn) matSearchIn.addEventListener('input', window.filtrarMateriales);
     if (matCatIn) matCatIn.addEventListener('change', window.filtrarMateriales);
 
-    // Eventos del mapa (manténlos)
     const inputLat = document.getElementById('jobLat');
     const inputLng = document.getElementById('jobLng');
     const inputDireccion = document.getElementById('jobAddress');
@@ -112,25 +105,20 @@ window.filtrarTrabajosCombinados = () => {
     const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
 
     const trabajosFiltrados = allJobsCache.filter(job => {
-        // 1. Filtro de texto
         const coincideTexto = 
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
             (job.clientPhone || '').toLowerCase().includes(texto) ||
             (job.nameEmployee || '').toLowerCase().includes(texto);
 
-        // 2. Filtro de estado
         const coincideEstado = estado === 'ALL' || job.status === estado;
 
-        // 3. Filtro de prioridad (seguro contra valores null/undefined, con default 2)
         let coincidePrioridad = true;
         if (prioridadInput !== '') {
             const prioBuscada = parseInt(prioridadInput);
-            
             const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '') 
                 ? parseInt(job.priority) 
                 : 2;
-                
             coincidePrioridad = prioJob === prioBuscada;
         }
 
@@ -333,8 +321,6 @@ async function cargarUsuariosYMateriales(emailActual) {
             }
         }
 
-        // 🔥 NUEVO: guardamos los materiales en cache, poblamos el filtro de categoría
-        // y delegamos el pintado a renderizarMateriales()
         const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resMat.ok) {
             allMaterialsCache = await resMat.json();
@@ -344,13 +330,10 @@ async function cargarUsuariosYMateriales(emailActual) {
     } catch (e) { console.error("Error cargando dependencias", e); }
 }
 
-// 🔥 NUEVO: intenta leer la categoría del material sin importar cómo la llame el backend.
 function obtenerNombreCategoria(mat) {
-    return mat.categoryName
-        || (mat.category && (mat.category.name || mat.category)) || '';
+    return mat.categoryName || (mat.category && (mat.category.name || mat.category)) || '';
 }
 
-// 🔥 NUEVO: llena el <select id="filterCategoryMaterial"> con las categorías presentes en los materiales
 function poblarCategoriasMateriales(materials) {
     const select = document.getElementById('filterCategoryMaterial');
     if (!select) return;
@@ -370,9 +353,6 @@ function poblarCategoriasMateriales(materials) {
     if ([...categorias].includes(valorActual)) select.value = valorActual;
 }
 
-// 🔥 pinta la lista de materiales: solo checkbox + nombre + precio unitario.
-// La cantidad/unidad se maneja en "Materiales Necesarios para esta Obra".
-// 🔥 pinta la lista de materiales: checkbox + nombre + precio unitario + UNIDAD
 function renderizarMateriales(materials) {
     const containerMat = document.getElementById('materialsContainer');
     if (!containerMat) return;
@@ -389,7 +369,6 @@ function renderizarMateriales(materials) {
         const estado = materialesEstado[mat.materialId] || {};
         const checkedAttr = estado.checked ? 'checked' : '';
         
-        // 🔥 Capturamos la unidad de la Base de Datos para esconderla en el checkbox
         const safeUnit = mat.unit ? mat.unit.replace(/'/g, "\\'") : '';
         const displayUnit = mat.unit ? ` ${mat.unit}` : '';
 
@@ -397,7 +376,6 @@ function renderizarMateriales(materials) {
         <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
             <label style="display: flex; align-items: center; justify-content: space-between; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <!-- 🔥 Agregamos data-unit="${safeUnit}" aquí -->
                     <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" data-unit="${safeUnit}" onchange="toggleMaterialOpciones(${mat.materialId})" ${checkedAttr}>
                     ${mat.name} <span style="font-size: 0.8rem; font-weight: normal; color: #666;">(Disp: ${mat.count || 0}${displayUnit})</span>
                 </div>
@@ -408,12 +386,9 @@ function renderizarMateriales(materials) {
     });
 }
 
-// 🔥 NUEVO: filtra allMaterialsCache por texto + categoría y vuelve a pintar
 window.filtrarMateriales = () => {
-    const texto = document.getElementById('searchMaterialInput')
-        ? document.getElementById('searchMaterialInput').value.toLowerCase().trim() : '';
-    const categoria = document.getElementById('filterCategoryMaterial')
-        ? document.getElementById('filterCategoryMaterial').value : '';
+    const texto = document.getElementById('searchMaterialInput') ? document.getElementById('searchMaterialInput').value.toLowerCase().trim() : '';
+    const categoria = document.getElementById('filterCategoryMaterial') ? document.getElementById('filterCategoryMaterial').value : '';
 
     const filtrados = allMaterialsCache.filter(mat => {
         const coincideTexto = (mat.name || '').toLowerCase().includes(texto);
@@ -464,6 +439,24 @@ function renderizarTrabajos(trabajos) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
         }
 
+        // 🔥 LÓGICA PARA EL PLANO
+        const urlPlano = job.blueprintUrl || job.blueprint_url;
+        let btnPlanoTable = '';
+        let btnPlanoCard = '';
+
+        if (urlPlano) {
+            btnPlanoTable = `
+                <a href="${urlPlano}" target="_blank" class="btn-edit" style="background: #198754; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-right: 5px;" title="Ver Plano/Documento">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </a>
+            `;
+            btnPlanoCard = `
+                <a href="${urlPlano}" target="_blank" style="flex: 1; padding: 8px; border-radius: 4px; background: #E8F5E9; color: #198754; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Ver Plano/Documento">
+                    <i class="fa-solid fa-file-pdf"></i> Plano
+                </a>
+            `;
+        }
+
         // === FILA DE TABLA DESKTOP ===
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -485,6 +478,7 @@ function renderizarTrabajos(trabajos) {
             <td>${priorityBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
+                ${btnPlanoTable} <!-- 🔥 PLANO EN LA TABLA -->
                 <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #155e75; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
                     <i class="fa-solid fa-camera"></i>
                 </a>
@@ -518,13 +512,14 @@ function renderizarTrabajos(trabajos) {
                 <p style="margin:0; color:#198754; font-size: 14px;"><strong>Empleado:</strong> ${empName}</p>
                 <p style="margin:5px 0 0 0; font-weight:bold; color:#2e7d32; font-size: 15px;">Pago: $${job.pay.toFixed(2)}</p>
                 
-                <div class="card-actions" style="margin-top:15px; display:flex; gap:8px; width: 100%;">
-                <a href="../evidencias/evidencias.html?jobId=${job.jobId}" style="flex: 1; padding: 8px; border-radius: 4px; background: #155e75; color: white; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                    <i class="fa-solid fa-camera"></i> Evidencias
-                </a>
-                <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold;">Editar</button>
-                <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold;">Eliminar</button>
-            </div>
+                <div class="card-actions" style="margin-top:15px; display:flex; gap:8px; width: 100%; flex-wrap: wrap;">
+                    ${btnPlanoCard} <!-- 🔥 PLANO EN TARJETA MÓVIL -->
+                    <a href="../evidencias/evidencias.html?jobId=${job.jobId}" style="flex: 1; padding: 8px; border-radius: 4px; background: #155e75; color: white; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <i class="fa-solid fa-camera"></i> Evidencias
+                    </a>
+                    <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold; font-size: 13px;">Editar</button>
+                    <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex:1; padding: 8px 0; font-weight: bold; font-size: 13px;">Eliminar</button>
+                </div>
             `;
             mobileContainer.appendChild(card);
         }
@@ -563,7 +558,10 @@ window.abrirModalCrearJob = () => {
 
     limpiarMaterialesNecesarios();
 
-    // 🔥 Configuración del pago automático
+    // 🔥 Limpiar file y ocultar link de plano
+    if(document.getElementById('jobBlueprint')) document.getElementById('jobBlueprint').value = '';
+    if(document.getElementById('currentBlueprintContainer')) document.getElementById('currentBlueprintContainer').style.display = 'none';
+
     const payInput = document.getElementById('jobPay');
     if (payInput) {
         payInput.value = '0.00';
@@ -580,7 +578,6 @@ window.abrirModalEditarJob = async (id) => {
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
 
-    // 🔥 NUEVO: reseteamos estado de materiales y filtros antes de cargar los del trabajo
     materialesEstado = {};
     if (document.getElementById('searchMaterialInput')) document.getElementById('searchMaterialInput').value = '';
     if (document.getElementById('filterCategoryMaterial')) document.getElementById('filterCategoryMaterial').value = '';
@@ -617,11 +614,22 @@ window.abrirModalEditarJob = async (id) => {
                 document.getElementById('jobPriority').value = '2';
             }
 
-            // 🔥 Limpiamos el panel de "Materiales Necesarios" ANTES de poblarlo
+            // 🔥 MOSTRAR EL PLANO SI YA TIENE UNO
+            const blueprintContainer = document.getElementById('currentBlueprintContainer');
+            const blueprintLink = document.getElementById('currentBlueprintLink');
+            const fileInput = document.getElementById('jobBlueprint');
+            
+            if (fileInput) fileInput.value = ''; 
+            
+            if (data.blueprintUrl && blueprintContainer && blueprintLink) {
+                blueprintContainer.style.display = 'block';
+                blueprintLink.href = data.blueprintUrl;
+            } else if (blueprintContainer) {
+                blueprintContainer.style.display = 'none';
+            }
+
             limpiarMaterialesNecesarios();
 
-            // 🔥 Cargamos los materiales del trabajo en materialesEstado (marca los checkboxes)
-            // y reconstruimos sus filas en "Materiales Necesarios" con la cantidad/unidad guardadas.
             if (data.materials && data.materials.length > 0) {
                 data.materials.forEach(m => {
                     materialesEstado[m.materialId] = { checked: true };
@@ -646,9 +654,6 @@ window.abrirModalEditarJob = async (id) => {
             Swal.close();
             document.getElementById('modalJob').style.display = 'flex';
             inicializarMapa(data.latitude, data.longitude);
-            
-
-            
         }
     } catch (error) {
         Swal.close();
@@ -721,7 +726,6 @@ window.guardarTrabajo = async () => {
         priority: prioridadSeleccionada
     };
 
-    // ✅ Validación sin requerir descripción
     if (!payload.clientName || !payload.employeeId || !payload.jobDate || 
         isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire({
@@ -737,11 +741,20 @@ window.guardarTrabajo = async () => {
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
 
+    // 🔥 PREPARAMOS EL FORMDATA PARA ENVIAR EL ARCHIVO JUNTO CON LOS DATOS
+    const formData = new FormData();
+    formData.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+
+    const fileInput = document.getElementById('jobBlueprint');
+    if (fileInput && fileInput.files.length > 0) {
+        formData.append('file', fileInput.files[0]);
+    }
+
     try {
         const response = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-            body: JSON.stringify(payload)
+            headers: { 'Authorization': `Bearer ${userToken}` }, // 🔥 Sin 'Content-Type', el navegador lo pone solo
+            body: formData
         });
 
         if (response.ok) {
@@ -800,36 +813,24 @@ window.eliminarTrabajo = async (id) => {
     });
 };
 
-// =========================================================
-// MATERIALES: checkbox <-> "Materiales Necesarios para esta Obra"
-// =========================================================
-
 window.toggleMaterialOpciones = (matId) => {
     const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
     const matName = checkbox.getAttribute('data-name');
     const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
     
-    // 🔥 Leemos la unidad que guardamos en el checkbox
     const matUnit = checkbox.getAttribute('data-unit') || '';
 
-    // Guardamos el estado (checked) para que sobreviva a un re-render por filtro
     if (!materialesEstado[matId]) materialesEstado[matId] = {};
     materialesEstado[matId].checked = checkbox.checked;
 
     if (checkbox.checked) {
-        // Al marcar, se agrega directo a "Materiales Necesarios para esta Obra"
-        // 🔥 Le pasamos "1" como cantidad inicial y "matUnit" como unidad inicial
         agregarMaterialNecesarioDesdeInventario(matId, matName, matPrice, 1, matUnit);
     } else {
-        // Al desmarcar, se quita de Necesarios
         eliminarMaterialNecesarioPorId(matId);
         delete materialesEstado[matId];
     }
 };
 
-// 🔥 Crea el HTML de una fila de "Materiales Necesarios" (nombre, cantidad, unidad, precio, borrar)
-// Agregar material desde inventario a la sección Necesarios
-// 🔥 Crea el HTML de una fila bloqueando Precio y Unidad
 function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial) {
     const qty = (qtyInicial !== undefined && qtyInicial !== null) ? qtyInicial : 1;
     const unit = (unitInicial !== undefined && unitInicial !== null) ? unitInicial : '';
@@ -840,20 +841,16 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
 
             <div style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
 
-            <!-- ✅ CANTIDAD (El único que se puede editar) -->
             <input type="number" class="input-field nec-qty" value="${qty}" min="1"
                    style="margin:0; text-align:center; padding:6px; border: 1px solid #e65100;"
                    oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
 
-            <!-- 🚫 UNIDAD (Bloqueado) -->
             <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}" readonly
                    style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
 
-            <!-- 🚫 PRECIO (Bloqueado) -->
             <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0" readonly
                    style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
 
-            <!-- BOTÓN ELIMINAR -->
             <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
                     style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
                 <i class="fa-solid fa-trash"></i>
@@ -868,13 +865,13 @@ window.agregarMaterialNecesarioDesdeInventario = (matId, name, price, qtyInicial
     if (document.getElementById(`nec-${matId}`)) return;
 
     container.insertAdjacentHTML('beforeend', crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial));
-    calcularTotalMaterialesNecesarios();   // ← Forzar cálculo inmediato
+    calcularTotalMaterialesNecesarios();   
 };
 
 window.eliminarMaterialNecesarioPorId = (matId) => {
     const row = document.getElementById(`nec-${matId}`);
     if (row) row.remove();
-    calcularTotalMaterialesNecesarios();   // ← Importante
+    calcularTotalMaterialesNecesarios();   
 };
 
 window.calcularTotalMaterialesNecesarios = () => {
@@ -890,13 +887,11 @@ window.calcularTotalMaterialesNecesarios = () => {
         total += qty * price;
     });
 
-    // Actualizar total visible
     const totalElement = document.getElementById('totalNecessaryMaterials');
     if (totalElement) {
         totalElement.textContent = total.toFixed(2);
     }
 
-    // 🔥 ACTUALIZAR EL CAMPO DE PAGO
     const payInput = document.getElementById('jobPay');
     if (payInput) {
         payInput.value = total.toFixed(2);

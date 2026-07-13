@@ -313,6 +313,25 @@
                         </div>
                     </div>
 
+                    <!-- 🔥 NUEVO: SUBIR PLANOS -->
+                    <h4 style="margin-top: 20px; margin-bottom: 10px; color: #0f4c81; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                        Documentos Adjuntos
+                    </h4>
+                    <div class="form-group">
+                        <label><i class="fa-solid fa-file-pdf"></i> Planos del Trabajo (Imagen o PDF)</label>
+                        <input type="file" id="jobBlueprint" class="input-field" accept="image/*,application/pdf" style="padding: 5px;">
+                        <small style="color: #666;">Opcional. Puedes subir un plano inicial para la obra.</small>
+                        
+                        <!-- Aquí mostraremos el link si ya hay un plano guardado -->
+                        <div id="currentBlueprintContainer" style="display:none; margin-top:8px; padding: 10px; background: #e8f5e9; border-radius: 6px; border: 1px dashed #4caf50;">
+                            <i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i> 
+                            <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">Plano actual:</span>
+                            <a id="currentBlueprintLink" href="#" target="_blank" style="color: #0f4c81; font-weight: bold; font-size: 13px; margin-left: 5px; text-decoration: underline;">
+                                Ver Documento
+                            </a>
+                        </div>
+                    </div>
+
                 </form>
             </div>
 

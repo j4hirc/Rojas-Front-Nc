@@ -6,9 +6,8 @@ let userToken = '';
 let mapa, marcador;
 let allJobsCache = [];
 
-// 🔥 NUEVO: cache de materiales + estado de selección (persiste aunque filtres)
 let allMaterialsCache = [];
-let materialesEstado = {}; // { [materialId]: { checked: bool, qty: string, unit: string } }
+let materialesEstado = {}; 
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -36,7 +35,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         inputLng.addEventListener('input', window.actualizarMapaDesdeInputs);
     }
 
-    // 🔥 Filtros de la tabla de Trabajos
     const txtIn = document.getElementById('searchJobInput');
     const estIn = document.getElementById('filterStatusInput');
     const priIn = document.getElementById('filterPriorityInput');
@@ -52,7 +50,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // 🔥 NUEVO: Filtros de Materiales (buscador + categoría) dentro del modal
     const matSearchIn = document.getElementById('searchMaterialInput');
     const matCatIn = document.getElementById('filterCategoryMaterial');
     if (matSearchIn) matSearchIn.addEventListener('input', window.filtrarMateriales);
@@ -230,8 +227,6 @@ async function cargarUsuariosYMateriales(emailActual) {
             }
         }
 
-        // 🔥 NUEVO: guardamos los materiales en cache, poblamos el filtro de categoría
-        // y delegamos el pintado a renderizarMateriales()
         const resMat = await fetch(MATERIALS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resMat.ok) {
             allMaterialsCache = await resMat.json();
@@ -241,14 +236,10 @@ async function cargarUsuariosYMateriales(emailActual) {
     } catch (e) { console.error("Error cargando dependencias", e); }
 }
 
-// 🔥 NUEVO: intenta leer la categoría del material sin importar cómo la llame el backend.
-// Si tu API devuelve el campo con otro nombre, agrégalo aquí.
 function obtenerNombreCategoria(mat) {
-    return mat.categoryName
-        || (mat.category && (mat.category.name || mat.category)) || '';
+    return mat.categoryName || (mat.category && (mat.category.name || mat.category)) || '';
 }
 
-// 🔥 NUEVO: llena el <select id="filterCategoryMaterial"> con las categorías presentes en los materiales
 function poblarCategoriasMateriales(materials) {
     const select = document.getElementById('filterCategoryMaterial');
     if (!select) return;
@@ -265,13 +256,9 @@ function poblarCategoriasMateriales(materials) {
         select.innerHTML += `<option value="${cat}">${cat}</option>`;
     });
 
-    // Si la categoría que estaba seleccionada sigue existiendo, la mantenemos
     if ([...categorias].includes(valorActual)) select.value = valorActual;
 }
 
-// 🔥 pinta la lista de materiales: solo checkbox + nombre + precio unitario.
-// Ya NO muestra cantidad/unidad aquí — eso se maneja en "Materiales Necesarios para esta Obra".
-// 🔥 pinta la lista de materiales: checkbox + nombre + precio unitario + UNIDAD
 function renderizarMateriales(materials) {
     const containerMat = document.getElementById('materialsContainer');
     if (!containerMat) return;
@@ -288,7 +275,6 @@ function renderizarMateriales(materials) {
         const estado = materialesEstado[mat.materialId] || {};
         const checkedAttr = estado.checked ? 'checked' : '';
         
-        // 🔥 Capturamos la unidad de la Base de Datos para esconderla en el checkbox
         const safeUnit = mat.unit ? mat.unit.replace(/'/g, "\\'") : '';
         const displayUnit = mat.unit ? ` ${mat.unit}` : '';
 
@@ -296,7 +282,6 @@ function renderizarMateriales(materials) {
         <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
             <label style="display: flex; align-items: center; justify-content: space-between; font-size: 14px; color: #2b3674; font-weight: bold; cursor: pointer;">
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <!-- 🔥 Agregamos data-unit="${safeUnit}" aquí -->
                     <input type="checkbox" name="jobMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" data-unit="${safeUnit}" onchange="toggleMaterialOpciones(${mat.materialId})" ${checkedAttr}>
                     ${mat.name} <span style="font-size: 0.8rem; font-weight: normal; color: #666;">(Disp: ${mat.count || 0}${displayUnit})</span>
                 </div>
@@ -307,12 +292,9 @@ function renderizarMateriales(materials) {
     });
 }
 
-// 🔥 NUEVO: filtra allMaterialsCache por texto + categoría y vuelve a pintar
 window.filtrarMateriales = () => {
-    const texto = document.getElementById('searchMaterialInput')
-        ? document.getElementById('searchMaterialInput').value.toLowerCase().trim() : '';
-    const categoria = document.getElementById('filterCategoryMaterial')
-        ? document.getElementById('filterCategoryMaterial').value : '';
+    const texto = document.getElementById('searchMaterialInput') ? document.getElementById('searchMaterialInput').value.toLowerCase().trim() : '';
+    const categoria = document.getElementById('filterCategoryMaterial') ? document.getElementById('filterCategoryMaterial').value : '';
 
     const filtrados = allMaterialsCache.filter(mat => {
         const coincideTexto = (mat.name || '').toLowerCase().includes(texto);
@@ -327,9 +309,7 @@ async function cargarTrabajos() {
     try {
         const response = await fetch(`${API_URL}/all`, { method: 'GET', headers: { 'Authorization': `Bearer ${userToken}` } });
         if (response.ok) {
-            // 🔥 Guardamos el respaldo original
             allJobsCache = await response.json();
-            // Ejecutamos la lógica que aplica los filtros combinados
             filtrarTrabajosCombinados();
         }
     } catch (error) { console.error("Error al cargar trabajos", error); }
@@ -341,31 +321,25 @@ window.filtrarTrabajosCombinados = () => {
     const prioridad = document.getElementById('filterPriorityInput') ? document.getElementById('filterPriorityInput').value.trim() : '';
 
     const trabajosFiltrados = allJobsCache.filter(job => {
-        // 1. Filtro por Texto (Corregido para mapear exactamente con el Backend de Spring)
         const coincideTexto =
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.clientPhone || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
-            (job.employeeName || '').toLowerCase().includes(texto) || // 🔥 ANTES: nameEmployee
-            (job.managerName || '').toLowerCase().includes(texto);   // 🔥 ANTES: nameManager
+            (job.employeeName || '').toLowerCase().includes(texto) || 
+            (job.managerName || '').toLowerCase().includes(texto);  
 
-        // 2. Filtro por Estado
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
 
-        // 3. Filtro por Prioridad (seguro contra valores null/undefined, con default 2)
         let coincidePrioridad = true;
         if (prioridad !== '') {
             const prioBuscada = parseInt(prioridad);
-            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '')
-                ? parseInt(job.priority)
-                : 2;
+            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '') ? parseInt(job.priority) : 2;
             coincidePrioridad = prioJob === prioBuscada;
         }
 
         return coincideTexto && coincideEstado && coincidePrioridad;
     });
 
-    // Le mandamos la lista ya filtrada a tu función renderizarTrabajos que se encarga del DOM
     renderizarTrabajos(trabajosFiltrados);
 };
 
@@ -376,6 +350,9 @@ function renderizarTrabajos(trabajos) {
     tbody.innerHTML = '';
     if (mobileContainer) mobileContainer.innerHTML = '';
 
+    // 🔥 EL CHISMOSO: Abre tu página, presiona F12, ve a la pestaña "Consola" (Console) y mira qué sale aquí
+    console.log("👀 DATOS QUE LLEGAN DE JAVA:", trabajos);
+
     if (trabajos.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
         if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No hay trabajos registrados.</div>`;
@@ -383,14 +360,12 @@ function renderizarTrabajos(trabajos) {
     }
 
     trabajos.forEach(job => {
-        // 1. Badge para el Estado
         let statusBadge = '';
         if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
         else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">En Progreso</span>`;
         else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Completado</span>`;
         else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Cancelado</span>`;
 
-        // 2. Badge estético para la Prioridad
         let priorityBadge = '';
         const pValor = job.priority !== null && job.priority !== undefined ? job.priority : 2;
 
@@ -402,18 +377,33 @@ function renderizarTrabajos(trabajos) {
             priorityBadge = `<span style="background: #ECEFF1; color: #546E7A; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #cfd8dc;"> ${pValor} - Baja</span>`;
         }
 
-        // Propiedades corregidas del DTO de Spring Boot
         const empName = job.nameEmployee || 'Sin asignar';
         const manName = job.nameManager || 'Sin asignar';
         const fechaTxt = formatearFecha(job.jobDate);
 
-        // Limpiamos notas previas de materiales en la descripción
         let safeDesc = job.description ? job.description : 'Sin descripción';
         if (safeDesc.includes('[MATERIALES PRE-ASIGNADOS]:')) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
         }
 
-        // GENERACIÓN DE FILA EN LA TABLA DESKTOP
+        // 🔥 ATRAPAMOS CUALQUIER NOMBRE QUE JAVA LE HAYA PUESTO AL PLANO
+        const urlPlano = job.blueprintUrl || job.blueprint_url;
+
+        let btnPlanoTable = '';
+        let btnPlanoCard = '';
+        if (urlPlano) {
+            btnPlanoTable = `
+                <a href="${urlPlano}" target="_blank" class="btn-edit" style="background: #10B981; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-right: 5px;" title="Ver Plano/Documento">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </a>
+            `;
+            btnPlanoCard = `
+                <a href="${urlPlano}" target="_blank" style="flex: 1; padding: 8px; border-radius: 8px; background: #E8F5E9; color: #10B981; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Ver Plano/Documento">
+                    <i class="fa-solid fa-file-pdf"></i> Plano
+                </a>
+            `;
+        }
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -437,6 +427,7 @@ function renderizarTrabajos(trabajos) {
             <td>${priorityBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
+                ${btnPlanoTable}
                 <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #0f4c81; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
                     <i class="fa-solid fa-camera"></i>
                 </a>
@@ -450,7 +441,6 @@ function renderizarTrabajos(trabajos) {
         `;
         tbody.appendChild(tr);
 
-        // GENERACIÓN DE TARJETA EN LA VISTA MÓVIL
         if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
@@ -482,7 +472,8 @@ function renderizarTrabajos(trabajos) {
 
                 <p style="margin: 10px 0 0 0; font-size: 15px; color:#2e7d32; font-weight: bold;">Pago: $${job.pay.toFixed(2)}</p>
 
-                <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 10px;">
+                <div class="card-actions" style="margin-top: 15px; width: 100%; display: flex; gap: 10px; flex-wrap: wrap;">
+                    ${btnPlanoCard}
                     <a href="../evidencias/evidencias.html?jobId=${job.jobId}" style="flex: 1; padding: 8px; border-radius: 8px; background: #E3F2FD; color: #0f4c81; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;">
                         <i class="fa-solid fa-camera"></i> Evidencias
                     </a>
@@ -514,11 +505,14 @@ window.abrirModalCrearJob = () => {
     renderizarMateriales(allMaterialsCache);
     limpiarMaterialesNecesarios();
 
-    // 🔥 Forzar pago en 0 al crear nuevo
+    // 🔥 Limpia el input del archivo y esconde el link del documento
+    if(document.getElementById('jobBlueprint')) document.getElementById('jobBlueprint').value = '';
+    if(document.getElementById('currentBlueprintContainer')) document.getElementById('currentBlueprintContainer').style.display = 'none';
+
     const payInput = document.getElementById('jobPay');
     if (payInput) {
         payInput.value = '0.00';
-        payInput.readOnly = true;   // ← importante
+        payInput.readOnly = true; 
     }
 
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
@@ -531,7 +525,6 @@ window.abrirModalEditarJob = async (id) => {
     document.getElementById('jobId').value = id;
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen"></i> Editar Trabajo';
 
-    // 🔥 NUEVO: reseteamos estado de materiales y filtros antes de cargar los del trabajo
     materialesEstado = {};
     if (document.getElementById('searchMaterialInput')) document.getElementById('searchMaterialInput').value = '';
     if (document.getElementById('filterCategoryMaterial')) document.getElementById('filterCategoryMaterial').value = '';
@@ -563,20 +556,28 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobEmployee').value = data.employeeId;
             document.getElementById('jobManager').value = data.managerId;
 
-            // 🔥 Validamos si el número de prioridad es un valor válido (incluyendo 0)
             if (data.priority !== null && data.priority !== undefined) {
                 document.getElementById('jobPriority').value = data.priority;
             } else {
                 document.getElementById('jobPriority').value = '2';
             }
 
-            // 🔥 Limpiamos el panel de "Materiales Necesarios" ANTES de poblarlo
-            // (antes se limpiaba después y borraba lo que acabábamos de agregar)
+            // 🔥 MUESTRA EL LINK DEL PLANO SI EXISTE EN LA BASE DE DATOS
+            const blueprintContainer = document.getElementById('currentBlueprintContainer');
+            const blueprintLink = document.getElementById('currentBlueprintLink');
+            const fileInput = document.getElementById('jobBlueprint');
+            
+            if (fileInput) fileInput.value = ''; 
+            
+            if (data.blueprintUrl && blueprintContainer && blueprintLink) {
+                blueprintContainer.style.display = 'block';
+                blueprintLink.href = data.blueprintUrl;
+            } else if (blueprintContainer) {
+                blueprintContainer.style.display = 'none';
+            }
+
             limpiarMaterialesNecesarios();
 
-            // 🔥 Cargamos los materiales del trabajo en materialesEstado (marca los checkboxes)
-            // y ADEMÁS reconstruimos sus filas en "Materiales Necesarios" con la cantidad/unidad guardadas,
-            // porque marcar el checkbox por código no dispara el evento onchange que las crea normalmente.
             if (data.materials && data.materials.length > 0) {
                 data.materials.forEach(m => {
                     materialesEstado[m.materialId] = { checked: true };
@@ -591,12 +592,10 @@ window.abrirModalEditarJob = async (id) => {
                 });
             }
 
-            // === MATERIALES NECESARIOS ADICIONALES (lista aparte del backend, si existe) ===
-            // Si un material ya tiene fila (porque venía marcado arriba), no la duplicamos.
             if (data.necessaryMaterials && Array.isArray(data.necessaryMaterials) && data.necessaryMaterials.length > 0) {
                 const container = document.getElementById('necessaryMaterialsContainer');
                 data.necessaryMaterials.forEach(mat => {
-                    if (document.getElementById(`nec-${mat.materialId}`)) return; // ya existe, no duplicar
+                    if (document.getElementById(`nec-${mat.materialId}`)) return; 
 
                     const precio = mat.estimatedPrice || mat.price || 0;
                     container.insertAdjacentHTML('beforeend',
@@ -610,7 +609,6 @@ window.abrirModalEditarJob = async (id) => {
             const payInput = document.getElementById('jobPay');
             if (payInput) {
                 payInput.readOnly = true;
-                // Si no hay materiales, mantener el valor que venía del backend
                 if (data.materials?.length === 0 && data.necessaryMaterials?.length === 0) {
                     payInput.value = data.pay || '0.00';
                 }
@@ -635,8 +633,6 @@ window.cerrarModalJob = () => {
     document.getElementById('modalJob').style.display = 'none';
 };
 
-
-
 window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
@@ -649,7 +645,6 @@ window.guardarTrabajo = async () => {
         const matId = parseInt(cb.value);
         const nombreMat = cb.getAttribute('data-name');
 
-        // 🔥 La cantidad y unidad ahora se toman de su fila en "Materiales Necesarios para esta Obra"
         const filaNecesaria = document.getElementById(`nec-${matId}`);
         const qtyInput = filaNecesaria ? filaNecesaria.querySelector('.nec-qty') : null;
         const unitInput = filaNecesaria ? filaNecesaria.querySelector('.nec-unit') : null;
@@ -677,7 +672,6 @@ window.guardarTrabajo = async () => {
         descripcionFinal = `${descripcionBase}\n\n[MATERIALES PRE-ASIGNADOS]:\n${resumenMateriales}`;
     }
 
-    // 🔥 Capturamos el valor. Usamos "isNaN" para que si borran todo el campo o ponen algo inválido, mande 2 por defecto.
     let prioridadSeleccionada = parseInt(document.getElementById('jobPriority').value);
     if (isNaN(prioridadSeleccionada)) {
         prioridadSeleccionada = 2;
@@ -690,7 +684,6 @@ window.guardarTrabajo = async () => {
         const qtyInput = row.querySelector('.nec-qty');
         const qty = qtyInput ? (parseFloat(qtyInput.value) || 1) : 1;
 
-        // 🔥 El precio se muestra como texto ($XX.XX), no como input — lo extraemos con regex
         let price = 0;
         const priceInput = row.querySelector('.nec-price');
         if (priceInput) {
@@ -727,26 +720,33 @@ window.guardarTrabajo = async () => {
         managerId: parseInt(document.getElementById('jobManager').value),
         materials: selectedMaterials,
         necessaryMaterials: necessaryMaterials,
-        priority: prioridadSeleccionada // 🔥 Enviado como número entero sin restricciones máximas hacia Spring Boot
-
-
+        priority: prioridadSeleccionada 
     };
 
-    if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || 
-    isNaN(payload.latitude)){
-    return Swal.fire('Error', 'Por favor completa los campos obligatorios (Cliente, Empleado, Manager, Fecha, Ubicación y Pago).', 'error');
-}
+    if (!payload.clientName || !payload.employeeId || !payload.managerId || !payload.jobDate || isNaN(payload.latitude)){
+        return Swal.fire('Error', 'Por favor completa los campos obligatorios (Cliente, Empleado, Manager, Fecha y Ubicación).', 'error');
+    }
 
     Swal.fire({ title: 'Guardando trabajo...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
 
+    // 🔥 AHORA SÍ ENVIAMOS EL JSON Y EL ARCHIVO CON FORMDATA
+    const formData = new FormData();
+    formData.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+
+    const fileInput = document.getElementById('jobBlueprint');
+    if (fileInput && fileInput.files.length > 0) {
+        formData.append('file', fileInput.files[0]);
+    }
+
     try {
         const response = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${userToken}` },
-            body: JSON.stringify(payload)
+            // 🔥 El Content-Type se genera solo para enviar el FormData
+            headers: { 'Authorization': `Bearer ${userToken}` },
+            body: formData
         });
 
         if (response.ok) {
@@ -901,28 +901,20 @@ window.toggleMaterialOpciones = (matId) => {
     const matName = checkbox.getAttribute('data-name');
     const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
     
-    // 🔥 Leemos la unidad que guardamos en el checkbox
     const matUnit = checkbox.getAttribute('data-unit') || '';
 
-    // Guardamos el estado (checked) para que sobreviva a un re-render por filtro
     if (!materialesEstado[matId]) materialesEstado[matId] = {};
     materialesEstado[matId].checked = checkbox.checked;
 
     if (checkbox.checked) {
-        // Al marcar, se agrega directo a "Materiales Necesarios para esta Obra"
-        // 🔥 Le pasamos "1" como cantidad inicial y "matUnit" como unidad inicial
         agregarMaterialNecesarioDesdeInventario(matId, matName, matPrice, 1, matUnit);
     } else {
-        // Al desmarcar, se quita de Necesarios
         eliminarMaterialNecesarioPorId(matId);
         delete materialesEstado[matId];
     }
 };
 
-// Agregar material desde inventario a la sección Necesarios
-// 🔥 Crea el HTML de una fila de "Materiales Necesarios" (nombre, cantidad, unidad, precio, borrar)
-// Agregar material desde inventario a la sección Necesarios
-// 🔥 Crea el HTML de una fila bloqueando Precio y Unidad
+// 🔥 FILAS DE MATERIAL CON PRECIO Y UNIDAD BLOQUEADOS
 function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial) {
     const qty = (qtyInicial !== undefined && qtyInicial !== null) ? qtyInicial : 1;
     const unit = (unitInicial !== undefined && unitInicial !== null) ? unitInicial : '';
@@ -933,20 +925,16 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
 
             <div style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
 
-            <!-- ✅ CANTIDAD (El único que se puede editar) -->
             <input type="number" class="input-field nec-qty" value="${qty}" min="1"
                    style="margin:0; text-align:center; padding:6px; border: 1px solid #e65100;"
                    oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
 
-            <!-- 🚫 UNIDAD (Bloqueado) -->
             <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}" readonly
                    style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
 
-            <!-- 🚫 PRECIO (Bloqueado) -->
             <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0" readonly
                    style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
 
-            <!-- BOTÓN ELIMINAR -->
             <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
                     style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
                 <i class="fa-solid fa-trash"></i>
@@ -961,14 +949,13 @@ window.agregarMaterialNecesarioDesdeInventario = (matId, name, price, qtyInicial
     if (document.getElementById(`nec-${matId}`)) return;
 
     container.insertAdjacentHTML('beforeend', crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial));
-    calcularTotalMaterialesNecesarios();   // ← Forzar cálculo inmediato
+    calcularTotalMaterialesNecesarios(); 
 };
 
-// Eliminar material necesario
 window.eliminarMaterialNecesarioPorId = (matId) => {
     const row = document.getElementById(`nec-${matId}`);
     if (row) row.remove();
-    calcularTotalMaterialesNecesarios();   // ← Importante
+    calcularTotalMaterialesNecesarios(); 
 };
 
 window.calcularTotalMaterialesNecesarios = () => {
@@ -989,7 +976,6 @@ window.calcularTotalMaterialesNecesarios = () => {
         totalElement.textContent = total.toFixed(2);
     }
 
-    // 🔥 NUEVO: Actualizar automáticamente el campo de pago
     const payInput = document.getElementById('jobPay');
     if (payInput) {
         payInput.value = total.toFixed(2);
