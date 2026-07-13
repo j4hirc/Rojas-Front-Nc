@@ -803,7 +803,7 @@ window.guardarReporteYPdf = async () => {
         pdfMaterialsRows += `
         <tr style="${esNuevo ? 'background: #FFF3CD;' : ''}">
             <td style="padding: 8px; border: 1px solid #ddd; color: #2E3238; ${esNuevo ? 'font-weight:bold; color:#92400E;' : ''}">
-                ${esNuevo ? '🆕 ' : ''}${nombreMat}
+                ${esNuevo ? 'NEW ' : ''}${nombreMat}
             </td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #2E3238;">${textoCantidad}</td>
             <td style="padding: 8px; border: 1px solid #ddd; text-align: right; color: #2E3238;">$${precioUnit.toFixed(2)}</td>
