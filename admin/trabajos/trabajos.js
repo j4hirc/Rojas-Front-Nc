@@ -212,7 +212,8 @@ async function cargarUsuariosYMateriales(emailActual) {
                 const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
                 empleados.forEach(u => {
                     const fullName = u.name || `${u.firstName} ${u.lastName}`;
-                    selectEmp.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
+                    const idCorrecto = u.employeeId || u.userId;
+                    selectEmp.innerHTML += `<option value="${idCorrecto}">${fullName}</option>`;
                 });
             }
 
@@ -222,7 +223,8 @@ async function cargarUsuariosYMateriales(emailActual) {
                 const managers = users.filter(u => u.status !== 'Unemployed' && (u.roles.some(r => r.name === 'ROLE_JEFE') || u.roles.some(r => r.name === 'ROLE_ADMIN')));
                 managers.forEach(u => {
                     const fullName = u.name || `${u.firstName} ${u.lastName}`;
-                    selectManager.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
+                    const idCorrecto = u.managerId || u.userId; 
+                    selectManager.innerHTML += `<option value="${idCorrecto}">${fullName}</option>`;
                 });
             }
         }
