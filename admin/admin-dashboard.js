@@ -68,38 +68,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const btnSalir = document.getElementById("btnSalir");
     if (btnSalir) btnSalir.addEventListener("click", cerrarSesion);
-
-    const swalMobileFix = document.createElement('style');
-    swalMobileFix.textContent = `
-        @media (max-width: 768px) {
-            .swal2-popup {
-                width: 94vw !important;
-                max-width: 94vw !important;
-                max-height: 88vh !important;
-                padding: 14px !important;
-                box-sizing: border-box !important;
-                overflow-y: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-            }
-            .swal2-popup * {
-                max-width: 100% !important;
-                box-sizing: border-box !important;
-            }
-            .swal2-html-container {
-                max-height: none !important;
-                overflow-y: visible !important;
-                -webkit-overflow-scrolling: touch !important;
-            }
-            #nomina-contenedor-admin,
-            #bodega-admin-contenedor,
-            #tabla-exportar-pdf-container,
-            #bodega-admin-lista-dia {
-                max-width: 100% !important;
-                -webkit-overflow-scrolling: touch !important;
-            }
-        }
-    `;
-    document.head.appendChild(swalMobileFix);
 });
 
 // --- FUNCIONES PARA EDITAR EL PERFIL ---
@@ -388,8 +356,8 @@ function renderizarNominaAdmin(offset) {
     const strFin = formatMDY(finSemana);
 
     let htmlContent = `
-        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
-            <button onclick="cambiarSemanaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+            <button onclick="cambiarSemanaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
                 <i class="fa-solid fa-chevron-left"></i> Anterior
             </button>
             <div style="text-align: center; font-family: 'Poppins', sans-serif;">
@@ -399,7 +367,7 @@ function renderizarNominaAdmin(offset) {
             <button type="button" onclick="exportarNominaSemanalAPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar a PDF">
                 <i class="fa-solid fa-file-pdf"></i> PDF
             </button>
-            <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; display: flex; align-items: center; gap: 6px;">
+            <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
                 Siguiente <i class="fa-solid fa-chevron-right"></i>
             </button>
         </div>
@@ -661,7 +629,7 @@ function renderizarBodegaAdmin(offset) {
             htmlContent += `
                 <div style="padding: 14px; border-bottom: 1px solid #eee; background: #f8faff;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
-                        <strong style="color: #0F2D4A; word-break: break-word;">${job.clientName || 'Cliente sin nombre'}</strong>
+                        <strong style="color: #0F2D4A;">${job.clientName || 'Cliente sin nombre'}</strong>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             ${statusBadge}
                             <span style="color: #F4A300; font-weight: bold;">${nombreEmpleado}</span>
