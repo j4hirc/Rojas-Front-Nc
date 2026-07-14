@@ -118,6 +118,14 @@ loginForm?.addEventListener('submit', async (e) => {
     }
 });
 
+const MANTENIMIENTO_ACTIVO = true; 
+
+if (MANTENIMIENTO_ACTIVO) {
+    document.getElementById('mantenimiento-overlay').style.display = 'flex';
+    // Opcional: Ocultar el formulario de login para inhabilitarlo por completo
+    // document.getElementById('login-form').style.display = 'none';
+}
+
 // Recuperar contraseña
 if (forgotPasswordBtn) {
     forgotPasswordBtn.addEventListener('click', async () => {

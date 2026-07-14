@@ -313,3 +313,17 @@ button[type="submit"]:disabled {
         font-size: 0.85rem;
     }
 }
+
+#mantenimiento-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.95);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
