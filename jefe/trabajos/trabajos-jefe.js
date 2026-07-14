@@ -106,7 +106,7 @@ window.filtrarTrabajosCombinados = () => {
     const texto = (document.getElementById('searchJobInput')?.value || '').toLowerCase().trim();
     const estado = (document.getElementById('filterStatusInput')?.value || 'ALL').trim();
     const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
-    const empleadoId = document.getElementById('filterEmployeeInput')?.value || ''; // 🔥 NUEVO
+    const empleadoNombre = document.getElementById('filterEmployeeInput')?.value || ''; // 🔥 NUEVO
 
     const trabajosFiltrados = allJobsCache.filter(job => {
         const coincideTexto = 
@@ -127,7 +127,7 @@ window.filtrarTrabajosCombinados = () => {
         }
 
         // 🔥 NUEVO
-        const coincideEmpleado = (empleadoId === '') || (String(job.employeeId) === empleadoId);
+        const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
 
         return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado;
     });
@@ -322,15 +322,17 @@ async function cargarUsuariosYMateriales(emailActual) {
             const select = document.getElementById('jobEmployee');
             if (select) {
                 select.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
-                users.filter(u => u.roles.some(r => r.name === 'ROLE_EMPLOYEE')).forEach(u => {
+                const empleados = users.filter(u => u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
+                empleados.forEach(u => {
                     select.innerHTML += `<option value="${u.userId}">${u.name}</option>`;
                 });
 
+                // 🔥 Filtro por subcontratista, comparando por nombre igual que arriba
                 const filterEmp = document.getElementById('filterEmployeeInput');
                 if (filterEmp) {
                     filterEmp.innerHTML = '<option value="">Todos los Subcontratistas</option>';
                     empleados.forEach(u => {
-                        filterEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`;
+                        filterEmp.innerHTML += `<option value="${u.name}">${u.name}</option>`;
                     });
                 }
             }

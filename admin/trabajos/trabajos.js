@@ -216,12 +216,15 @@ async function cargarUsuariosYMateriales(emailActual) {
                     const fullName = u.name || `${u.firstName} ${u.lastName}`;
                     selectEmp.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
                 });
+
+                // 🔥 Filtro por subcontratista: usamos el NOMBRE (no el ID),
+                // porque /jobs/all trae nameEmployee, no employeeId, en cada trabajo.
                 const filterEmp = document.getElementById('filterEmployeeInput');
                 if (filterEmp) {
                     filterEmp.innerHTML = '<option value="">Todos los Subcontratistas</option>';
                     empleados.forEach(u => {
                         const fullName = u.name || `${u.firstName} ${u.lastName}`;
-                        filterEmp.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
+                        filterEmp.innerHTML += `<option value="${fullName}">${fullName}</option>`;
                     });
                 }
             }
@@ -329,16 +332,15 @@ window.filtrarTrabajosCombinados = () => {
     const texto = document.getElementById('searchJobInput') ? document.getElementById('searchJobInput').value.toLowerCase().trim() : '';
     const estado = document.getElementById('filterStatusInput') ? document.getElementById('filterStatusInput').value : 'ALL';
     const prioridad = document.getElementById('filterPriorityInput') ? document.getElementById('filterPriorityInput').value.trim() : '';
-    const empleadoId = document.getElementById('filterEmployeeInput') ? document.getElementById('filterEmployeeInput').value : ''; // 🔥 NUEVO
-
+    const empleadoNombre = document.getElementById('filterEmployeeInput') ? document.getElementById('filterEmployeeInput').value : ''; // 🔥 NUEVO
 
     const trabajosFiltrados = allJobsCache.filter(job => {
         const coincideTexto =
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.clientPhone || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
-            (job.employeeName || '').toLowerCase().includes(texto) ||
-            (job.managerName || '').toLowerCase().includes(texto);
+            (job.employeeName || '').toLowerCase().includes(texto) || 
+            (job.managerName || '').toLowerCase().includes(texto);  
 
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
 
@@ -349,9 +351,10 @@ window.filtrarTrabajosCombinados = () => {
             coincidePrioridad = prioJob === prioBuscada;
         }
 
-        const coincideEmpleado = (empleadoId === '') || (String(job.employeeId) === empleadoId);
+        // 🔥 NUEVO: comparamos por nombre, igual que se muestra en la tabla
+        const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
 
-        return coincideTexto && coincideEstado && coincidePrioridad;
+        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado;
     });
 
     renderizarTrabajos(trabajosFiltrados);
