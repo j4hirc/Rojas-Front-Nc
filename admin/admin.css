@@ -298,7 +298,16 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
 #necessaryMaterialsContainer {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    
+    /* Ajustes principales para que quepan 3 bien */
+    max-height: 520px;        /* ← Aumentado */
+    min-height: 80px;        /* Altura mínima más grande */
+    padding: 16px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow-y: auto;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
 }
 
 .necessary-material-row {
