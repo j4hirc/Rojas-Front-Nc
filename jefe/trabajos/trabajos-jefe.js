@@ -845,24 +845,26 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
 
     return `
         <div class="necessary-material-row" id="nec-${matId}"
-             style="display: grid; grid-template-columns: 1.8fr 70px 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #e65100;">
+             style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px; border-left: 4px solid #e65100;">
 
-            <div style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
+            <div class="nec-name" title="${name}" style="font-weight: 600; color:#2B3674; font-size: 14px; margin-bottom: 8px;">${name}</div>
 
-            <input type="number" class="input-field nec-qty" value="${qty}" min="1"
-                   style="margin:0; text-align:center; padding:6px; border: 1px solid #e65100;"
-                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
+            <div class="nec-fields" style="display: grid; grid-template-columns: 70px 90px 80px 40px; gap: 8px; align-items: center;">
+                <input type="number" class="input-field nec-qty" value="${qty}" min="1"
+                       style="margin:0; text-align:center; padding:6px; border: 1px solid #e65100;"
+                       oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
 
-            <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}" readonly
-                   style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
+                <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}" readonly
+                       style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
 
-            <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0" readonly
-                   style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
+                <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0" readonly
+                       style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
 
-            <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
-                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
-                <i class="fa-solid fa-trash"></i>
-            </button>
+                <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
+                        style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
         </div>
     `;
 }

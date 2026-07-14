@@ -548,25 +548,27 @@ function crearFilaMaterialNecesarioEmpleado(matId, name, price, qtyInicial, unit
 
     return `
         <div class="necessary-material-row-emp" id="nec-emp-${matId}"
-             style="display: grid; grid-template-columns: 1.8fr 70px 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #12CFF4;">
+             style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px; border-left: 4px solid #12CFF4;">
 
-            <div style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
+            <div class="nec-name" title="${name}" style="font-weight: 600; color:#2B3674; font-size: 14px; margin-bottom: 8px;">${name}</div>
 
-            <input type="number" class="input-field nec-emp-qty" value="${qty}" min="1"
-                   style="margin:0; text-align:center;"
-                   oninput="calcularTotalMaterialesNecesariosEmpleado()" data-matid="${matId}">
+            <div class="nec-fields" style="display: grid; grid-template-columns: 70px 90px 80px 40px; gap: 8px; align-items: center;">
+                <input type="number" class="input-field nec-emp-qty" value="${qty}" min="1"
+                       style="margin:0; text-align:center;"
+                       oninput="calcularTotalMaterialesNecesariosEmpleado()" data-matid="${matId}">
 
-            <input type="text" class="input-field nec-emp-unit" placeholder="Unidad" value="${unit}"
-                   style="margin:0; text-align:center;" data-matid="${matId}">
+                <input type="text" class="input-field nec-emp-unit" placeholder="Unidad" value="${unit}"
+                       style="margin:0; text-align:center;" data-matid="${matId}">
 
-            <div style="text-align: right; font-weight: bold; color: #198754; font-size: 13px;">
-                $${price.toFixed(2)}
+                <div style="text-align: right; font-weight: bold; color: #198754; font-size: 13px;">
+                    $${price.toFixed(2)}
+                </div>
+
+                <button type="button" onclick="eliminarMaterialNecesarioEmpleadoPorId(${matId})"
+                        style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             </div>
-
-            <button type="button" onclick="eliminarMaterialNecesarioEmpleadoPorId(${matId})"
-                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
-                <i class="fa-solid fa-trash"></i>
-            </button>
         </div>
     `;
 }
