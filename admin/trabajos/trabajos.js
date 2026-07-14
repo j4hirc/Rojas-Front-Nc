@@ -217,8 +217,6 @@ async function cargarUsuariosYMateriales(emailActual) {
                     selectEmp.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
                 });
 
-                // 🔥 Filtro por subcontratista: usamos el NOMBRE (no el ID),
-                // porque /jobs/all trae nameEmployee, no employeeId, en cada trabajo.
                 const filterEmp = document.getElementById('filterEmployeeInput');
                 if (filterEmp) {
                     filterEmp.innerHTML = '<option value="">Todos los Subcontratistas</option>';
@@ -332,7 +330,7 @@ window.filtrarTrabajosCombinados = () => {
     const texto = document.getElementById('searchJobInput') ? document.getElementById('searchJobInput').value.toLowerCase().trim() : '';
     const estado = document.getElementById('filterStatusInput') ? document.getElementById('filterStatusInput').value : 'ALL';
     const prioridad = document.getElementById('filterPriorityInput') ? document.getElementById('filterPriorityInput').value.trim() : '';
-    const empleadoNombre = document.getElementById('filterEmployeeInput') ? document.getElementById('filterEmployeeInput').value : ''; // 🔥 NUEVO
+    const empleadoNombre = document.getElementById('filterEmployeeInput') ? document.getElementById('filterEmployeeInput').value : '';
 
     const trabajosFiltrados = allJobsCache.filter(job => {
         const coincideTexto =
@@ -351,7 +349,6 @@ window.filtrarTrabajosCombinados = () => {
             coincidePrioridad = prioJob === prioBuscada;
         }
 
-        // 🔥 NUEVO: comparamos por nombre, igual que se muestra en la tabla
         const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
 
         return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado;
@@ -366,9 +363,6 @@ function renderizarTrabajos(trabajos) {
 
     tbody.innerHTML = '';
     if (mobileContainer) mobileContainer.innerHTML = '';
-
-    // 🔥 EL CHISMOSO: Abre tu página, presiona F12, ve a la pestaña "Consola" (Console) y mira qué sale aquí
-    console.log("👀 DATOS QUE LLEGAN DE JAVA:", trabajos);
 
     if (trabajos.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
@@ -403,21 +397,21 @@ function renderizarTrabajos(trabajos) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
         }
 
-        // 🔥 ATRAPAMOS CUALQUIER NOMBRE QUE JAVA LE HAYA PUESTO AL PLANO
-        const urlPlano = job.blueprintUrl || job.blueprint_url;
-
+        // 🔥 BOTÓN ÚNICO PARA ABRIR MODAL DE PLANOS
         let btnPlanoTable = '';
         let btnPlanoCard = '';
-        if (urlPlano) {
+        const urlsPlanos = job.blueprintUrls || [];
+
+        if (urlsPlanos && urlsPlanos.length > 0) {
             btnPlanoTable = `
-                <a href="${urlPlano}" target="_blank" class="btn-edit" style="background: #10B981; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin-right: 5px;" title="Ver Plano/Documento">
-                    <i class="fa-solid fa-file-pdf"></i>
-                </a>
+                <button type="button" class="btn-edit" onclick="verPlanos(${job.jobId})" style="background: #10B981; color: white; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; border:none; cursor:pointer;" title="Ver Planos (${urlsPlanos.length})">
+                    <i class="fa-solid fa-file-pdf"></i> <span style="margin-left: 4px; font-size: 11px;">${urlsPlanos.length}</span>
+                </button>
             `;
             btnPlanoCard = `
-                <a href="${urlPlano}" target="_blank" style="flex: 1; padding: 8px; border-radius: 8px; background: #E8F5E9; color: #10B981; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Ver Plano/Documento">
-                    <i class="fa-solid fa-file-pdf"></i> Plano
-                </a>
+                <button type="button" onclick="verPlanos(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #E8F5E9; color: #10B981; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; margin-top:5px; border:none; cursor:pointer;" title="Ver Planos">
+                    <i class="fa-solid fa-file-pdf"></i> Planos (${urlsPlanos.length})
+                </button>
             `;
         }
 
@@ -450,7 +444,7 @@ function renderizarTrabajos(trabajos) {
     <td>${priorityBadge}</td>
     <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
     <td>
-        <div class="acciones-cell">
+        <div class="acciones-cell" style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
             ${btnPlanoTable}
             <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #0f4c81; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
                 <i class="fa-solid fa-camera"></i>
@@ -462,6 +456,7 @@ function renderizarTrabajos(trabajos) {
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
+    </td>
     `;
         tbody.appendChild(tr);
 
@@ -514,6 +509,40 @@ function renderizarTrabajos(trabajos) {
     });
 }
 
+// 🔥 NUEVAS FUNCIONES PARA EL MODAL DE PLANOS
+window.verPlanos = (jobId) => {
+    const job = allJobsCache.find(j => j.jobId === jobId);
+    if (!job) return;
+
+    const urls = job.blueprintUrls || [];
+    const container = document.getElementById('listaPlanosContainer');
+    container.innerHTML = '';
+
+    if (urls.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666; font-size: 14px;">No hay planos adjuntos en este proyecto.</p>';
+    } else {
+        urls.forEach((url, idx) => {
+            container.innerHTML += `
+                <a href="${url}" target="_blank" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #0f4c81; font-weight: 500; transition: all 0.2s;">
+                    <span style="display:flex; align-items:center; gap:10px;">
+                        <i class="fa-solid fa-file-pdf" style="color: #10B981; font-size: 1.5rem;"></i>
+                        Documento adjunto ${idx + 1}
+                    </span>
+                    <i class="fa-solid fa-external-link-alt" style="color: #64748b; font-size: 0.9rem;"></i>
+                </a>
+            `;
+        });
+    }
+
+    document.getElementById('modalVerPlanos').style.display = 'flex';
+};
+
+window.cerrarModalPlanos = () => {
+    document.getElementById('modalVerPlanos').style.display = 'none';
+};
+
+// ==========================================
+
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
@@ -529,7 +558,6 @@ window.abrirModalCrearJob = () => {
     renderizarMateriales(allMaterialsCache);
     limpiarMaterialesNecesarios();
 
-    // 🔥 Limpia el input del archivo y esconde el link del documento
     if (document.getElementById('jobBlueprint')) document.getElementById('jobBlueprint').value = '';
     if (document.getElementById('currentBlueprintContainer')) document.getElementById('currentBlueprintContainer').style.display = 'none';
 
@@ -586,18 +614,30 @@ window.abrirModalEditarJob = async (id) => {
                 document.getElementById('jobPriority').value = '2';
             }
 
-            // 🔥 MUESTRA EL LINK DEL PLANO SI EXISTE EN LA BASE DE DATOS
             const blueprintContainer = document.getElementById('currentBlueprintContainer');
-            const blueprintLink = document.getElementById('currentBlueprintLink');
             const fileInput = document.getElementById('jobBlueprint');
 
             if (fileInput) fileInput.value = '';
 
-            if (data.blueprintUrl && blueprintContainer && blueprintLink) {
-                blueprintContainer.style.display = 'block';
-                blueprintLink.href = data.blueprintUrl;
-            } else if (blueprintContainer) {
-                blueprintContainer.style.display = 'none';
+            if (blueprintContainer) {
+                blueprintContainer.innerHTML = ''; 
+                const urlsPlanos = data.blueprintUrls || [];
+                
+                if (urlsPlanos.length > 0) {
+                    blueprintContainer.style.display = 'block';
+                    let htmlInner = `<i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i> <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">Planos guardados:</span><br><div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:5px;">`;
+                    
+                    urlsPlanos.forEach((url, idx) => {
+                        htmlInner += `
+                            <a href="${url}" target="_blank" style="color: #0f4c81; font-weight: bold; font-size: 13px; text-decoration: underline; background:#f0f4f8; padding:4px 8px; border-radius:4px;">
+                                <i class="fa-solid fa-file-image"></i> Plano ${idx + 1}
+                            </a>`;
+                    });
+                    htmlInner += `</div>`;
+                    blueprintContainer.innerHTML = htmlInner;
+                } else {
+                    blueprintContainer.style.display = 'none';
+                }
             }
 
             limpiarMaterialesNecesarios();
@@ -756,19 +796,19 @@ window.guardarTrabajo = async () => {
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
 
-    // 🔥 AHORA SÍ ENVIAMOS EL JSON Y EL ARCHIVO CON FORMDATA
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
     const fileInput = document.getElementById('jobBlueprint');
     if (fileInput && fileInput.files.length > 0) {
-        formData.append('file', fileInput.files[0]);
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('files', fileInput.files[i]);
+        }
     }
 
     try {
         const response = await fetch(url, {
             method: method,
-            // 🔥 El Content-Type se genera solo para enviar el FormData
             headers: { 'Authorization': `Bearer ${userToken}` },
             body: formData
         });
@@ -938,7 +978,6 @@ window.toggleMaterialOpciones = (matId) => {
     }
 };
 
-// 🔥 FILAS DE MATERIAL CON PRECIO Y UNIDAD BLOQUEADOS
 function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial) {
     const qty = (qtyInicial !== undefined && qtyInicial !== null) ? qtyInicial : 1;
     const unit = (unitInicial !== undefined && unitInicial !== null) ? unitInicial : '';

@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const searchInput = document.getElementById('searchJobInput');
     const statusInput = document.getElementById('filterStatusInput');
     const priorityInput = document.getElementById('filterPriorityInput');
-    const empIn = document.getElementById('filterEmployeeInput'); // 🔥 NUEVO
+    const empIn = document.getElementById('filterEmployeeInput'); 
 
 
     if (searchInput) searchInput.addEventListener('input', filtrarTrabajosCombinados);
@@ -106,7 +106,7 @@ window.filtrarTrabajosCombinados = () => {
     const texto = (document.getElementById('searchJobInput')?.value || '').toLowerCase().trim();
     const estado = (document.getElementById('filterStatusInput')?.value || 'ALL').trim();
     const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
-    const empleadoNombre = document.getElementById('filterEmployeeInput')?.value || ''; // 🔥 NUEVO
+    const empleadoNombre = document.getElementById('filterEmployeeInput')?.value || ''; 
 
     const trabajosFiltrados = allJobsCache.filter(job => {
         const coincideTexto = 
@@ -126,7 +126,6 @@ window.filtrarTrabajosCombinados = () => {
             coincidePrioridad = prioJob === prioBuscada;
         }
 
-        // 🔥 NUEVO
         const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
 
         return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado;
@@ -316,23 +315,28 @@ async function cargarUsuariosYMateriales(emailActual) {
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (resUsers.ok) {
             const users = await resUsers.json();
-            const jefe = users.find(u => u.email === emailActual);
-            if (jefe) myManagerId = jefe.userId;
 
-            const select = document.getElementById('jobEmployee');
-            if (select) {
-                select.innerHTML = '<option value="">-- Seleccione Empleado --</option>';
-                const empleados = users.filter(u => u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
+            if (typeof myManagerId !== 'undefined') {
+                const jefeActual = users.find(u => u.email === emailActual);
+                if (jefeActual) myManagerId = jefeActual.userId;
+            }
+
+            const selectEmp = document.getElementById('jobEmployee');
+            if (selectEmp) {
+                selectEmp.innerHTML = '<option value="">-- Seleccione Subcontratista --</option>';
+                const empleados = users.filter(u => u.status !== 'Unemployed' && u.roles.some(r => r.name === 'ROLE_EMPLOYEE'));
                 empleados.forEach(u => {
-                    select.innerHTML += `<option value="${u.userId}">${u.name}</option>`;
+                    const fullName = u.name || `${u.firstName} ${u.lastName}`;
+                    selectEmp.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
                 });
 
-                // 🔥 Filtro por subcontratista, comparando por nombre igual que arriba
+                // 🔥 Filtro por subcontratista, comparando por nombre
                 const filterEmp = document.getElementById('filterEmployeeInput');
                 if (filterEmp) {
                     filterEmp.innerHTML = '<option value="">Todos los Subcontratistas</option>';
                     empleados.forEach(u => {
-                        filterEmp.innerHTML += `<option value="${u.name}">${u.name}</option>`;
+                        const fullName = u.name || `${u.firstName} ${u.lastName}`;
+                        filterEmp.innerHTML += `<option value="${fullName}">${fullName}</option>`;
                     });
                 }
             }
@@ -456,21 +460,21 @@ function renderizarTrabajos(trabajos) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
         }
 
-        // 🔥 LÓGICA PARA EL PLANO
-        const urlPlano = job.blueprintUrl || job.blueprint_url;
+        // 🔥 BOTÓN ÚNICO PARA ABRIR MODAL DE PLANOS
         let btnPlanoTable = '';
         let btnPlanoCard = '';
+        const urlsPlanos = job.blueprintUrls || [];
 
-        if (urlPlano) {
+        if (urlsPlanos && urlsPlanos.length > 0) {
             btnPlanoTable = `
-                <a href="${urlPlano}" target="_blank" class="btn-edit" style="background: #198754; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Plano/Documento">
-                    <i class="fa-solid fa-file-pdf"></i>
-                </a>
+                <button type="button" class="btn-edit" onclick="verPlanos(${job.jobId})" style="background: #198754; color: white; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; border:none; cursor:pointer;" title="Ver Planos (${urlsPlanos.length})">
+                    <i class="fa-solid fa-file-pdf"></i> <span style="margin-left: 4px; font-size: 11px;">${urlsPlanos.length}</span>
+                </button>
             `;
             btnPlanoCard = `
-                <a href="${urlPlano}" target="_blank" style="flex: 1; padding: 8px; border-radius: 4px; background: #E8F5E9; color: #198754; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Ver Plano/Documento">
-                    <i class="fa-solid fa-file-pdf"></i> Plano
-                </a>
+                <button type="button" onclick="verPlanos(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 4px; background: #E8F5E9; color: #198754; text-decoration: none; font-weight: bold; font-size: 13px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 5px; border:none; cursor:pointer;" title="Ver Planos">
+                    <i class="fa-solid fa-file-pdf"></i> Planos (${urlsPlanos.length})
+                </button>
             `;
         }
 
@@ -501,7 +505,7 @@ function renderizarTrabajos(trabajos) {
             <td>${priorityBadge}</td>
             <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
             <td>
-                <div class="acciones-cell">
+                <div class="acciones-cell" style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
                     ${btnPlanoTable}
                     <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #155e75; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
                         <i class="fa-solid fa-camera"></i>
@@ -517,12 +521,12 @@ function renderizarTrabajos(trabajos) {
         `;
         tbody.appendChild(tr);
 
-        // === TARJETA MÓVIL === (sin cambios)
+        // === TARJETA MÓVIL ===
         if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
             card.style.cssText = 'padding: 20px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; width: 100%; margin-bottom: 15px;';
-
+            
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 10px; margin-bottom:5px;">
                     <h3 style="margin:0; color:#198754; font-size: 16px; word-break: break-word;">${job.clientName}</h3>
@@ -550,6 +554,40 @@ function renderizarTrabajos(trabajos) {
         }
     });
 }
+
+// 🔥 NUEVAS FUNCIONES PARA EL MODAL DE PLANOS
+window.verPlanos = (jobId) => {
+    const job = allJobsCache.find(j => j.jobId === jobId);
+    if (!job) return;
+
+    const urls = job.blueprintUrls || [];
+    const container = document.getElementById('listaPlanosContainer');
+    container.innerHTML = '';
+
+    if (urls.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666; font-size: 14px;">No hay planos adjuntos en este proyecto.</p>';
+    } else {
+        urls.forEach((url, idx) => {
+            container.innerHTML += `
+                <a href="${url}" target="_blank" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #198754; font-weight: 500; transition: all 0.2s;">
+                    <span style="display:flex; align-items:center; gap:10px;">
+                        <i class="fa-solid fa-file-pdf" style="color: #198754; font-size: 1.5rem;"></i>
+                        Documento adjunto ${idx + 1}
+                    </span>
+                    <i class="fa-solid fa-external-link-alt" style="color: #64748b; font-size: 0.9rem;"></i>
+                </a>
+            `;
+        });
+    }
+
+    document.getElementById('modalVerPlanos').style.display = 'flex';
+};
+
+window.cerrarModalPlanos = () => {
+    document.getElementById('modalVerPlanos').style.display = 'none';
+};
+
+// ==========================================
 
 function getPriorityBadge(priority) {
     const p = (priority !== null && priority !== undefined) ? parseInt(priority) : 2;
@@ -639,18 +677,31 @@ window.abrirModalEditarJob = async (id) => {
                 document.getElementById('jobPriority').value = '2';
             }
 
-            // 🔥 MOSTRAR EL PLANO SI YA TIENE UNO
+            // 🔥 MOSTRAR LISTA DE PLANOS
             const blueprintContainer = document.getElementById('currentBlueprintContainer');
-            const blueprintLink = document.getElementById('currentBlueprintLink');
             const fileInput = document.getElementById('jobBlueprint');
 
             if (fileInput) fileInput.value = '';
 
-            if (data.blueprintUrl && blueprintContainer && blueprintLink) {
-                blueprintContainer.style.display = 'block';
-                blueprintLink.href = data.blueprintUrl;
-            } else if (blueprintContainer) {
-                blueprintContainer.style.display = 'none';
+            if (blueprintContainer) {
+                blueprintContainer.innerHTML = ''; 
+                const urlsPlanos = data.blueprintUrls || [];
+                
+                if (urlsPlanos.length > 0) {
+                    blueprintContainer.style.display = 'block';
+                    let htmlInner = `<i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i> <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">Planos guardados:</span><br><div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:5px;">`;
+                    
+                    urlsPlanos.forEach((url, idx) => {
+                        htmlInner += `
+                            <a href="${url}" target="_blank" style="color: #198754; font-weight: bold; font-size: 13px; text-decoration: underline; background:#E8F5E9; padding:4px 8px; border-radius:4px;">
+                                <i class="fa-solid fa-file-image"></i> Plano ${idx + 1}
+                            </a>`;
+                    });
+                    htmlInner += `</div>`;
+                    blueprintContainer.innerHTML = htmlInner;
+                } else {
+                    blueprintContainer.style.display = 'none';
+                }
             }
 
             limpiarMaterialesNecesarios();
@@ -666,6 +717,18 @@ window.abrirModalEditarJob = async (id) => {
                     const nombreMat = matInfo ? matInfo.name : (m.name || 'Material');
                     const precioMat = matInfo ? (matInfo.price || 0) : (m.price || 0);
                     agregarMaterialNecesarioDesdeInventario(m.materialId, nombreMat, precioMat, m.quantity, m.unit);
+                });
+            }
+
+            if (data.necessaryMaterials && Array.isArray(data.necessaryMaterials) && data.necessaryMaterials.length > 0) {
+                const container = document.getElementById('necessaryMaterialsContainer');
+                data.necessaryMaterials.forEach(mat => {
+                    if (document.getElementById(`nec-${mat.materialId}`)) return;
+
+                    const precio = mat.estimatedPrice || mat.price || 0;
+                    container.insertAdjacentHTML('beforeend',
+                        crearFilaMaterialNecesario(mat.materialId, mat.name || 'Material', precio, mat.quantity || 1, mat.unit)
+                    );
                 });
             }
 
@@ -734,6 +797,34 @@ window.guardarTrabajo = async () => {
         prioridadSeleccionada = 2;
     }
 
+    const necessaryMaterials = [];
+    document.querySelectorAll('.necessary-material-row').forEach(row => {
+        const matId = row.id.replace('nec-', '');
+        const name = row.querySelector('div').textContent.trim();
+        const qtyInput = row.querySelector('.nec-qty');
+        const qty = qtyInput ? (parseFloat(qtyInput.value) || 1) : 1;
+
+        let price = 0;
+        const priceInput = row.querySelector('.nec-price');
+        if (priceInput) {
+            price = parseFloat(priceInput.value) || 0;
+        } else {
+            const priceMatch = row.textContent.match(/\$([\d.]+)/);
+            if (priceMatch) price = parseFloat(priceMatch[1]) || 0;
+        }
+
+        const unitInput = row.querySelector('.nec-unit');
+        const unit = unitInput ? unitInput.value.trim() : '';
+
+        necessaryMaterials.push({
+            materialId: parseInt(matId),
+            name: name,
+            quantity: qty,
+            unit: unit,
+            estimatedPrice: price
+        });
+    });
+
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
@@ -751,12 +842,12 @@ window.guardarTrabajo = async () => {
         priority: prioridadSeleccionada
     };
 
-    if (!payload.clientName || !payload.employeeId || !payload.jobDate ||
+    if (!payload.clientName || !payload.employeeId || !payload.jobDate || 
         isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire({
-            icon: 'error',
-            title: 'Campos incompletos',
-            text: 'Por favor completa: Cliente, Empleado, Fecha, Ubicación y Pago.',
+            icon: 'error', 
+            title: 'Campos incompletos', 
+            text: 'Por favor completa: Cliente, Empleado, Fecha, Ubicación y Pago.', 
             confirmButtonColor: '#198754'
         });
     }
@@ -766,19 +857,21 @@ window.guardarTrabajo = async () => {
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
 
-    // 🔥 PREPARAMOS EL FORMDATA PARA ENVIAR EL ARCHIVO JUNTO CON LOS DATOS
+    // 🔥 EMPAQUETAR LISTA DE ARCHIVOS (PLANOS)
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
     const fileInput = document.getElementById('jobBlueprint');
     if (fileInput && fileInput.files.length > 0) {
-        formData.append('file', fileInput.files[0]);
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('files', fileInput.files[i]);
+        }
     }
 
     try {
         const response = await fetch(url, {
             method: method,
-            headers: { 'Authorization': `Bearer ${userToken}` }, // 🔥 Sin 'Content-Type', el navegador lo pone solo
+            headers: { 'Authorization': `Bearer ${userToken}` },
             body: formData
         });
 
@@ -842,7 +935,7 @@ window.toggleMaterialOpciones = (matId) => {
     const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
     const matName = checkbox.getAttribute('data-name');
     const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
-
+    
     const matUnit = checkbox.getAttribute('data-unit') || '';
 
     if (!materialesEstado[matId]) materialesEstado[matId] = {};
@@ -862,26 +955,24 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
 
     return `
         <div class="necessary-material-row" id="nec-${matId}"
-             style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px; border-left: 4px solid #e65100;">
+             style="display: grid; grid-template-columns: 1.8fr 70px 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #e65100;">
 
-            <div class="nec-name" title="${name}" style="font-weight: 600; color:#2B3674; font-size: 14px; margin-bottom: 8px;">${name}</div>
+            <div style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
 
-            <div class="nec-fields" style="display: grid; grid-template-columns: 70px 90px 80px 40px; gap: 8px; align-items: center;">
-                <input type="number" class="input-field nec-qty" value="${qty}" min="1"
-                       style="margin:0; text-align:center; padding:6px; border: 1px solid #e65100;"
-                       oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
+            <input type="number" class="input-field nec-qty" value="${qty}" min="1"
+                   style="margin:0; text-align:center; padding:6px; border: 1px solid #e65100;"
+                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
 
-                <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}" readonly
-                       style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
+            <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}" readonly
+                   style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
 
-                <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0" readonly
-                       style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
+            <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0" readonly
+                   style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
 
-                <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
-                        style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </div>
+            <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
+                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
+                <i class="fa-solid fa-trash"></i>
+            </button>
         </div>
     `;
 }
@@ -892,13 +983,13 @@ window.agregarMaterialNecesarioDesdeInventario = (matId, name, price, qtyInicial
     if (document.getElementById(`nec-${matId}`)) return;
 
     container.insertAdjacentHTML('beforeend', crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial));
-    calcularTotalMaterialesNecesarios();
+    calcularTotalMaterialesNecesarios();   
 };
 
 window.eliminarMaterialNecesarioPorId = (matId) => {
     const row = document.getElementById(`nec-${matId}`);
     if (row) row.remove();
-    calcularTotalMaterialesNecesarios();
+    calcularTotalMaterialesNecesarios();   
 };
 
 window.calcularTotalMaterialesNecesarios = () => {
@@ -928,8 +1019,8 @@ window.calcularTotalMaterialesNecesarios = () => {
 window.cerrarSesion = () => {
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) {
-        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
+    if (rolesString) { 
+        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
     }
 
     if (userRoles.length > 1) {
@@ -974,7 +1065,7 @@ window.cerrarSesion = () => {
 
 window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil();
+        cerrarModalPerfil(); 
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
@@ -992,18 +1083,18 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-
-        if (rol === 'ROLE_ADMIN') {
-            nombreRol = 'Acceder como Administrador';
-            url = `${prefijoRaiz}admin/admin-dashboard.html`;
+        
+        if (rol === 'ROLE_ADMIN') { 
+            nombreRol = 'Acceder como Administrador'; 
+            url = `${prefijoRaiz}admin/admin-dashboard.html`; 
         }
-        if (rol === 'ROLE_JEFE') {
-            nombreRol = 'Acceder como Jefe';
-            url = `${prefijoJefe}jefe-dashboard.html`;
+        if (rol === 'ROLE_JEFE') { 
+            nombreRol = 'Acceder como Jefe'; 
+            url = `${prefijoJefe}jefe-dashboard.html`; 
         }
-        if (rol === 'ROLE_EMPLOYEE') {
-            nombreRol = 'Acceder como Subcontratista';
-            url = `${prefijoRaiz}employee/employee-dashboard.html`;
+        if (rol === 'ROLE_EMPLOYEE') { 
+            nombreRol = 'Acceder como Subcontratista'; 
+            url = `${prefijoRaiz}employee/employee-dashboard.html`; 
         }
 
         if (nombreRol) {
@@ -1014,7 +1105,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
             boton.style.backgroundColor = '#00B8A9';
             boton.style.cursor = 'pointer';
             boton.textContent = nombreRol;
-
+            
             boton.addEventListener('click', () => {
                 window.location.href = url;
             });
@@ -1025,7 +1116,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
 
     Swal.fire({
         title: 'Selecciona tu área de trabajo',
-        html: contenedor,
+        html: contenedor, 
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',

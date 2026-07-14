@@ -12,17 +12,11 @@ let miUsuarioActual = null;
 let archivosSeleccionados = [];
 let imagenesBase64Data = [];
 
-// 🔥 NUEVO: cache de materiales + estado de selección (persiste aunque filtres)
 let allMaterialsCache = [];
-let materialesEstadoEmpleado = {}; // { [materialId]: { checked: bool, qty: string, unit: string } }
+let materialesEstadoEmpleado = {}; 
 
-// Variables para la doble firma
 let canvasSub, ctxSub;
 let drawingSub = false;
-
-// ==================================================
-// FUNCIONES DE APOYO Y FALLBACK SEGURO
-// ==================================================
 
 function calcularTotalMaterialesOriginales(jobInfo) {
     if (!jobInfo || !jobInfo.materials || jobInfo.materials.length === 0) return 0;
@@ -61,7 +55,6 @@ function fechaParaCalendario(fecha) {
     return fecha;
 }
 
-// 🔥 FALLBACK (Para seguir leyendo los viejos de ser necesario)
 function extraerDatosMaterialesFallback(texto) {
     const datos = {};
     if (!texto) return datos;
@@ -105,7 +98,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await cargarMateriales();
     await cargarCalendarioEmpleado(userEmail);
 
-    // 🔥 NUEVO: Filtros de Materiales (buscador + categoría) dentro del modal
     const matSearchIn = document.getElementById('searchMaterialInput');
     const matCatIn = document.getElementById('filterCategoryMaterial');
     if (matSearchIn) matSearchIn.addEventListener('input', window.filtrarMaterialesEmpleado);
@@ -148,32 +140,30 @@ async function cargarCalendarioEmpleado(emailActual) {
         const misTrabajos = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
 
         const eventosFormateados = misTrabajos.map(job => {
-            // Nueva lógica de prioridad
-            const prioridad = job.priority || 3; // 1 = Alta, 2 = Media, 3 = Baja (por defecto)
+            const prioridad = job.priority || 3; 
 
-            let bgColor = '#64748B'; // gris por defecto
+            let bgColor = '#64748B'; 
             let borderColor = '#475569';
             let icon = '<i class="fa-solid fa-clock"></i>';
 
             switch (prioridad) {
-                case 1: // Alta
+                case 1: 
                     bgColor = '#EF4444';
                     borderColor = '#B91C1C';
                     icon = '<i class="fa-solid fa-fire-flame-curved"></i>';
                     break;
-                case 2: // Media
+                case 2: 
                     bgColor = '#F59E0B';
                     borderColor = '#D97706';
                     icon = '<i class="fa-solid fa-exclamation-triangle"></i>';
                     break;
-                case 3: // Baja
+                case 3: 
                     bgColor = '#10B981';
                     borderColor = '#059669';
                     icon = '<i class="fa-solid fa-clock"></i>';
                     break;
             }
 
-            // Ajustar color según estado (mantener compatibilidad)
             if (job.status === 'COMPLETED') {
                 bgColor = '#10B981';
                 borderColor = '#059669';
@@ -204,7 +194,7 @@ async function cargarCalendarioEmpleado(emailActual) {
             initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
             locale: 'es',
             height: 'auto',
-            eventOrder: ['prioridad', 'start', 'title'], // Primero por prioridad, luego por hora
+            eventOrder: ['prioridad', 'start', 'title'], 
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
@@ -253,7 +243,6 @@ async function cargarCalendarioEmpleado(emailActual) {
             `
                     };
                 } else {
-                    // Vista mes
                     return {
                         html: `
                 <div style="padding: 4px; color: white; line-height: 1.4; overflow: hidden; text-align: center;">
@@ -295,13 +284,11 @@ async function cargarCalendarioEmpleado(emailActual) {
                        </div>`
                     : ``;
 
-                // 🔥 LIMPIAMOS LA DESCRIPCIÓN Y LEEMOS LA DB DIRECTO
                 let descCompleta = p.description || '';
                 if (descCompleta.includes('[MATERIALES PRE-ASIGNADOS]:')) {
                     descCompleta = descCompleta.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
                 }
 
-                // 🔥 CONSTRUIMOS LA LISTA DESDE LA BASE DE DATOS REAL (p.materials)
                 let listaMaterialesHtml = '';
                 if (p.materials && p.materials.length > 0) {
                     listaMaterialesHtml = p.materials.map(m => {
@@ -320,14 +307,15 @@ async function cargarCalendarioEmpleado(emailActual) {
                     listaMaterialesHtml = `<li style="font-size: 13px; color: #666; list-style: none;">No hay materiales registrados en la orden.</li>`;
                 }
 
-                const urlPlano = p.blueprintUrl || p.blueprint_url;
+                // 🔥 NUEVO BOTONAZO DE PLANOS MÚLTIPLES (MUCHO MÁS LLAMATIVO)
+                const urlsPlanos = p.blueprintUrls || [];
                 let planoHtml = '';
-                if (urlPlano) {
+                if (urlsPlanos.length > 0) {
                     planoHtml = `
-                        <div style="text-align:center; margin: 15px 0;">
-                            <a href="${urlPlano}" target="_blank" style="display:inline-flex; align-items:center; gap:8px; background:#E8F5E9; color:#10B981; padding:10px 18px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:13px; box-shadow: 0 2px 6px rgba(16,185,129,0.15);">
-                                <i class="fa-solid fa-file-pdf"></i> Ver Plano / Documento
-                            </a>
+                        <div style="text-align:center; margin: 20px 0;">
+                            <button type="button" onclick="verPlanosEmpleado()" class="animate__animated animate__pulse animate__infinite" style="display:flex; width:100%; align-items:center; justify-content:center; gap:10px; background:linear-gradient(135deg, #12CFF4, #0f4c81); color:white; padding:14px 18px; border-radius:12px; text-decoration:none; font-weight:bold; font-size:15px; box-shadow: 0 6px 15px rgba(18,207,244,0.4); border:none; cursor:pointer; text-transform:uppercase; letter-spacing: 0.5px;">
+                                <i class="fa-solid fa-folder-open" style="font-size: 1.4rem;"></i> Ver Planos Adjuntos (${urlsPlanos.length})
+                            </button>
                         </div>
                     `;
                 }
@@ -353,19 +341,16 @@ async function cargarCalendarioEmpleado(emailActual) {
                     html: `
             <div style="text-align: left; margin-top: 10px; font-family: 'Poppins', sans-serif;">
                 
-                <!-- Badge de Estado -->
                 <div style="text-align:center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px dashed #E2E8F0;">
                     <span style="background: ${badgeColor}; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: bold; text-transform: uppercase;">
                         Estado: ${estadoTxt}
                     </span>
                 </div>
 
-                <!-- 🔥 NUEVO: PRIORIDAD AQUÍ -->
                 <div style="text-align:center; margin: 12px 0 18px 0;">
                     ${prioridadHTML}
                 </div>
 
-                <!-- Resto de tu información -->
                 <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
                     <strong><i class="fa-regular fa-calendar" style="color:#00B8A9; width:20px;"></i> Fecha:</strong> ${p.fechaHermosa}
                 </p>
@@ -388,7 +373,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                             
                             <div style="position: relative; margin-top: 15px;">
                                 <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/search/?api=1&query=$${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;">
+                                <a href="https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;">
                                     <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
                                 </a>
                             </div>
@@ -424,13 +409,45 @@ async function cargarCalendarioEmpleado(emailActual) {
     } catch (error) { console.error(error); }
 }
 
-// 🔥 NUEVO: intenta leer la categoría del material sin importar cómo la llame el backend.
+// 🔥 FUNCIONES DEL MODAL DE PLANOS (MEJORADO VISUALMENTE)
+window.verPlanosEmpleado = () => {
+    if (!currentJobInfo) return;
+    
+    const urls = currentJobInfo.blueprintUrls || [];
+    const container = document.getElementById('listaPlanosContainer');
+    container.innerHTML = '';
+
+    if (urls.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666; font-size: 14px;">No hay planos adjuntos en este proyecto.</p>';
+    } else {
+        urls.forEach((url, idx) => {
+            container.innerHTML += `
+                <a href="${url}" target="_blank" style="display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; text-decoration: none; color: #0f4c81; font-weight: 600; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; word-break: break-word;">
+                    <span style="display:flex; align-items:center; gap:12px;">
+                        <span style="background: #e0f2fe; padding: 10px; border-radius: 8px;">
+                            <i class="fa-solid fa-file-pdf" style="color: #0ea5e9; font-size: 1.8rem;"></i>
+                        </span>
+                        <span>Plano / Documento ${idx + 1}</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right" style="color: #94a3b8; font-size: 1.2rem;"></i>
+                </a>
+            `;
+        });
+    }
+
+    document.getElementById('modalVerPlanos').style.display = 'flex';
+};
+
+window.cerrarModalPlanos = () => {
+    document.getElementById('modalVerPlanos').style.display = 'none';
+};
+
+
 function obtenerNombreCategoriaEmpleado(mat) {
     return mat.categoryName
         || (mat.category && (mat.category.name || mat.category)) || '';
 }
 
-// 🔥 NUEVO: llena el <select id="filterCategoryMaterial"> con las categorías presentes en los materiales
 function poblarCategoriasMaterialesEmpleado(materials) {
     const select = document.getElementById('filterCategoryMaterial');
     if (!select) return;
@@ -450,7 +467,6 @@ function poblarCategoriasMaterialesEmpleado(materials) {
     if ([...categorias].includes(valorActual)) select.value = valorActual;
 }
 
-// 🔥 pinta la lista de materiales: checkbox + nombre + precio unitario + cantidad/unidad (si está marcado)
 function renderizarMaterialesEmpleado(materials) {
     const containerMat = document.getElementById('employeeMaterialsContainer');
     if (!containerMat) return;
@@ -483,7 +499,6 @@ function renderizarMaterialesEmpleado(materials) {
     });
 }
 
-// 🔥 NUEVO: filtra allMaterialsCache por texto + categoría y vuelve a pintar
 window.filtrarMaterialesEmpleado = () => {
     const texto = document.getElementById('searchMaterialInput')
         ? document.getElementById('searchMaterialInput').value.toLowerCase().trim() : '';
@@ -510,7 +525,6 @@ async function cargarMateriales() {
     } catch (e) { console.error(e); }
 }
 
-// 🔥 Al marcar/desmarcar, se guarda el estado (checked/qty/unit) para que sobreviva a un re-render por filtro
 window.toggleMaterialEmpleado = (matId) => {
     const checkbox = document.querySelector(`input[name="empMaterials"][value="${matId}"]`);
     const matName = checkbox.getAttribute('data-name');
@@ -523,7 +537,6 @@ window.toggleMaterialEmpleado = (matId) => {
     if (checkbox.checked) {
         agregarMaterialNecesarioEmpleado(matId, matName, matPrice, 1, matUnit);
 
-        // 🔥 Si el material NO estaba asignado originalmente, marcamos la alerta automáticamente
         const idsOriginales = (currentJobInfo && currentJobInfo.materials)
             ? currentJobInfo.materials.map(m => m.materialId) : [];
         const esNuevo = !idsOriginales.includes(matId);
@@ -629,7 +642,6 @@ window.abrirModalEvidence = (jobId) => {
 
     document.getElementById('evComment').value = "";
 
-    // 🔥 NUEVO: reseteamos filtros y estado de materiales, y reconstruimos desde el trabajo actual
     materialesEstadoEmpleado = {};
     if (document.getElementById('searchMaterialInput')) document.getElementById('searchMaterialInput').value = '';
     if (document.getElementById('filterCategoryMaterial')) document.getElementById('filterCategoryMaterial').value = '';
@@ -774,8 +786,6 @@ window.guardarReporteYPdf = async () => {
     if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#00B8A9' });
     if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
 
-    // 🔥 Recorremos los materiales marcados, calculando subtotal (cantidad x precio unitario)
-    // 🔥 IDs de los materiales que ya venían asignados originalmente (por el admin)
     const idsOriginales = (currentJobInfo.materials || []).map(m => m.materialId);
 
     const selectedRows = document.querySelectorAll('.necessary-material-row-emp');
@@ -831,9 +841,7 @@ window.guardarReporteYPdf = async () => {
     `;
     });
 
-    // 🔥 El precio a pagar SIEMPRE es el total de materiales reportados
     const nuevoPrecioValor = totalMateriales;
-
     const hasModifications = document.getElementById('evModifications').checked;
 
     if (materialesNuevos.length > 0) {
@@ -863,15 +871,11 @@ window.guardarReporteYPdf = async () => {
     document.getElementById('pdfDate').textContent = `${String(hoy.getMonth() + 1).padStart(2, '0')}/${String(hoy.getDate()).padStart(2, '0')}/${hoy.getFullYear()}`;
     document.getElementById('pdfComment').textContent = comment;
 
-    // 🔥 NUEVO: llenamos la tabla de materiales del PDF + total materiales
     document.getElementById('pdfMaterialsBody').innerHTML = pdfMaterialsRows !== ''
         ? pdfMaterialsRows
         : `<tr><td colspan="4" style="padding: 8px; border: 1px solid #ddd; text-align: center; color: #666;">No se reportaron materiales.</td></tr>`;
     document.getElementById('pdfTotalMateriales').textContent = `$${totalMateriales.toFixed(2)}`;
-
-    // 🔥 NUEVO: resumen final -> valor del trabajo + total general (materiales + trabajo)
     document.getElementById('pdfTotalGeneral').textContent = `$${pagoSeguroPDF.toFixed(2)}`;
-
     document.getElementById('pdfGuaranteeBox').style.display = status === 'COMPLETED' ? 'block' : 'none';
 
     document.getElementById('pdfImages').innerHTML = imagenesBase64Data.map(b64 => `
@@ -888,12 +892,12 @@ window.guardarReporteYPdf = async () => {
     const pdfWrapper = document.getElementById('pdfWrapper');
     const pdfTemplate = document.getElementById('pdfTemplate');
 
-    window.scrollTo(0, 0); // 🔥 evita offsets raros de captura en iOS
+    window.scrollTo(0, 0); 
 
     pdfWrapper.style.display = 'block';
     pdfWrapper.style.position = 'fixed';
     pdfWrapper.style.top = '0';
-    pdfWrapper.style.left = '-9999px';   // 🔥 fuera de pantalla por la izquierda, no por arriba
+    pdfWrapper.style.left = '-9999px';   
     pdfWrapper.style.width = '750px';
     pdfWrapper.style.zIndex = '-1';
     pdfWrapper.style.visibility = 'visible';
@@ -913,7 +917,7 @@ window.guardarReporteYPdf = async () => {
             logging: false,
             backgroundColor: '#ffffff',
             scrollX: 0,
-            scrollY: 0            // 🔥 clave para que no capture mal en iOS
+            scrollY: 0            
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: {
@@ -927,7 +931,6 @@ window.guardarReporteYPdf = async () => {
         pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
 
         if (esIOS()) {
-            // 🔥 Ya NO usamos html2pdf().save() en iOS, causa el mismo bug de navegación
             await manejarDescargaPDF(pdfBlob, nombreArchivoPDF);
         } else {
             html2pdf().set(opt).from(pdfTemplate).save();
@@ -980,7 +983,6 @@ window.guardarReporteYPdf = async () => {
                 confirmButtonColor: '#00B8A9'
             }).then(() => {
                 cerrarModalEvidence();
-                // 🔥 ESTO RECARGA LA PÁGINA PARA ACTUALIZAR LA VISTA AL INSTANTE
                 window.location.reload();
             });
         } else {
@@ -998,6 +1000,7 @@ window.guardarReporteYPdf = async () => {
         Swal.fire({ icon: 'error', title: 'Error de Red', text: 'Verifica tu conexión a internet o el estado del servidor.', confirmButtonColor: '#00B8A9' });
     }
 };
+
 function esIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 }
@@ -1008,14 +1011,12 @@ async function manejarDescargaPDF(pdfBlob, nombreArchivo) {
             const file = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({ files: [file], title: nombreArchivo });
-                return; // 🔥 éxito: compartido sin abrir nada más
+                return; 
             }
         } catch (e) {
             console.warn('No se pudo compartir el PDF:', e);
         }
 
-        // 🔥 Fallback: NO navegamos la pestaña actual. Mostramos un botón
-        // y el usuario decide si lo quiere abrir (en pestaña NUEVA, no en la misma).
         const pdfUrl = URL.createObjectURL(pdfBlob);
         Swal.fire({
             icon: 'success',
@@ -1025,11 +1026,10 @@ async function manejarDescargaPDF(pdfBlob, nombreArchivo) {
             confirmButtonColor: '#00B8A9'
         }).then((result) => {
             if (result.isConfirmed) {
-                window.open(pdfUrl, '_blank'); // 🔥 pestaña nueva, no reemplaza tu app
+                window.open(pdfUrl, '_blank'); 
             }
         });
     } else {
-        // Escritorio / Android: funciona bien como está
         html2pdf().set(opt).from(pdfTemplate).save();
         const pdfUrl = URL.createObjectURL(pdfBlob);
         window.open(pdfUrl, '_blank');

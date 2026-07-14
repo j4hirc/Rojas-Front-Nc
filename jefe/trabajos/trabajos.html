@@ -279,7 +279,7 @@
                         </div>
                     </div>
 
-                    <!-- 🔥 NUEVO: SUBIR PLANOS PARA EL JEFE -->
+                    <!-- 🔥 NUEVO: SUBIR PLANOS MÚLTIPLES -->
                     <h4
                         style="margin-top: 20px; margin-bottom: 10px; color: #198754; border-bottom: 1px solid #eee; padding-bottom: 5px;">
                         Documentos Adjuntos
@@ -287,18 +287,13 @@
                     <div class="form-group">
                         <label><i class="fa-solid fa-file-pdf"></i> Planos del Trabajo (Imagen o PDF)</label>
                         <input type="file" id="jobBlueprint" class="input-field" accept="image/*,application/pdf"
-                            style="padding: 5px;">
-                        <small style="color: #666;">Opcional. Puedes subir un plano inicial para la obra.</small>
+                            style="padding: 5px;" multiple>
+                        <small style="color: #666;">Opcional. Puedes subir múltiples planos para la obra.</small>
 
-                        <!-- Aquí mostraremos el link si ya hay un plano guardado -->
+                        <!-- Aquí mostraremos la lista si ya hay planos guardados -->
                         <div id="currentBlueprintContainer"
                             style="display:none; margin-top:8px; padding: 10px; background: #e8f5e9; border-radius: 6px; border: 1px dashed #4caf50;">
-                            <i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i>
-                            <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">Plano actual:</span>
-                            <a id="currentBlueprintLink" href="#" target="_blank"
-                                style="color: #198754; font-weight: bold; font-size: 13px; margin-left: 5px; text-decoration: underline;">
-                                Ver Documento
-                            </a>
+                            <!-- Inyectado desde JS -->
                         </div>
                     </div>
 
@@ -309,6 +304,26 @@
                 <button onclick="cerrarModalJob()" class="btn-secondary">Cancelar</button>
                 <button onclick="guardarTrabajo()" class="btn-primary" style="background:#e65100;">Guardar
                     Trabajo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 MODAL PARA VER LISTA DE PLANOS -->
+    <div class="modal-overlay" id="modalVerPlanos" style="display: none; z-index: 2000;">
+        <div class="modal-container" style="max-width: 450px; width: 90%;">
+            <div class="modal-header">
+                <span style="color: #198754; font-weight: bold; font-size: 1.1rem;">
+                    <i class="fa-solid fa-file-pdf"></i> Planos del Proyecto
+                </span>
+                <button onclick="cerrarModalPlanos()" class="btn-close-modal">✕</button>
+            </div>
+            
+            <div class="modal-body" id="listaPlanosContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
+                <!-- Los enlaces se inyectarán aquí -->
+            </div>
+            
+            <div class="modal-footer" style="display: flex; justify-content: center;">
+                <button onclick="cerrarModalPlanos()" class="btn-secondary" style="width: 100%;">Cerrar</button>
             </div>
         </div>
     </div>
