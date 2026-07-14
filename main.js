@@ -118,7 +118,7 @@ loginForm?.addEventListener('submit', async (e) => {
     }
 });
 
-const MANTENIMIENTO_ACTIVO = true; 
+const MANTENIMIENTO_ACTIVO = false; 
 
 if (MANTENIMIENTO_ACTIVO) {
     document.getElementById('mantenimiento-overlay').style.display = 'flex';
