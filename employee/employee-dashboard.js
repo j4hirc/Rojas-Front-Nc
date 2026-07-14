@@ -307,7 +307,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                     listaMaterialesHtml = `<li style="font-size: 13px; color: #666; list-style: none;">No hay materiales registrados en la orden.</li>`;
                 }
 
-                // 🔥 NUEVO BOTONAZO DE PLANOS MÚLTIPLES (MUCHO MÁS LLAMATIVO)
+                // 🔥 BOTÓN PARA MOSTRAR LOS PLANOS EN EL MODAL DEL EMPLEADO
                 const urlsPlanos = p.blueprintUrls || [];
                 let planoHtml = '';
                 if (urlsPlanos.length > 0) {
@@ -409,7 +409,7 @@ async function cargarCalendarioEmpleado(emailActual) {
     } catch (error) { console.error(error); }
 }
 
-// 🔥 FUNCIONES DEL MODAL DE PLANOS (MEJORADO VISUALMENTE)
+// 🔥 MODAL DE PLANOS PARA EL EMPLEADO
 window.verPlanosEmpleado = () => {
     if (!currentJobInfo) return;
     
@@ -554,7 +554,7 @@ window.toggleMaterialEmpleado = (matId) => {
     }
 };
 
-
+// 🔥 AQUÍ ESTÁ EL ARREGLO: CAJITA DE UNIDAD BLOQUEADA
 function crearFilaMaterialNecesarioEmpleado(matId, name, price, qtyInicial, unitInicial) {
     const qty = (qtyInicial !== undefined && qtyInicial !== null && qtyInicial !== '') ? qtyInicial : 1;
     const unit = (unitInicial !== undefined && unitInicial !== null) ? unitInicial : '';
@@ -567,11 +567,12 @@ function crearFilaMaterialNecesarioEmpleado(matId, name, price, qtyInicial, unit
 
             <div class="nec-fields" style="display: grid; grid-template-columns: 70px 90px 80px 40px; gap: 8px; align-items: center;">
                 <input type="number" class="input-field nec-emp-qty" value="${qty}" min="1"
-                       style="margin:0; text-align:center;"
+                       style="margin:0; text-align:center; padding:6px; border: 1px solid #12CFF4;"
                        oninput="calcularTotalMaterialesNecesariosEmpleado()" data-matid="${matId}">
 
-                <input type="text" class="input-field nec-emp-unit" placeholder="Unidad" value="${unit}"
-                       style="margin:0; text-align:center;" data-matid="${matId}">
+                <!-- 🔥 UNIDAD BLOQUEADA (readonly y estilo gris) -->
+                <input type="text" class="input-field nec-emp-unit" placeholder="Unidad" value="${unit}" readonly
+                       style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}">
 
                 <div class="nec-emp-price" style="text-align: center; font-weight: bold; color: #198754; font-size: 13px; background-color: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 6px; padding: 6px; box-sizing: border-box;" data-price="${price}">
                     $${price.toFixed(2)}
