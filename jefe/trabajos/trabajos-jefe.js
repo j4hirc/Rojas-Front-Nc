@@ -8,7 +8,7 @@ let mapa, marcador;
 let allJobsCache = [];
 
 let allMaterialsCache = [];
-let materialesEstado = {}; 
+let materialesEstado = {};
 
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
@@ -44,9 +44,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_JEFE')) {
         Swal.fire({
-            icon: 'error', 
-            title: 'Acceso Denegado', 
-            text: 'Solo los Jefes pueden acceder a esta sección.', 
+            icon: 'error',
+            title: 'Acceso Denegado',
+            text: 'Solo los Jefes pueden acceder a esta sección.',
             confirmButtonColor: '#198754'
         }).then(() => { window.location.href = '../../index.html'; });
         return;
@@ -54,11 +54,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById('jefe-email-display').textContent = userEmail || 'Jefe';
 
-    Swal.fire({ 
-        title: 'Preparando tu área de trabajo...', 
-        text: 'Cargando personal y proyectos', 
-        allowOutsideClick: false, 
-        didOpen: () => { Swal.showLoading(); } 
+    Swal.fire({
+        title: 'Preparando tu área de trabajo...',
+        text: 'Cargando personal y proyectos',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
     });
 
     await cargarUsuariosYMateriales(userEmail);
@@ -67,10 +67,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const searchInput = document.getElementById('searchJobInput');
     const statusInput = document.getElementById('filterStatusInput');
     const priorityInput = document.getElementById('filterPriorityInput');
+    const empIn = document.getElementById('filterEmployeeInput'); // 🔥 NUEVO
+
 
     if (searchInput) searchInput.addEventListener('input', filtrarTrabajosCombinados);
     if (statusInput) statusInput.addEventListener('change', filtrarTrabajosCombinados);
     if (priorityInput) priorityInput.addEventListener('input', filtrarTrabajosCombinados);
+    if (empIn) empIn.addEventListener('change', filtrarTrabajosCombinados);
 
     const matSearchIn = document.getElementById('searchMaterialInput');
     const matCatIn = document.getElementById('filterCategoryMaterial');
@@ -103,6 +106,7 @@ window.filtrarTrabajosCombinados = () => {
     const texto = (document.getElementById('searchJobInput')?.value || '').toLowerCase().trim();
     const estado = (document.getElementById('filterStatusInput')?.value || 'ALL').trim();
     const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
+    const empleadoId = document.getElementById('filterEmployeeInput')?.value || ''; // 🔥 NUEVO
 
     const trabajosFiltrados = allJobsCache.filter(job => {
         const coincideTexto = 
@@ -122,7 +126,10 @@ window.filtrarTrabajosCombinados = () => {
             coincidePrioridad = prioJob === prioBuscada;
         }
 
-        return coincideTexto && coincideEstado && coincidePrioridad;
+        // 🔥 NUEVO
+        const coincideEmpleado = (empleadoId === '') || (String(job.employeeId) === empleadoId);
+
+        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado;
     });
 
     renderizarTrabajos(trabajosFiltrados);
@@ -318,6 +325,14 @@ async function cargarUsuariosYMateriales(emailActual) {
                 users.filter(u => u.roles.some(r => r.name === 'ROLE_EMPLOYEE')).forEach(u => {
                     select.innerHTML += `<option value="${u.userId}">${u.name}</option>`;
                 });
+
+                const filterEmp = document.getElementById('filterEmployeeInput');
+                if (filterEmp) {
+                    filterEmp.innerHTML = '<option value="">Todos los Subcontratistas</option>';
+                    empleados.forEach(u => {
+                        filterEmp.innerHTML += `<option value="${u.userId}">${u.name}</option>`;
+                    });
+                }
             }
         }
 
@@ -368,7 +383,7 @@ function renderizarMateriales(materials) {
         const precioMat = mat.price || 0;
         const estado = materialesEstado[mat.materialId] || {};
         const checkedAttr = estado.checked ? 'checked' : '';
-        
+
         const safeUnit = mat.unit ? mat.unit.replace(/'/g, "\\'") : '';
         const displayUnit = mat.unit ? ` ${mat.unit}` : '';
 
@@ -433,7 +448,7 @@ function renderizarTrabajos(trabajos) {
         const priorityBadge = getPriorityBadge(job.priority);
         const empName = job.nameEmployee || 'Sin asignar';
         const fechaTxt = formatearFecha(job.jobDate);
-        
+
         let safeDesc = job.description ? job.description : 'Sin descripción';
         if (safeDesc.includes('[MATERIALES PRE-ASIGNADOS]:')) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
@@ -505,7 +520,7 @@ function renderizarTrabajos(trabajos) {
             const card = document.createElement('div');
             card.className = 'card';
             card.style.cssText = 'padding: 20px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; width: 100%; margin-bottom: 15px;';
-            
+
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 10px; margin-bottom:5px;">
                     <h3 style="margin:0; color:#198754; font-size: 16px; word-break: break-word;">${job.clientName}</h3>
@@ -536,7 +551,7 @@ function renderizarTrabajos(trabajos) {
 
 function getPriorityBadge(priority) {
     const p = (priority !== null && priority !== undefined) ? parseInt(priority) : 2;
-    
+
     if (p === 0 || p === 1) {
         return `<span style="background:#FBE9E7; color:#d32f2f; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${p} - Alta</span>`;
     } else if (p === 2) {
@@ -567,8 +582,8 @@ window.abrirModalCrearJob = () => {
     limpiarMaterialesNecesarios();
 
     // 🔥 Limpiar file y ocultar link de plano
-    if(document.getElementById('jobBlueprint')) document.getElementById('jobBlueprint').value = '';
-    if(document.getElementById('currentBlueprintContainer')) document.getElementById('currentBlueprintContainer').style.display = 'none';
+    if (document.getElementById('jobBlueprint')) document.getElementById('jobBlueprint').value = '';
+    if (document.getElementById('currentBlueprintContainer')) document.getElementById('currentBlueprintContainer').style.display = 'none';
 
     const payInput = document.getElementById('jobPay');
     if (payInput) {
@@ -626,9 +641,9 @@ window.abrirModalEditarJob = async (id) => {
             const blueprintContainer = document.getElementById('currentBlueprintContainer');
             const blueprintLink = document.getElementById('currentBlueprintLink');
             const fileInput = document.getElementById('jobBlueprint');
-            
-            if (fileInput) fileInput.value = ''; 
-            
+
+            if (fileInput) fileInput.value = '';
+
             if (data.blueprintUrl && blueprintContainer && blueprintLink) {
                 blueprintContainer.style.display = 'block';
                 blueprintLink.href = data.blueprintUrl;
@@ -734,12 +749,12 @@ window.guardarTrabajo = async () => {
         priority: prioridadSeleccionada
     };
 
-    if (!payload.clientName || !payload.employeeId || !payload.jobDate || 
+    if (!payload.clientName || !payload.employeeId || !payload.jobDate ||
         isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire({
-            icon: 'error', 
-            title: 'Campos incompletos', 
-            text: 'Por favor completa: Cliente, Empleado, Fecha, Ubicación y Pago.', 
+            icon: 'error',
+            title: 'Campos incompletos',
+            text: 'Por favor completa: Cliente, Empleado, Fecha, Ubicación y Pago.',
             confirmButtonColor: '#198754'
         });
     }
@@ -825,7 +840,7 @@ window.toggleMaterialOpciones = (matId) => {
     const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
     const matName = checkbox.getAttribute('data-name');
     const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
-    
+
     const matUnit = checkbox.getAttribute('data-unit') || '';
 
     if (!materialesEstado[matId]) materialesEstado[matId] = {};
@@ -875,13 +890,13 @@ window.agregarMaterialNecesarioDesdeInventario = (matId, name, price, qtyInicial
     if (document.getElementById(`nec-${matId}`)) return;
 
     container.insertAdjacentHTML('beforeend', crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial));
-    calcularTotalMaterialesNecesarios();   
+    calcularTotalMaterialesNecesarios();
 };
 
 window.eliminarMaterialNecesarioPorId = (matId) => {
     const row = document.getElementById(`nec-${matId}`);
     if (row) row.remove();
-    calcularTotalMaterialesNecesarios();   
+    calcularTotalMaterialesNecesarios();
 };
 
 window.calcularTotalMaterialesNecesarios = () => {
@@ -911,8 +926,8 @@ window.calcularTotalMaterialesNecesarios = () => {
 window.cerrarSesion = () => {
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) { 
-        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    if (rolesString) {
+        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
     }
 
     if (userRoles.length > 1) {
@@ -957,7 +972,7 @@ window.cerrarSesion = () => {
 
 window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
@@ -975,18 +990,18 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
-        if (rol === 'ROLE_ADMIN') { 
-            nombreRol = 'Acceder como Administrador'; 
-            url = `${prefijoRaiz}admin/admin-dashboard.html`; 
+
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = 'Acceder como Administrador';
+            url = `${prefijoRaiz}admin/admin-dashboard.html`;
         }
-        if (rol === 'ROLE_JEFE') { 
-            nombreRol = 'Acceder como Jefe'; 
-            url = `${prefijoJefe}jefe-dashboard.html`; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = 'Acceder como Jefe';
+            url = `${prefijoJefe}jefe-dashboard.html`;
         }
-        if (rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = 'Acceder como Subcontratista'; 
-            url = `${prefijoRaiz}employee/employee-dashboard.html`; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = 'Acceder como Subcontratista';
+            url = `${prefijoRaiz}employee/employee-dashboard.html`;
         }
 
         if (nombreRol) {
@@ -997,7 +1012,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
             boton.style.backgroundColor = '#00B8A9';
             boton.style.cursor = 'pointer';
             boton.textContent = nombreRol;
-            
+
             boton.addEventListener('click', () => {
                 window.location.href = url;
             });
@@ -1008,7 +1023,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
 
     Swal.fire({
         title: 'Selecciona tu área de trabajo',
-        html: contenedor, 
+        html: contenedor,
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
