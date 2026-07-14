@@ -560,7 +560,7 @@ function crearFilaMaterialNecesarioEmpleado(matId, name, price, qtyInicial, unit
                 <input type="text" class="input-field nec-emp-unit" placeholder="Unidad" value="${unit}"
                        style="margin:0; text-align:center;" data-matid="${matId}">
 
-                <div style="text-align: right; font-weight: bold; color: #198754; font-size: 13px;">
+                <div class="nec-emp-price" style="text-align: center; font-weight: bold; color: #198754; font-size: 13px; background-color: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 6px; padding: 6px; box-sizing: border-box;" data-price="${price}">
                     $${price.toFixed(2)}
                 </div>
 
