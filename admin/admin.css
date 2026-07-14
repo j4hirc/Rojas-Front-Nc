@@ -294,3 +294,109 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
     background-color: #D9EFFC; /* Un toque más marcado al pasar el mouse */
     border-left-color: var(--cyan);
 }
+
+#necessaryMaterialsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.necessary-material-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: var(--white);
+    border-radius: 8px;
+    padding: 7px 8px;
+    border: 1px solid #f0e0c8;
+    border-left: 3px solid var(--gold);
+    box-shadow: var(--shadow-sm);
+}
+
+.necessary-material-row .nec-name {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--black);
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.necessary-material-row .nec-fields {
+    display: grid;
+    grid-template-columns: 55px 70px 70px 30px;
+    gap: 6px;
+    align-items: left;
+    justify-content: center;
+}
+
+.necessary-material-row input {
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+    height: 26px;
+    margin: 0;
+    padding: 0 4px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.72rem;
+    text-align: center;
+    border-radius: 5px;
+    border: 1px solid #E0E5F2;
+    background: var(--white);
+    color: var(--slate);
+}
+
+.necessary-material-row .nec-qty {
+    border: 1px solid var(--gold);
+    font-weight: 600;
+    color: var(--black);
+}
+
+.necessary-material-row .nec-unit {
+    background-color: #f1f5f9;
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.necessary-material-row .nec-price {
+    text-align: right;
+    padding-right: 6px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #198754;
+    background-color: #E8F5E9;
+    border-color: #a5d6a7;
+    cursor: not-allowed;
+}
+
+.necessary-material-row .nec-delete {
+    height: 26px;
+    width: 100%;
+    border: none;
+    border-radius: 5px;
+    background: #FBE9E7;
+    color: #d32f2f;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+.necessary-material-row .nec-delete:hover {
+    background: #d32f2f;
+    color: var(--white);
+}
+
+@media (max-width: 480px) {
+    .necessary-material-row .nec-fields {
+        grid-template-columns: 1fr 1fr 28px;
+        grid-template-areas:
+            "qty  unit del"
+            "price price price";
+        row-gap: 5px;
+    }
+    .necessary-material-row .nec-qty    { grid-area: qty; }
+    .necessary-material-row .nec-unit   { grid-area: unit; }
+    .necessary-material-row .nec-price  { grid-area: price; text-align: center; }
+    .necessary-material-row .nec-delete { grid-area: del; height: 100%; }
+}
