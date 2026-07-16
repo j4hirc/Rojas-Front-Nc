@@ -50,12 +50,14 @@ window.buscarMaterial = () => {
 
     let materialesFiltrados = todosLosMaterialesCache;
 
+    // 1. Filtrar por texto
     if (textoBuscado !== "") {
         materialesFiltrados = materialesFiltrados.filter(mat =>
             mat.name && mat.name.toLowerCase().includes(textoBuscado)
         );
     }
 
+    // 2. Filtrar por categoría
     if (categoriaSeleccionada !== "todos") {
         materialesFiltrados = materialesFiltrados.filter(mat => {
             if (!mat.categoryName) return false;
@@ -63,6 +65,14 @@ window.buscarMaterial = () => {
         });
     }
 
+    // 🔥 3. ORDENAR ALFABÉTICAMENTE (Insensible a mayúsculas y acentos)
+    materialesFiltrados.sort((a, b) => {
+        const nombreA = a.name || '';
+        const nombreB = b.name || '';
+        return nombreA.localeCompare(nombreB, 'es', { sensitivity: 'base' });
+    });
+
+    // 4. Renderizar la lista ya filtrada y ordenada
     renderizarMateriales(materialesFiltrados);
 };
 
