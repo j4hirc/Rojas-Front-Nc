@@ -372,7 +372,7 @@ function mostrarSelectorDeRolesEnSubcarpeta(roles) {
             url = '../admin-dashboard.html'; 
         }
         if(rol === 'ROLE_JEFE') { 
-            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Jefe'; 
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Manager'; 
             url = '../../jefe/jefe-dashboard.html'; 
         }
         if(rol === 'ROLE_EMPLOYEE') { 
