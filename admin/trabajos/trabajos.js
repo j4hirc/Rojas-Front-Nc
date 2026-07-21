@@ -701,17 +701,20 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
-    const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
+    // 🔥 CORREGIDO: se lee de las filas persistentes (.necessary-material-row)
+    // en vez de los checkboxes visibles, que desaparecen del DOM cuando se filtra/busca.
+    const filasMateriales = document.querySelectorAll('.necessary-material-row');
     const selectedMaterials = [];
-
     let resumenMateriales = '';
-    matCheckboxes.forEach(cb => {
-        const matId = parseInt(cb.value);
-        const nombreMat = cb.getAttribute('data-name');
 
-        const filaNecesaria = document.getElementById(`nec-${matId}`);
-        const qtyInput = filaNecesaria ? filaNecesaria.querySelector('.nec-qty') : null;
-        const unitInput = filaNecesaria ? filaNecesaria.querySelector('.nec-unit') : null;
+    filasMateriales.forEach(row => {
+        const matId = parseInt(row.id.replace('nec-', ''));
+        const nombreMat = row.querySelector('.nec-name')
+            ? row.querySelector('.nec-name').textContent.trim()
+            : 'Material';
+
+        const qtyInput = row.querySelector('.nec-qty');
+        const unitInput = row.querySelector('.nec-unit');
         const cantidadStr = qtyInput ? qtyInput.value.trim() : '1';
         const unidadStr = unitInput ? unitInput.value.trim() : '';
         const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 1;
@@ -987,11 +990,11 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
             <div class="nec-name" title="${name}">${name}</div>
             <div class="nec-fields">
                 <input type="number" class="nec-qty" value="${qty}" min="1"
-                       oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
+                    oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
                 <input type="text" class="nec-unit" placeholder="Unidad" value="${unit}" readonly
-                       data-matid="${matId}" title="Unidad (Fija)">
+                    data-matid="${matId}" title="Unidad (Fija)">
                 <input type="number" class="nec-price" value="${price}" step="0.01" min="0" readonly
-                       data-matid="${matId}" title="Precio Unitario (Fijo)">
+                    data-matid="${matId}" title="Precio Unitario (Fijo)">
                 <button type="button" class="nec-delete" onclick="eliminarMaterialNecesarioPorId(${matId})" title="Quitar Material">
                     <i class="fa-solid fa-trash"></i>
                 </button>
@@ -1012,6 +1015,13 @@ window.agregarMaterialNecesarioDesdeInventario = (matId, name, price, qtyInicial
 window.eliminarMaterialNecesarioPorId = (matId) => {
     const row = document.getElementById(`nec-${matId}`);
     if (row) row.remove();
+
+    // 🔥 CORREGIDO: mantener sincronizado el checkbox y el estado
+    // cuando se elimina la fila directamente con el botón de basurita.
+    const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
+    if (checkbox) checkbox.checked = false;
+    if (materialesEstado[matId]) delete materialesEstado[matId];
+
     calcularTotalMaterialesNecesarios();
 };
 
