@@ -569,6 +569,7 @@ window.abrirModalCrearJob = () => {
 
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
+    resetearScrollModal();
     inicializarMapa(-2.900128, -79.005896);
 };
 
@@ -680,6 +681,7 @@ window.abrirModalEditarJob = async (id) => {
 
             Swal.close();
             document.getElementById('modalJob').style.display = 'flex';
+            resetearScrollModal();
             inicializarMapa(data.latitude, data.longitude);
         }
     } catch (error) {
@@ -687,6 +689,33 @@ window.abrirModalEditarJob = async (id) => {
         console.error("Error al obtener trabajo:", error);
     }
 };
+
+function resetearScrollModal() {
+    const modal = document.getElementById('modalJob');
+    if (!modal) return;
+
+    const resetTodo = () => {
+        // Resetea el propio overlay
+        modal.scrollTop = 0;
+
+        // Resetea CUALQUIER descendiente que tenga scroll real
+        modal.querySelectorAll('*').forEach(el => {
+            if (el.scrollHeight > el.clientHeight) {
+                el.scrollTop = 0;
+            }
+        });
+
+        // Por si el scroll está a nivel de la ventana/página (poco común en modales, pero por si acaso)
+        window.scrollTo(0, 0);
+    };
+
+    // Se hace varias veces con pequeños delays porque el mapa (Leaflet) y el
+    // contenido dinámico (materiales, etc.) pueden seguir cambiando el layout
+    // justo después de mostrar el modal.
+    requestAnimationFrame(resetTodo);
+    setTimeout(resetTodo, 50);
+    setTimeout(resetTodo, 300); // coincide con el setTimeout de invalidateSize del mapa
+}
 
 function limpiarMaterialesNecesarios() {
     document.getElementById('necessaryMaterialsContainer').innerHTML = '';
