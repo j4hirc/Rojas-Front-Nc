@@ -288,3 +288,25 @@ input[type="checkbox"] {
     .page-title { font-size: 1.2rem; }
     .modal-header span { font-size: 1.1rem; }
 }
+
+
+    .input-error {
+        border-color: #ff4d4f !important;
+        box-shadow: 0 0 8px rgba(255, 77, 79, 0.4) !important;
+        transition: all 0.3s ease;
+        animation: shake 0.3s;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    /* Estilo para el asterisco obligatorio */
+    .text-required {
+        color: #ff4d4f;
+        font-weight: bold;
+        margin-left: 3px;
+        font-size: 0.9em;
+    }

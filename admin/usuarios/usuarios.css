@@ -314,3 +314,9 @@ select.input-field { cursor: pointer; }
         gap: 15px;
     }
 }
+.text-required {
+    color: #ff4d4f;
+    font-weight: bold;
+    margin-left: 3px;
+    font-size: 0.9em;
+}

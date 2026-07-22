@@ -1,43 +1,54 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Usuarios - Rojas Remodeling</title>
     <link rel="icon" type="image/png" href="../../image.png">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <link rel="stylesheet" href="../admin.css"> 
+
+    <link rel="stylesheet" href="../admin.css">
     <link rel="stylesheet" href="usuarios.css">
 </head>
 <style>
-        /* Ajuste para que los filtros no se rompan en pantallas pequeñas */
-        @media (max-width: 900px) {
-            .header-section {
-                flex-direction: column !important;
-                align-items: stretch !important;
-                gap: 15px;
-            }
-            .filters-wrapper {
-                flex-direction: column;
-                width: 100%;
-            }
-            .filters-wrapper > div { width: 100% !important; }
-            .btn-add { width: 100%; justify-content: center; }
+    /* Ajuste para que los filtros no se rompan en pantallas pequeñas */
+    @media (max-width: 900px) {
+        .header-section {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 15px;
         }
-    </style>
+
+        .filters-wrapper {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .filters-wrapper>div {
+            width: 100% !important;
+        }
+
+        .btn-add {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
 <body>
 
     <div class="app-layout">
-        
+
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <img src="../../img/logo.png" alt="Rojas Remodeling">
             </div>
-            
+
             <nav class="sidebar-nav">
                 <a href="../admin-dashboard.html">
                     <i class="fa-solid fa-house"></i> Inicio
@@ -57,7 +68,7 @@
                 <a href="../materiales/materiales.html">
                     <i class="fa-solid fa-boxes-stacked"></i> Materiales
                 </a>
-                
+
             </nav>
 
             <div class="sidebar-footer">
@@ -68,7 +79,7 @@
         </aside>
 
         <main class="main-content">
-            
+
             <header class="top-navbar">
                 <div class="page-title">Gestión de Usuarios</div>
                 <div class="user-profile">
@@ -79,24 +90,32 @@
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-                    
-                    <div class="header-section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #F4F7FE;">
-                        <h2 style="margin: 0; color: #0B0B0D; font-weight: 700; font-size: 1.4rem;">Directorio del Personal</h2>
-                        
+
+                    <div class="header-section"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #F4F7FE;">
+                        <h2 style="margin: 0; color: #0B0B0D; font-weight: 700; font-size: 1.4rem;">Directorio del
+                            Personal</h2>
+
                         <div class="filters-wrapper" style="display: flex; gap: 15px; align-items: center;">
-                            
+
                             <div style="position: relative; width: 220px;">
-                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8a9099;"></i>
-                                <input type="text" id="buscadorDni" class="input-field" placeholder="Buscar por DNI..." style="padding-left: 40px; padding-top: 10px; padding-bottom: 10px; width: 100%; border: 1px solid #E0E5F2; border-radius: 8px; font-size: 0.9rem;" oninput="buscarPorDni()">
+                                <i class="fa-solid fa-magnifying-glass"
+                                    style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #8a9099;"></i>
+                                <input type="text" id="buscadorDni" class="input-field" placeholder="Buscar por DNI..."
+                                    style="padding-left: 40px; padding-top: 10px; padding-bottom: 10px; width: 100%; border: 1px solid #E0E5F2; border-radius: 8px; font-size: 0.9rem;"
+                                    oninput="buscarPorDni()">
                             </div>
 
-                            <select id="filtroEstado" class="input-field" style="padding: 10px 15px; cursor: pointer; font-weight: 600; color: #2E3238; border: 1px solid #E0E5F2; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFC;" onchange="cargarUsuarios()">
+                            <select id="filtroEstado" class="input-field"
+                                style="padding: 10px 15px; cursor: pointer; font-weight: 600; color: #2E3238; border: 1px solid #E0E5F2; border-radius: 8px; font-size: 0.9rem; background-color: #F9FAFC;"
+                                onchange="cargarUsuarios()">
                                 <option value="Active">Empleados Activos</option>
                                 <option value="Unemployed">Desempleados</option>
                                 <option value="All">Ver Todos</option>
                             </select>
 
-                            <button class="btn-add" onclick="abrirModalCrear()" style="white-space: nowrap; display: flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 0.9rem;">
+                            <button class="btn-add" onclick="abrirModalCrear()"
+                                style="white-space: nowrap; display: flex; align-items: center; gap: 8px; padding: 10px 20px; font-size: 0.9rem;">
                                 <i class="fa-solid fa-plus"></i> Nuevo Usuario
                             </button>
 
@@ -127,66 +146,85 @@
     <div class="modal-overlay" id="modalUsuario">
         <div class="modal-container">
             <div class="modal-header">
-                <span id="modalTitulo"><i class="fa-solid fa-user-plus" style="color: #12CFF4;"></i> Nuevo Usuario</span>
+                <span id="modalTitulo"><i class="fa-solid fa-user-plus" style="color: #12CFF4;"></i> Nuevo
+                    Usuario</span>
                 <button onclick="cerrarModal()" class="btn-close-modal">✕</button>
             </div>
 
             <div class="modal-body">
                 <form id="formUsuario">
-                    <input type="hidden" id="userId"> 
+                    <input type="hidden" id="userId">
                     <div class="form-grid">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>DNI</label>
-                                <input type="text" id="userDni" class="input-field" required placeholder="10 dígitos">
+                                <!-- @NotBlank en Java -->
+                                <label>DNI <span class="text-required">*</span></label>
+                                <input type="text" id="userDni" class="input-field" required
+                                    placeholder="10 dígitos (Obligatorio)">
                             </div>
                             <div class="form-group">
-                                <label>Título (Ej. Ingeniero)</label>
-                                <input type="text" id="userTitle" class="input-field" required>
+                                <!-- @NotBlank en Java -->
+                                <label>Título <span class="text-required">*</span></label>
+                                <input type="text" id="userTitle" class="input-field" required
+                                    placeholder="Ej. Ingeniero (Obligatorio)">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Primer Nombre</label>
-                                <input type="text" id="userFirstName" class="input-field" required>
+                                <!-- @NotBlank en Java -->
+                                <label>Primer Nombre <span class="text-required">*</span></label>
+                                <input type="text" id="userFirstName" class="input-field" required
+                                    placeholder="(Obligatorio)">
                             </div>
                             <div class="form-group">
+                                <!-- No tiene @NotBlank en Java (Es opcional) -->
                                 <label>Segundo Nombre</label>
-                                <input type="text" id="userMiddleName" class="input-field">
+                                <input type="text" id="userMiddleName" class="input-field" placeholder="(Opcional)">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Primer Apellido</label>
-                                <input type="text" id="userLastName" class="input-field" required>
+                                <!-- @NotBlank en Java -->
+                                <label>Primer Apellido <span class="text-required">*</span></label>
+                                <input type="text" id="userLastName" class="input-field" required
+                                    placeholder="(Obligatorio)">
                             </div>
                             <div class="form-group">
+                                <!-- No tiene @NotBlank en Java (Es opcional) -->
                                 <label>Segundo Apellido</label>
-                                <input type="text" id="userSecondSurname" class="input-field">
+                                <input type="text" id="userSecondSurname" class="input-field" placeholder="(Opcional)">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Correo Electrónico</label>
-                                <input type="email" id="userEmail" class="input-field" required>
+                                <!-- @NotBlank y @Email en Java -->
+                                <label>Correo Electrónico <span class="text-required">*</span></label>
+                                <input type="email" id="userEmail" class="input-field" required
+                                    placeholder="ejemplo@correo.com (Obligatorio)">
                             </div>
                             <div class="form-group">
-                                <label>Teléfono</label>
-                                <input type="text" id="userPhone" class="input-field" required>
+                                <!-- @NotBlank en Java -->
+                                <label>Teléfono <span class="text-required">*</span></label>
+                                <input type="text" id="userPhone" class="input-field" required
+                                    placeholder="(Obligatorio)">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
+                                <!-- Depende de si es nuevo o edición -->
                                 <label>Contraseña</label>
-                                <input type="password" id="userPassword" class="input-field" placeholder="Requerida para nuevos" required>
+                                <input type="password" id="userPassword" class="input-field"
+                                    placeholder="(Requerida para nuevos)">
                             </div>
                             <div class="form-group">
-                                <label>Estado</label>
+                                <!-- @NotBlank en Java -->
+                                <label>Estado <span class="text-required">*</span></label>
                                 <select id="userStatus" class="input-field" required>
+                                    <option value="" disabled selected>Seleccione... (Obligatorio)</option>
                                     <option value="Active">Activo</option>
                                     <option value="Unemployed">Inactivo / Despedido</option>
                                 </select>
@@ -195,25 +233,33 @@
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Fecha de Nacimiento</label>
+                                <!-- @NotNull en Java -->
+                                <label>Fecha de Nacimiento <span class="text-required">*</span></label>
                                 <input type="date" id="userBirth" class="input-field" required>
                             </div>
                             <div class="form-group">
-                                <label>Fecha de Ingreso</label>
+                                <!-- @NotNull en Java -->
+                                <label>Fecha de Ingreso <span class="text-required">*</span></label>
                                 <input type="date" id="userEntry" class="input-field" required>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>Roles (Puedes seleccionar varios)</label>
-                            <div style="display: flex; gap: 15px; background: rgba(18, 207, 244, 0.05); padding: 15px; border: 1px solid rgba(18, 207, 244, 0.2); border-radius: 12px; flex-wrap: wrap;">
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
+                            <!-- @NotNull en Java -->
+                            <label>Roles <span class="text-required">*</span> (Obligatorio seleccionar al menos
+                                uno)</label>
+                            <div
+                                style="display: flex; gap: 15px; background: rgba(18, 207, 244, 0.05); padding: 15px; border: 1px solid rgba(18, 207, 244, 0.2); border-radius: 12px; flex-wrap: wrap;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
                                     <input type="checkbox" name="userRoles" value="ROLE_EMPLOYEE"> Subcontratista
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
                                     <input type="checkbox" name="userRoles" value="ROLE_JEFE"> Manager
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; font-weight: 600; cursor: pointer; color: #2E3238;">
                                     <input type="checkbox" name="userRoles" value="ROLE_ADMIN"> Administrador
                                 </label>
                             </div>
@@ -231,4 +277,5 @@
 
     <script type="module" src="usuarios.js"></script>
 </body>
+
 </html>

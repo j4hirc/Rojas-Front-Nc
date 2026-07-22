@@ -1,27 +1,30 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Personal - Rojas Remodeling</title>
     <link rel="icon" type="image/png" href="../../image.png">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <link rel="stylesheet" href="../../admin/admin.css"> 
+
+    <link rel="stylesheet" href="../../admin/admin.css">
     <link rel="stylesheet" href="../../admin/usuarios/usuarios.css">
 </head>
+
 <body>
 
     <div class="app-layout">
-        
+
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <img src="../../img/logo.png" alt="Rojas Remodeling">
             </div>
-            
+
             <nav class="sidebar-nav">
                 <a href="../jefe-dashboard.html">
                     <i class="fa-solid fa-house"></i> Inicio
@@ -36,7 +39,7 @@
                     <i class="fa-solid fa-camera"></i> Evidencias
                 </a>
                 <a href="../calendario/calendario.html"><i class="fa-solid fa-calendar-days"></i> Calendario</a>
-                
+
             </nav>
 
             <div class="sidebar-footer">
@@ -47,7 +50,7 @@
         </aside>
 
         <main class="main-content">
-            
+
             <header class="top-navbar">
                 <div class="page-title">Gestión de Personal</div>
                 <div class="user-profile" style="color: #198754; background: #E8F5E9;">
@@ -58,18 +61,22 @@
 
             <div class="content-body">
                 <div class="usuarios-container" style="margin-top: 0;">
-                    
+
                     <div class="header-section" style="flex-wrap: wrap; gap: 15px;">
                         <h2 style="margin: 0; color: #2B3674;">Directorio del Personal</h2>
-                        
+
                         <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
-                            
+
                             <div style="position: relative;">
-                                <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #A3AED0;"></i>
-                                <input type="text" id="buscadorDni" class="input-field" placeholder="Buscar por DNI..." style="padding-left: 35px; width: 180px; padding-top: 10px; padding-bottom: 10px;" onkeyup="buscarPorDni()">
+                                <i class="fa-solid fa-magnifying-glass"
+                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #A3AED0;"></i>
+                                <input type="text" id="buscadorDni" class="input-field" placeholder="Buscar por DNI..."
+                                    style="padding-left: 35px; width: 180px; padding-top: 10px; padding-bottom: 10px;"
+                                    onkeyup="buscarPorDni()">
                             </div>
 
-                            <select id="filtroEstado" class="input-field" style="width: auto; padding: 10px;" onchange="cargarUsuarios()">
+                            <select id="filtroEstado" class="input-field" style="width: auto; padding: 10px;"
+                                onchange="cargarUsuarios()">
                                 <option value="Active">Empleados (Activos)</option>
                                 <option value="Unemployed">Desempleados (Inactivos)</option>
                                 <option value="All">Ver Todos</option>
@@ -109,60 +116,69 @@
 
             <div class="modal-body">
                 <form id="formUsuario">
-                    <input type="hidden" id="userId"> 
+                    <input type="hidden" id="userId">
+                    <input type="hidden" id="userId">
                     <div class="form-grid">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>DNI</label>
-                                <input type="text" id="userDni" class="input-field" required placeholder="10 dígitos">
+                                <label>DNI <span class="text-required">*</span></label>
+                                <input type="text" id="userDni" class="input-field" required
+                                    placeholder="10 dígitos (Obligatorio)">
                             </div>
                             <div class="form-group">
-                                <label>Título (Ej. Ingeniero)</label>
-                                <input type="text" id="userTitle" class="input-field" required>
+                                <label>Título <span class="text-required">*</span></label>
+                                <input type="text" id="userTitle" class="input-field" required
+                                    placeholder="Ej. Ingeniero (Obligatorio)">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Primer Nombre</label>
-                                <input type="text" id="userFirstName" class="input-field" required>
+                                <label>Primer Nombre <span class="text-required">*</span></label>
+                                <input type="text" id="userFirstName" class="input-field" required
+                                    placeholder="(Obligatorio)">
                             </div>
                             <div class="form-group">
                                 <label>Segundo Nombre</label>
-                                <input type="text" id="userMiddleName" class="input-field">
+                                <input type="text" id="userMiddleName" class="input-field" placeholder="(Opcional)">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Primer Apellido</label>
-                                <input type="text" id="userLastName" class="input-field" required>
+                                <label>Primer Apellido <span class="text-required">*</span></label>
+                                <input type="text" id="userLastName" class="input-field" required
+                                    placeholder="(Obligatorio)">
                             </div>
                             <div class="form-group">
                                 <label>Segundo Apellido</label>
-                                <input type="text" id="userSecondSurname" class="input-field">
+                                <input type="text" id="userSecondSurname" class="input-field" placeholder="(Opcional)">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Correo Electrónico</label>
-                                <input type="email" id="userEmail" class="input-field" required>
+                                <label>Correo Electrónico <span class="text-required">*</span></label>
+                                <input type="email" id="userEmail" class="input-field" required
+                                    placeholder="ejemplo@correo.com (Obligatorio)">
                             </div>
                             <div class="form-group">
-                                <label>Teléfono</label>
-                                <input type="text" id="userPhone" class="input-field" required>
+                                <label>Teléfono <span class="text-required">*</span></label>
+                                <input type="text" id="userPhone" class="input-field" required
+                                    placeholder="(Obligatorio)">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Contraseña</label>
-                                <input type="password" id="userPassword" class="input-field" placeholder="Requerida para nuevos" required>
+                                <input type="password" id="userPassword" class="input-field"
+                                    placeholder="(Requerida para nuevos)">
                             </div>
                             <div class="form-group">
-                                <label>Estado</label>
+                                <label>Estado <span class="text-required">*</span></label>
                                 <select id="userStatus" class="input-field" required>
+                                    <option value="" disabled selected>Seleccione... (Obligatorio)</option>
                                     <option value="Active">Activo</option>
                                     <option value="Unemployed">Inactivo / Despedido</option>
                                 </select>
@@ -171,25 +187,31 @@
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Fecha de Nacimiento</label>
+                                <label>Fecha de Nacimiento <span class="text-required">*</span></label>
                                 <input type="date" id="userBirth" class="input-field" required>
                             </div>
                             <div class="form-group">
-                                <label>Fecha de Ingreso</label>
+                                <label>Fecha de Ingreso <span class="text-required">*</span></label>
                                 <input type="date" id="userEntry" class="input-field" required>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>Roles (Puedes seleccionar varios)</label>
-                            <div style="display: flex; gap: 15px; background: #F9FAFC; padding: 12px 18px; border: 1px solid #E0E5F2; border-radius: 12px; flex-wrap: wrap;">
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                            <label>Roles <span class="text-required">*</span> (Obligatorio seleccionar al menos
+                                uno)</label>
+                            <div
+                                style="display: flex; gap: 15px; background: #F9FAFC; padding: 12px 18px; border: 1px solid #E0E5F2; border-radius: 12px; flex-wrap: wrap;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
                                     <input type="checkbox" name="userRoles" value="ROLE_EMPLOYEE"> Subcontratista
                                 </label>
-                                <label style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                                <label
+                                    style="display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
                                     <input type="checkbox" name="userRoles" value="ROLE_JEFE"> Manager
                                 </label>
-                                <label style="display: none; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
+                                <!-- Mantenemos el rol de admin oculto tal como lo tenías en tu código original -->
+                                <label
+                                    style="display: none; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; color: #2B3674;">
                                     <input type="checkbox" name="userRoles" value="ROLE_ADMIN"> Administrador
                                 </label>
                             </div>
@@ -207,4 +229,5 @@
 
     <script type="module" src="usuarios.js"></script>
 </body>
+
 </html>
