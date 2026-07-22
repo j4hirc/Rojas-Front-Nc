@@ -151,7 +151,7 @@ const rolesNombres = user.roles.map(r => mapaRoles[r.name] || r.name.replace('RO
             </td>
             <td>${user.email}</td>
             <td>${user.phone}</td>
-            <td><span class="badge rol">${rolesNombres}</span><br>${estadoHTML}</td>
+            <td><span class="badge rol" style="white-space: normal; display: inline-block; line-height: 1.2;">${rolesNombres}</span><br>${estadoHTML}</td>
             <td>
                 <button class="btn-edit" onclick="abrirModalEditar(${user.userId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
                 ${actionBtn}
@@ -172,7 +172,7 @@ const rolesNombres = user.roles.map(r => mapaRoles[r.name] || r.name.replace('RO
             <p style="margin: 5px 0; font-size: 14px;"><strong>DNI:</strong> ${user.dni || 'N/A'}</p>
             <p style="margin: 5px 0; font-size: 14px;"><strong>Email:</strong> ${user.email}</p>
             <p style="margin: 5px 0; font-size: 14px;"><strong>Tel:</strong> ${user.phone}</p>
-            <p style="margin: 5px 0; font-size: 14px;"><strong>Rol:</strong> <span class="badge rol">${rolesNombres}</span></p>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>Rol:</strong> <span class="badge rol" style="white-space: normal; display: inline-block; line-height: 1.2;">${rolesNombres}</span></p>
             <div class="card-actions">
                 <button class="btn-edit" onclick="abrirModalEditar(${user.userId})">Editar</button>
                 ${actionBtn}
