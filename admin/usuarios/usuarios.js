@@ -118,7 +118,13 @@ function renderizarUsuarios(usuarios) {
     }
 
     usuarios.forEach(user => {
-        const rolesNombres = user.roles.map(r => r.name.replace('ROLE_', '')).join(', ');
+        const mapaRoles = {
+    'ROLE_ADMIN': 'ADMINISTRADOR',
+    'ROLE_JEFE': 'MANAGER',
+    'ROLE_EMPLOYEE': 'SUBCONTRATISTA'
+};
+
+const rolesNombres = user.roles.map(r => mapaRoles[r.name] || r.name.replace('ROLE_', '')).join(', ');
 
         // Verificamos si es desempleado
         const isUnemployed = (user.status === 'Unemployed');
