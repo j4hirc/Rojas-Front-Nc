@@ -568,6 +568,13 @@ window.abrirModalCrearJob = () => {
     }
 
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
+    
+    // Reiniciar el scroll del modal y del formulario hacia la parte superior
+    const modal = document.getElementById('modalJob');
+    const form = document.getElementById('formJob'); 
+    if (modal) modal.scrollTop = 0;
+    if (form) form.scrollTop = 0;
+    
     document.getElementById('modalJob').style.display = 'flex';
     inicializarMapa(-2.900128, -79.005896);
 };
