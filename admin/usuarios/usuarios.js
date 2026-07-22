@@ -231,7 +231,19 @@ window.abrirModalCrear = () => {
     document.getElementById('userPassword').placeholder = "Requerida para nuevos usuarios";
 
     document.querySelectorAll('input[name="userRoles"]').forEach(cb => cb.checked = false);
-    document.getElementById('modalUsuario').style.display = 'flex';
+    
+    const modal = document.getElementById('modalUsuario');
+    modal.style.display = 'flex';
+
+    // ✨ MAGIA PARA RESETEAR EL SCROLL AL TOPE ✨
+    // Apunta al formulario o al contenedor interno que genera el scroll
+    const form = document.getElementById('formUsuario');
+    if (form) form.scrollTop = 0; 
+    
+    // Por si el scroll está en el propio modal o en un contenedor interno
+    modal.scrollTop = 0;
+    const scrollableContent = modal.querySelector('.modal-body, .modal-content');
+    if (scrollableContent) scrollableContent.scrollTop = 0;
 };
 
 window.abrirModalEditar = async (id) => {
@@ -262,7 +274,16 @@ window.abrirModalEditar = async (id) => {
             const checkboxes = document.querySelectorAll('input[name="userRoles"]');
             checkboxes.forEach(cb => { cb.checked = data.roles.some(r => r.name === cb.value); });
 
-            document.getElementById('modalUsuario').style.display = 'flex';
+            const modal = document.getElementById('modalUsuario');
+            modal.style.display = 'flex';
+
+            // ✨ MAGIA PARA RESETEAR EL SCROLL AL TOPE ✨
+            const form = document.getElementById('formUsuario');
+            if (form) form.scrollTop = 0;
+            
+            modal.scrollTop = 0;
+            const scrollableContent = modal.querySelector('.modal-body, .modal-content');
+            if (scrollableContent) scrollableContent.scrollTop = 0;
         }
     } catch (error) { console.error("Error al obtener usuario:", error); }
 };
