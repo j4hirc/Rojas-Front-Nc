@@ -481,18 +481,25 @@ function renderizarMaterialesEmpleado(materials) {
         return;
     }
 
+    const idsOriginales = (currentJobInfo && currentJobInfo.materials)
+        ? currentJobInfo.materials.map(m => m.materialId) : [];
+
     materials.forEach(mat => {
         const precioMat = mat.price || 0;
         const estado = materialesEstadoEmpleado[mat.materialId] || {};
         const checkedAttr = estado.checked ? 'checked' : '';
+        const esOriginal = idsOriginales.includes(mat.materialId);
+        const disabledAttr = esOriginal ? '' : 'disabled';
+        const rowStyle = esOriginal ? '' : 'opacity: 0.45;';
+        const titleAttr = esOriginal ? '' : 'title="Solo puedes ajustar cantidad de los materiales ya asignados, no agregar materiales nuevos"';
 
         const safeUnit = mat.unit ? mat.unit.replace(/'/g, "\\'") : '';
 
         containerMat.innerHTML += `
-    <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-        <label style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; color: #2B3674; font-weight: bold; cursor: pointer;">
+    <div style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; ${rowStyle}" ${titleAttr}>
+        <label style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; color: #2B3674; font-weight: bold; cursor: ${esOriginal ? 'pointer' : 'not-allowed'};">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" data-unit="${safeUnit}" onchange="toggleMaterialEmpleado(${mat.materialId})" ${checkedAttr}>
+                <input type="checkbox" name="empMaterials" value="${mat.materialId}" data-name="${mat.name}" data-price="${precioMat}" data-unit="${safeUnit}" onchange="toggleMaterialEmpleado(${mat.materialId})" ${checkedAttr} ${disabledAttr}>
                 ${mat.name}
             </div>
             <span style="color: #198754; font-size: 12px; background: #e8f5e9; padding: 2px 6px; border-radius: 4px;">$${precioMat.toFixed(2)} c/u</span>
@@ -534,23 +541,20 @@ window.toggleMaterialEmpleado = (matId) => {
     const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
     const matUnit = checkbox.getAttribute('data-unit') || '';
 
+    const idsOriginales = (currentJobInfo && currentJobInfo.materials)
+        ? currentJobInfo.materials.map(m => m.materialId) : [];
+
+    if (checkbox.checked && !idsOriginales.includes(matId)) {
+        checkbox.checked = false;
+        Swal.fire({ icon: 'warning', title: 'No permitido', text: 'Solo puedes ajustar la cantidad de los materiales ya asignados a este trabajo, no agregar materiales nuevos.', confirmButtonColor: '#00B8A9' });
+        return;
+    }
+
     if (!materialesEstadoEmpleado[matId]) materialesEstadoEmpleado[matId] = {};
     materialesEstadoEmpleado[matId].checked = checkbox.checked;
 
     if (checkbox.checked) {
         agregarMaterialNecesarioEmpleado(matId, matName, matPrice, 1, matUnit);
-
-        const idsOriginales = (currentJobInfo && currentJobInfo.materials)
-            ? currentJobInfo.materials.map(m => m.materialId) : [];
-        const esNuevo = !idsOriginales.includes(matId);
-
-        if (esNuevo) {
-            const alertCheckbox = document.getElementById('evModifications');
-            if (alertCheckbox && !alertCheckbox.checked) {
-                alertCheckbox.checked = true;
-                document.getElementById('newPriceContainer').style.display = 'block';
-            }
-        }
     } else {
         eliminarMaterialNecesarioEmpleadoPorId(matId);
         delete materialesEstadoEmpleado[matId];
