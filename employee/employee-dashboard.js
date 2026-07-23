@@ -13,7 +13,7 @@ let archivosSeleccionados = [];
 let imagenesBase64Data = [];
 
 let allMaterialsCache = [];
-let materialesEstadoEmpleado = {}; 
+let materialesEstadoEmpleado = {};
 
 let canvasSub, ctxSub;
 let drawingSub = false;
@@ -140,24 +140,24 @@ async function cargarCalendarioEmpleado(emailActual) {
         const misTrabajos = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
 
         const eventosFormateados = misTrabajos.map(job => {
-            const prioridad = job.priority || 3; 
+            const prioridad = job.priority || 3;
 
-            let bgColor = '#64748B'; 
+            let bgColor = '#64748B';
             let borderColor = '#475569';
             let icon = '<i class="fa-solid fa-clock"></i>';
 
             switch (prioridad) {
-                case 1: 
+                case 1:
                     bgColor = '#EF4444';
                     borderColor = '#B91C1C';
                     icon = '<i class="fa-solid fa-fire-flame-curved"></i>';
                     break;
-                case 2: 
+                case 2:
                     bgColor = '#F59E0B';
                     borderColor = '#D97706';
                     icon = '<i class="fa-solid fa-exclamation-triangle"></i>';
                     break;
-                case 3: 
+                case 3:
                     bgColor = '#10B981';
                     borderColor = '#059669';
                     icon = '<i class="fa-solid fa-clock"></i>';
@@ -194,7 +194,7 @@ async function cargarCalendarioEmpleado(emailActual) {
             initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
             locale: 'es',
             height: 'auto',
-            eventOrder: ['prioridad', 'start', 'title'], 
+            eventOrder: ['prioridad', 'start', 'title'],
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
@@ -364,6 +364,9 @@ async function cargarCalendarioEmpleado(emailActual) {
                     <strong><i class="fa-solid fa-location-dot" style="color:#00B8A9; width:20px;"></i> Dirección:</strong> ${p.address || 'Sin dirección'}
                 </p>
                 <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
+                    <strong><i class="fa-solid fa-lock" style="color:#00B8A9; width:20px;"></i> Código Caja Fuerte:</strong> ${p.safeDepositBoxCodes || 'No registrado'}
+                </p>
+                <p style="margin: 8px 0; font-size: 14px; color: #2B3674;">
                     <strong><i class="fa-solid fa-sack-dollar" style="color:#00B8A9; width:20px;"></i> Pago:</strong> $${parseFloat(p.pay || 0).toFixed(2)}
                 </p>
 
@@ -412,7 +415,7 @@ async function cargarCalendarioEmpleado(emailActual) {
 // 🔥 MODAL DE PLANOS PARA EL EMPLEADO
 window.verPlanosEmpleado = () => {
     if (!currentJobInfo) return;
-    
+
     const urls = currentJobInfo.blueprintUrls || [];
     const container = document.getElementById('listaPlanosContainer');
     container.innerHTML = '';
@@ -893,12 +896,12 @@ window.guardarReporteYPdf = async () => {
     const pdfWrapper = document.getElementById('pdfWrapper');
     const pdfTemplate = document.getElementById('pdfTemplate');
 
-    window.scrollTo(0, 0); 
+    window.scrollTo(0, 0);
 
     pdfWrapper.style.display = 'block';
     pdfWrapper.style.position = 'fixed';
     pdfWrapper.style.top = '0';
-    pdfWrapper.style.left = '-9999px';   
+    pdfWrapper.style.left = '-9999px';
     pdfWrapper.style.width = '750px';
     pdfWrapper.style.zIndex = '-1';
     pdfWrapper.style.visibility = 'visible';
@@ -918,7 +921,7 @@ window.guardarReporteYPdf = async () => {
             logging: false,
             backgroundColor: '#ffffff',
             scrollX: 0,
-            scrollY: 0            
+            scrollY: 0
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: {
@@ -1012,7 +1015,7 @@ async function manejarDescargaPDF(pdfBlob, nombreArchivo) {
             const file = new File([pdfBlob], nombreArchivo, { type: 'application/pdf' });
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 await navigator.share({ files: [file], title: nombreArchivo });
-                return; 
+                return;
             }
         } catch (e) {
             console.warn('No se pudo compartir el PDF:', e);
@@ -1027,7 +1030,7 @@ async function manejarDescargaPDF(pdfBlob, nombreArchivo) {
             confirmButtonColor: '#00B8A9'
         }).then((result) => {
             if (result.isConfirmed) {
-                window.open(pdfUrl, '_blank'); 
+                window.open(pdfUrl, '_blank');
             }
         });
     } else {
