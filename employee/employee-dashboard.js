@@ -574,26 +574,23 @@ function crearFilaMaterialNecesarioEmpleado(matId, name, price, qtyInicial, unit
     const unit = (unitInicial !== undefined && unitInicial !== null) ? unitInicial : '';
 
     return `
-        <div class="necessary-material-row-emp" id="nec-emp-${matId}"
-             style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 6px; border-left: 4px solid #12CFF4;">
+        <div class="necessary-material-row necessary-material-row-emp" id="nec-emp-${matId}">
+            
+            <!-- Este span oculto permite que tu JS siga encontrando el "$" y el precio sin romperse -->
+            <span style="display:none;">$${price.toFixed(2)}</span>
 
-            <div class="nec-name" title="${name}" style="font-weight: 600; color:#2B3674; font-size: 14px; margin-bottom: 8px;">${name}</div>
-
-            <div class="nec-fields" style="display: grid; grid-template-columns: 70px 90px 80px 40px; gap: 8px; align-items: center;">
-                <input type="number" class="input-field nec-emp-qty" value="${qty}" min="1"
-                       style="margin:0; text-align:center; padding:6px; border: 1px solid #12CFF4;"
-                       oninput="calcularTotalMaterialesNecesariosEmpleado()" data-matid="${matId}">
-
-                <!-- 🔥 UNIDAD BLOQUEADA (readonly y estilo gris) -->
-                <input type="text" class="input-field nec-emp-unit" placeholder="Unidad" value="${unit}" readonly
-                       style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}">
-
-                <div class="nec-emp-price" style="text-align: center; font-weight: bold; color: #198754; font-size: 13px; background-color: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 6px; padding: 6px; box-sizing: border-box;" data-price="${price}">
-                    $${price.toFixed(2)}
-                </div>
-
-                <button type="button" onclick="eliminarMaterialNecesarioEmpleadoPorId(${matId})"
-                        style="background:#ef4444; color:white; border:none; border-radius:6px; height:34px; cursor:pointer;">
+            <div class="nec-name" title="${name}">${name}</div>
+            <div class="nec-fields">
+                <input type="number" class="nec-qty nec-emp-qty" value="${qty}" min="1"
+                       oninput="calcularTotalMaterialesNecesariosEmpleado()" data-matid="${matId}" title="Cantidad (Editable)">
+                
+                <input type="text" class="nec-unit nec-emp-unit" placeholder="Unidad" value="${unit}" readonly
+                       data-matid="${matId}" title="Unidad (Fija)">
+                
+                <input type="number" class="nec-price nec-emp-price" value="${price}" step="0.01" min="0" readonly
+                       data-matid="${matId}" title="Precio Unitario (Fijo)">
+                
+                <button type="button" class="nec-delete" onclick="eliminarMaterialNecesarioEmpleadoPorId(${matId})" title="Quitar Material">
                     <i class="fa-solid fa-trash"></i>
                 </button>
             </div>
