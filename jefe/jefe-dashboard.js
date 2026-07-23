@@ -226,7 +226,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     });
 };
 
-// --- RESUMEN DE BODEGA (Con navegación día por día, igual que Nómina) ---
+// --- RESUMEN DE BODEGA (GLOBAL: todos los managers, con navegación día por día) ---
 let bodegaJobsCache = null;
 let bodegaUsersCache = null;
 let bodegaDiaOffset = 0;
@@ -252,7 +252,7 @@ window.verBodegaHoy = async () => {
             html: '<div id="bodega-contenedor">Generando reporte...</div>',
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
-            width: '750px',
+            width: '800px',
             background: '#FFFFFF'
         });
 
@@ -281,6 +281,82 @@ function formatMDYBodega(date) {
     return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
 }
 
+// 🔥 Construye la tarjeta/hoja de un solo trabajo (reutilizada en pantalla y en el PDF)
+function construirBloqueJobBodega(job) {
+    const empleado = bodegaUsersCache.find(u => u.userId == job.employeeId);
+    const nombreEmpleado = empleado
+        ? `${empleado.firstName} ${empleado.lastName}`
+        : `ID: ${job.employeeId}`;
+
+    const nombreManager = job.nameManager || 'Sin manager asignado';
+
+    let statusBadge = '';
+    if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Pendiente</span>`;
+    else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">En Progreso</span>`;
+    else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Completado</span>`;
+    else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Cancelado</span>`;
+
+    let descBodega = job.description ? job.description : '';
+    if (descBodega.includes('[MATERIALES PRE-ASIGNADOS]:')) {
+        descBodega = descBodega.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
+    }
+
+    const materialesCombinados = {};
+    (job.materials || []).forEach(mat => {
+        materialesCombinados[mat.materialId] = {
+            name: mat.name || mat.material || 'Material',
+            quantity: parseFloat(mat.quantity || mat.cant || 1),
+            unit: mat.unit || '',
+            origen: 'Pre-asignado'
+        };
+    });
+    (job.necessaryMaterials || []).forEach(mat => {
+        const id = mat.materialId;
+        if (materialesCombinados[id]) {
+            materialesCombinados[id].quantity = parseFloat(mat.quantity || 1);
+            materialesCombinados[id].unit = mat.unit || materialesCombinados[id].unit;
+        } else {
+            materialesCombinados[id] = {
+                name: mat.name || 'Material',
+                quantity: parseFloat(mat.quantity || 1),
+                unit: mat.unit || '',
+                origen: 'Agregado por subcontratista'
+            };
+        }
+    });
+    const listaMateriales = Object.values(materialesCombinados);
+
+    let html = `
+        <div style="padding: 14px; border-bottom: 1px solid #eee; background: #f8faff;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+                <strong style="color: #0F2D4A;">${job.clientName || 'Cliente sin nombre'}</strong>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    ${statusBadge}
+                    <span style="color: #F4A300; font-weight: bold;">${nombreEmpleado}</span>
+                </div>
+            </div>
+            <p style="margin: 0 0 6px 0; font-size: 12px; color: #0f4c81; font-weight: 600;">
+                <i class="fa-solid fa-user-shield"></i> Manager: ${nombreManager}
+            </p>
+            ${descBodega ? `<p style="margin: 0 0 8px 0; font-size: 12px; color: #777; font-style: italic;">${descBodega}</p>` : ''}`;
+
+    if (listaMateriales.length > 0) {
+        html += `<ul style="padding-left: 20px; margin: 6px 0;">`;
+        listaMateriales.forEach(mat => {
+            const etiquetaOrigen = mat.origen === 'Agregado por subcontratista'
+                ? `<span style="color:#e65100; font-size:11px; font-weight:600;"> (agregado por subcontratista)</span>`
+                : '';
+            html += `<li><strong>${mat.name}</strong> — ${mat.quantity} ${mat.unit}${etiquetaOrigen}</li>`;
+        });
+        html += `</ul>`;
+    } else {
+        html += `<p style="color:#999; font-size:13px;">Sin materiales registrados</p>`;
+    }
+
+    html += `</div>`;
+    return html;
+}
+
 function renderizarBodega(offset) {
     const fechaObjetivo = new Date();
     fechaObjetivo.setDate(fechaObjetivo.getDate() + offset);
@@ -295,8 +371,6 @@ function renderizarBodega(offset) {
     else if (offset === -1) etiquetaDia = 'Ayer';
     else etiquetaDia = fechaObjetivo.toLocaleDateString('es-ES', { weekday: 'long' });
     etiquetaDia = etiquetaDia.charAt(0).toUpperCase() + etiquetaDia.slice(1);
-
-    const jefeNombreCompleto = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase();
 
     let htmlContent = `
     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
@@ -318,11 +392,9 @@ function renderizarBodega(offset) {
         </button>
     </div>`;
 
+    // 🔥 GLOBAL: ya no filtramos por manager, entran los trabajos de TODOS los jefes
     const itemsDelDia = bodegaJobsCache.filter(job => {
-        const jobManagerName = (job.nameManager || "").trim().toLowerCase();
-        const esDeEsteJefe = (jobManagerName === jefeNombreCompleto) || (job.managerId == miUsuarioActual.userId);
-
-        if (!esDeEsteJefe || !['PENDING', 'IN_PROGRESS'].includes(job.status)) return false;
+        if (!['PENDING', 'IN_PROGRESS'].includes(job.status)) return false;
 
         let jobDateStr = Array.isArray(job.jobDate)
             ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
@@ -334,83 +406,12 @@ function renderizarBodega(offset) {
     if (itemsDelDia.length === 0) {
         htmlContent += `<p style="color:#888; font-style:italic; padding:10px; text-align:center;">No hay trabajos programados para este día.</p>`;
     } else {
-        htmlContent += `<div id="bodega-lista-dia" style="max-height: 420px; overflow-y: auto; border: 1px solid #D4D4D4; border-radius: 8px;">`;
+        htmlContent += `<div id="bodega-lista-dia" style="max-height: 450px; overflow-y: auto; border: 1px solid #D4D4D4; border-radius: 8px;">`;
+
+        window.bodegaItemsDelDiaCache = itemsDelDia; // 🔥 guardamos para el PDF
 
         itemsDelDia.forEach(job => {
-            const empleado = bodegaUsersCache.find(u => u.userId == job.employeeId);
-            const nombreEmpleado = empleado
-                ? `${empleado.firstName} ${empleado.lastName}`
-                : `ID: ${job.employeeId}`;
-
-            // --- Estado del proyecto (mismo estilo que las otras vistas) ---
-            let statusBadge = '';
-            if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Pendiente</span>`;
-            else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">En Progreso</span>`;
-            else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Completado</span>`;
-            else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Cancelado</span>`;
-
-            // --- Descripción limpia (sin el bloque de materiales pre-asignados en texto) ---
-            let descBodega = job.description ? job.description : '';
-            if (descBodega.includes('[MATERIALES PRE-ASIGNADOS]:')) {
-                descBodega = descBodega.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
-            }
-
-            // --- Combinamos materiales pre-asignados (jefe/admin) + necesarios (puede agregar el subcontratista) ---
-            const materialesCombinados = {};
-
-            (job.materials || []).forEach(mat => {
-                const id = mat.materialId;
-                materialesCombinados[id] = {
-                    name: mat.name || mat.material || 'Material',
-                    quantity: parseFloat(mat.quantity || mat.cant || 1),
-                    unit: mat.unit || '',
-                    origen: 'Pre-asignado'
-                };
-            });
-
-            (job.necessaryMaterials || []).forEach(mat => {
-                const id = mat.materialId;
-                if (materialesCombinados[id]) {
-                    // Si ya existía, actualizamos cantidad por si el subcontratista la cambió
-                    materialesCombinados[id].quantity = parseFloat(mat.quantity || 1);
-                    materialesCombinados[id].unit = mat.unit || materialesCombinados[id].unit;
-                } else {
-                    materialesCombinados[id] = {
-                        name: mat.name || 'Material',
-                        quantity: parseFloat(mat.quantity || 1),
-                        unit: mat.unit || '',
-                        origen: 'Agregado por subcontratista'
-                    };
-                }
-            });
-
-            const listaMateriales = Object.values(materialesCombinados);
-
-            htmlContent += `
-        <div style="padding: 14px; border-bottom: 1px solid #eee; background: #f8faff;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
-                <strong style="color: #0F2D4A;">${job.clientName || 'Cliente sin nombre'}</strong>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    ${statusBadge}
-                    <span style="color: #F4A300; font-weight: bold;">${nombreEmpleado}</span>
-                </div>
-            </div>
-            ${descBodega ? `<p style="margin: 0 0 8px 0; font-size: 12px; color: #777; font-style: italic;">${descBodega}</p>` : ''}`;
-
-            if (listaMateriales.length > 0) {
-                htmlContent += `<ul style="padding-left: 20px; margin: 6px 0;">`;
-                listaMateriales.forEach(mat => {
-                    const etiquetaOrigen = mat.origen === 'Agregado por subcontratista'
-                        ? `<span style="color:#e65100; font-size:11px; font-weight:600;"> (agregado por subcontratista)</span>`
-                        : '';
-                    htmlContent += `<li><strong>${mat.name}</strong> — ${mat.quantity} ${mat.unit}${etiquetaOrigen}</li>`;
-                });
-                htmlContent += `</ul>`;
-            } else {
-                htmlContent += `<p style="color:#999; font-size:13px;">Sin materiales registrados</p>`;
-            }
-
-            htmlContent += `</div>`;
+            htmlContent += construirBloqueJobBodega(job);
         });
 
         htmlContent += `</div>`;
@@ -420,40 +421,47 @@ function renderizarBodega(offset) {
     if (contenedor) contenedor.innerHTML = htmlContent;
 }
 
-// ==================== EXPORTAR PDF ====================
+// ==================== EXPORTAR PDF (una hoja por cada trabajo) ====================
 window.exportarBodegaPdf = () => {
-    const listaDia = document.getElementById('bodega-lista-dia');
-    if (!listaDia) return Swal.fire('Error', 'No hay trabajos para exportar en este día.', 'error');
+    const items = window.bodegaItemsDelDiaCache;
+    if (!items || items.length === 0) {
+        return Swal.fire('Error', 'No hay trabajos para exportar en este día.', 'error');
+    }
 
     const lblFecha = document.getElementById('lblFechaBodega');
     const textoFecha = lblFecha ? lblFecha.textContent.trim() : new Date().toISOString().split('T')[0];
     const nombreArchivoClean = textoFecha.replace(/[\/]/g, '-');
 
-    const nombreJefe = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`;
-
     const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.style.padding = "30px";
     contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
     contenedorImpresion.style.background = "#ffffff";
 
-    contenedorImpresion.innerHTML = `
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #12CFF4; padding-bottom: 15px;">
-            <h1 style="color: #0B0B0D; margin: 0;">ORDENES DE BODEGA</h1>
-            <p style="margin: 8px 0 0 0; color: #12CFF4; font-weight: bold;">Jefe: ${nombreJefe}</p>
-            <p style="margin: 5px 0 0 0; color: #555;">${textoFecha}</p>
-        </div>
-        ${listaDia.innerHTML}
-        <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #888;">
-            Reporte generado por el Portal RemoMN
-        </div>
-    `;
+    const paginas = items.map((job, idx) => {
+        const esUltimo = idx === items.length - 1;
+        return `
+            <div class="job-pdf-page" style="padding: 30px; ${esUltimo ? '' : 'page-break-after: always;'}">
+                <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #12CFF4; padding-bottom: 15px;">
+                    <h1 style="color: #0B0B0D; margin: 0;">ORDEN DE BODEGA</h1>
+                    <p style="margin: 8px 0 0 0; color: #12CFF4; font-weight: bold;">Copia de trabajo — Subcontratista</p>
+                    <p style="margin: 5px 0 0 0; color: #555;">${textoFecha}</p>
+                </div>
+                ${construirBloqueJobBodega(job)}
+                <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #888;">
+                    Reporte generado por el Portal RemoMN
+                </div>
+            </div>
+        `;
+    });
+
+    contenedorImpresion.innerHTML = paginas.join('');
 
     const opt = {
         margin: [15, 15, 15, 15],
         filename: `Ordenes_Bodega_${nombreArchivoClean}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2.5, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
     };
 
     Swal.fire({ title: 'Generando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
