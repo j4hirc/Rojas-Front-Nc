@@ -164,13 +164,20 @@ async function cargarCalendarioEmpleado(emailActual) {
                     break;
             }
 
+            if (job.status === 'IN_PROGRESS') {
+                bgColor = '#12CFF4';
+                borderColor = '#0EA5C4';
+                icon = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            }
             if (job.status === 'COMPLETED') {
-                bgColor = '#10B981';
-                borderColor = '#059669';
+                bgColor = '#9CA3AF';
+                borderColor = '#6B7280';
+                icon = '<i class="fa-solid fa-circle-check"></i>';
             }
             if (job.status === 'CANCELLED') {
                 bgColor = '#6B7280';
                 borderColor = '#4B5563';
+                icon = '<i class="fa-solid fa-circle-xmark"></i>';
             }
 
             return {
