@@ -208,7 +208,7 @@ function mostrarSelectorDeRoles(roles) {
             url = '../admin-dashboard.html'; 
         }
         if (rol === 'ROLE_JEFE') { 
-            nombreRol = '<i class="fa-solid fa-user-shield"></i> Jefe de Trabajo'; 
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Manager de Trabajo'; 
             url = '../../jefe/jefe-dashboard.html'; 
         }
         if (rol === 'ROLE_EMPLOYEE') { 
