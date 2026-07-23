@@ -75,6 +75,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (priorityInput) priorityInput.addEventListener('input', filtrarTrabajosCombinados);
     if (empIn) empIn.addEventListener('change', filtrarTrabajosCombinados);
 
+    const fechaDesdeIn = document.getElementById('filterDateFromInput');
+    const fechaHastaIn = document.getElementById('filterDateToInput');
+    if (fechaDesdeIn) fechaDesdeIn.addEventListener('change', filtrarTrabajosCombinados);
+    if (fechaHastaIn) fechaHastaIn.addEventListener('change', filtrarTrabajosCombinados);
+
     const matSearchIn = document.getElementById('searchMaterialInput');
     const matCatIn = document.getElementById('filterCategoryMaterial');
     if (matSearchIn) matSearchIn.addEventListener('input', window.filtrarMateriales);
@@ -107,6 +112,8 @@ window.filtrarTrabajosCombinados = () => {
     const estado = (document.getElementById('filterStatusInput')?.value || 'ALL').trim();
     const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
     const empleadoNombre = document.getElementById('filterEmployeeInput')?.value || ''; 
+    const fechaDesde = document.getElementById('filterDateFromInput')?.value || '';
+    const fechaHasta = document.getElementById('filterDateToInput')?.value || '';
 
     const trabajosFiltrados = allJobsCache.filter(job => {
         const coincideTexto = 
@@ -128,7 +135,12 @@ window.filtrarTrabajosCombinados = () => {
 
         const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
 
-        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado;
+        let coincideFecha = true;
+        const jobDateStr = fechaParaInput(job.jobDate); // ya existe en este mismo archivo
+        if (fechaDesde && jobDateStr) coincideFecha = coincideFecha && (jobDateStr >= fechaDesde);
+        if (fechaHasta && jobDateStr) coincideFecha = coincideFecha && (jobDateStr <= fechaHasta);
+
+        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado && coincideFecha;
     });
 
     renderizarTrabajos(trabajosFiltrados);
