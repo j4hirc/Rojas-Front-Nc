@@ -59,6 +59,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (estIn) estIn.addEventListener('change', window.filtrarTrabajosCombinados);
     if (priIn) priIn.addEventListener('input', window.filtrarTrabajosCombinados);
     if (empIn) empIn.addEventListener('change', window.filtrarTrabajosCombinados);
+    const fechaDesdeIn = document.getElementById('filterDateFromInput');
+    const fechaHastaIn = document.getElementById('filterDateToInput');
+
+    if (fechaDesdeIn) fechaDesdeIn.addEventListener('change', window.filtrarTrabajosCombinados);
+    if (fechaHastaIn) fechaHastaIn.addEventListener('change', window.filtrarTrabajosCombinados);
     if (btnCl) {
         btnCl.addEventListener('click', () => {
             document.getElementById('filterPriorityInput').value = '';
@@ -347,6 +352,8 @@ window.filtrarTrabajosCombinados = () => {
     const estado = document.getElementById('filterStatusInput') ? document.getElementById('filterStatusInput').value : 'ALL';
     const prioridad = document.getElementById('filterPriorityInput') ? document.getElementById('filterPriorityInput').value.trim() : '';
     const empleadoNombre = document.getElementById('filterEmployeeInput') ? document.getElementById('filterEmployeeInput').value : '';
+    const fechaDesde = document.getElementById('filterDateFromInput') ? document.getElementById('filterDateFromInput').value : '';
+    const fechaHasta = document.getElementById('filterDateToInput') ? document.getElementById('filterDateToInput').value : '';
 
     const trabajosFiltrados = allJobsCache.filter(job => {
         const coincideTexto =
@@ -367,7 +374,13 @@ window.filtrarTrabajosCombinados = () => {
 
         const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
 
-        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado;
+        // 🔥 NUEVO: filtro por rango de fechas
+        let coincideFecha = true;
+        const jobDateStr = fechaParaInput(job.jobDate); // ya existe esta función, normaliza a 'yyyy-mm-dd'
+        if (fechaDesde && jobDateStr) coincideFecha = coincideFecha && (jobDateStr >= fechaDesde);
+        if (fechaHasta && jobDateStr) coincideFecha = coincideFecha && (jobDateStr <= fechaHasta);
+
+        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado && coincideFecha;
     });
 
     renderizarTrabajos(trabajosFiltrados);

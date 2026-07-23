@@ -95,6 +95,24 @@
                                     placeholder="Ej: 0, 1, 2, 3..." style="width:100%; margin:0;" min="0">
                             </div>
 
+                            <div style="width:160px;">
+                                <label
+                                    style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Fecha Desde
+                                </label>
+                                <input type="date" id="filterDateFromInput" class="input-field"
+                                    style="width:100%; margin:0;">
+                            </div>
+
+                            <div style="width:160px;">
+                                <label
+                                    style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
+                                    Fecha Hasta
+                                </label>
+                                <input type="date" id="filterDateToInput" class="input-field"
+                                    style="width:100%; margin:0;">
+                            </div>
+
                             <div style="width:220px;">
                                 <label
                                     style="display:block; font-size:.85rem; font-weight:bold; color:#0f4c81; margin-bottom:5px;">
@@ -334,7 +352,8 @@
                     </h4>
                     <div class="form-group">
                         <label><i class="fa-solid fa-file-pdf"></i> Planos del Trabajo (Imagen o PDF)</label>
-                        <input type="file" id="jobBlueprint" class="input-field" accept="image/*,application/pdf" style="padding: 5px;" multiple>
+                        <input type="file" id="jobBlueprint" class="input-field" accept="image/*,application/pdf"
+                            style="padding: 5px;" multiple>
                         <small style="color: #666;">Opcional. Puedes subir múltiples planos para la obra.</small>
 
                         <div id="currentBlueprintContainer"
@@ -363,11 +382,12 @@
                 </span>
                 <button onclick="cerrarModalPlanos()" class="btn-close-modal">✕</button>
             </div>
-            
-            <div class="modal-body" id="listaPlanosContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
+
+            <div class="modal-body" id="listaPlanosContainer"
+                style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
                 <!-- Los enlaces se inyectarán aquí -->
             </div>
-            
+
             <div class="modal-footer" style="display: flex; justify-content: center;">
                 <button onclick="cerrarModalPlanos()" class="btn-secondary" style="width: 100%;">Cerrar</button>
             </div>
