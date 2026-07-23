@@ -869,19 +869,11 @@ window.guardarTrabajo = async () => {
         });
     });
 
-    // 🛠️ CONVERSIÓN DE FECHA (YYYY-MM-DD -> MM/dd/yyyy)
-    const rawDate = document.getElementById('jobDate').value;
-    let jobDateFormatted = rawDate;
-    if (rawDate && rawDate.includes('-')) {
-        const [year, month, day] = rawDate.split('-');
-        jobDateFormatted = `${month}/${day}/${year}`;
-    }
-
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
         description: descripcionFinal,
-        jobDate: jobDateFormatted, // 👈 Se envía la fecha formateada en MM/dd/yyyy
+        jobDate: document.getElementById('jobDate').value,
         address: document.getElementById('jobAddress').value.trim(),
         latitude: parseFloat(document.getElementById('jobLat').value),
         longitude: parseFloat(document.getElementById('jobLng').value),
