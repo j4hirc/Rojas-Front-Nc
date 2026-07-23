@@ -857,9 +857,9 @@ window.guardarReporteYPdf = async () => {
         document.getElementById('pdfNewPriceRow').style.display = 'table-row';
         document.getElementById('pdfNewPrice').textContent = `Materiales nuevos: ${materialesNuevos.join(', ')}`;
     } else if (hasModifications) {
-        comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones a la orden original que requieren revisión del Jefe.\n\n` + comment;
+        comment = `⚠️ [ALERTA DE OFICINA]: Se hicieron modificaciones a la orden original que requieren revisión del Manager.\n\n` + comment;
         document.getElementById('pdfNewPriceRow').style.display = 'table-row';
-        document.getElementById('pdfNewPrice').textContent = `REQUIERE REVISIÓN DEL JEFE`;
+        document.getElementById('pdfNewPrice').textContent = `REQUIERE REVISIÓN DEL MANAGER`;
     } else {
         document.getElementById('pdfNewPriceRow').style.display = 'none';
     }
