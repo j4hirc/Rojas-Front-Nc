@@ -791,7 +791,7 @@ window.guardarReporteYPdf = async () => {
     if (isCanvasBlank(canvasSub)) {
         return Swal.fire({ icon: 'warning', title: 'Falta tu Firma', text: 'Debes firmar el reporte.', confirmButtonColor: '#12CFF4' });
     }
-    if (!comment) return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes escribir un comentario.', confirmButtonColor: '#00B8A9' });
+    
     if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
 
     const idsOriginales = (currentJobInfo.materials || []).map(m => m.materialId);
