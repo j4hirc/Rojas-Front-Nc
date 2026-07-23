@@ -3,6 +3,7 @@ const USERS_URL = 'https://api-remomn.onrender.com/api/v1/user/all-users';
 let userToken = '';
 let myEmployeeId = null; 
 let misTrabajosCache = [];
+let trabajosFiltradosCache = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -23,6 +24,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('employee-email-display').textContent = userEmail || 'Empleado';
 
     await inicializarDatosDelEmpleado(userEmail);
+
+    const txtIn = document.getElementById('searchJobInput');
+    const estIn = document.getElementById('filterStatusInput');
+    if (txtIn) txtIn.addEventListener('input', window.filtrarTrabajosEmpleado);
+    if (estIn) estIn.addEventListener('change', window.filtrarTrabajosEmpleado);
 });
 
 async function inicializarDatosDelEmpleado(emailActual) {
@@ -59,60 +65,95 @@ async function inicializarDatosDelEmpleado(emailActual) {
     }
 }
 
+function getStatusBadgeEmp(status) {
+    if (status === 'PENDING') return `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-clock"></i> Pendiente</span>`;
+    if (status === 'IN_PROGRESS') return `<span style="background: #E3F2FD; color: #1e88e5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-spinner fa-spin"></i> En Progreso</span>`;
+    if (status === 'COMPLETED') return `<span style="background: #E8F5E9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-check-double"></i> Completado</span>`;
+    return `<span style="background: #FFEBEE; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-ban"></i> Cancelado</span>`;
+}
+
+window.filtrarTrabajosEmpleado = () => {
+    const texto = document.getElementById('searchJobInput') ? document.getElementById('searchJobInput').value.toLowerCase().trim() : '';
+    const estado = document.getElementById('filterStatusInput') ? document.getElementById('filterStatusInput').value : 'ALL';
+
+    const filtrados = misTrabajosCache.filter(job => {
+        const coincideTexto = (job.clientName || '').toLowerCase().includes(texto) ||
+                               (job.description || '').toLowerCase().includes(texto) ||
+                               (job.nameManager || '').toLowerCase().includes(texto);
+        const coincideEstado = (estado === 'ALL') || (job.status === estado);
+        return coincideTexto && coincideEstado;
+    });
+
+    renderizarTrabajos(filtrados);
+};
+
 function renderizarTrabajos(trabajos) {
-    const grid = document.getElementById('jobsGrid');
-    grid.innerHTML = '';
+    const tbody = document.getElementById('jobTableBody');
+    const mobileContainer = document.getElementById('mobileCardsContainer');
+
+    tbody.innerHTML = '';
+    if (mobileContainer) mobileContainer.innerHTML = '';
 
     if (trabajos.length === 0) {
-        grid.innerHTML = '<div style="grid-column: 1 / -1;" class="empty-state">No tienes proyectos asignados actualmente.</div>';
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px;">No tienes proyectos que coincidan con los filtros.</td></tr>`;
+        if (mobileContainer) mobileContainer.innerHTML = `<div class="empty-state">No tienes proyectos que coincidan con los filtros.</div>`;
         return;
     }
 
     trabajos.forEach(job => {
         const numUpdates = job.updateJob ? job.updateJob.length : 0;
         let numArchivos = 0;
-        
-        if(job.updateJob) {
+        if (job.updateJob) {
             job.updateJob.forEach(update => {
-                if(update.evidences) numArchivos += update.evidences.length;
+                if (update.evidences) numArchivos += update.evidences.length;
             });
         }
 
-        let statusBadge = '';
-        if(job.status === 'PENDING') statusBadge = `<span style="color: #ff9800; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-clock"></i> Pendiente</span>`;
-        else if(job.status === 'IN_PROGRESS') statusBadge = `<span style="color: #1e88e5; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-spinner"></i> En Progreso</span>`;
-        else if(job.status === 'COMPLETED') statusBadge = `<span style="color: #2e7d32; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-check-double"></i> Completado</span>`;
-        else statusBadge = `<span style="color: #d32f2f; font-size: 12px; font-weight: bold;"><i class="fa-solid fa-ban"></i> Cancelado</span>`;
-
-        const btnEvidencias = numUpdates > 0 
-            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="width:100%; padding:8px; background:#0277bd; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Poppins'; font-weight:600; transition:0.3s;"><i class="fa-solid fa-folder-open"></i> Ver mis ${numArchivos} Archivos</button>`
-            : `<button disabled style="width:100%; padding:8px; background:#e9ecef; color:#A3AED0; border:none; border-radius:8px; font-family:'Poppins'; font-weight:600;">Sin evidencias aún</button>`;
-
+        const statusBadge = getStatusBadgeEmp(job.status);
         const safeDesc = job.description ? job.description : 'Sin descripción';
 
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.style.flexDirection = 'column';
-        card.style.alignItems = 'flex-start';
-        card.innerHTML = `
-            <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px solid #f0f2f5; padding-bottom: 10px; margin-bottom: 10px;">
-                <h3 style="margin:0; font-size:1.1rem; color:#2B3674;">${job.clientName}</h3>
-                ${statusBadge}
-            </div>
-            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-hard-hat"></i> <strong>Jefe Asignado:</strong> ${job.nameManager}</p>
-            <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
-            
-            <div style="margin: 10px 0; padding-left: 10px; border-left: 3px solid #0277bd;">
-                <p style="margin: 0; font-size: 13px; color: #444; font-style: italic; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
-                    "${safeDesc}"
-                </p>
-            </div>
-            
-            <div style="margin-top: 10px; width: 100%;">
-                ${btnEvidencias}
-            </div>
+        const btnEvidencias = numUpdates > 0
+            ? `<button onclick="abrirModalEvidencias(${job.jobId})" style="padding:8px 14px; background:#0277bd; color:white; border:none; border-radius:8px; cursor:pointer; font-family:'Poppins'; font-weight:600; white-space:nowrap;"><i class="fa-solid fa-folder-open"></i> Ver ${numArchivos}</button>`
+            : `<button disabled style="padding:8px 14px; background:#e9ecef; color:#A3AED0; border:none; border-radius:8px; font-family:'Poppins'; font-weight:600; white-space:nowrap;">Sin evidencias</button>`;
+
+        // FILA DE TABLA (DESKTOP)
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <strong>${job.clientName}</strong><br>
+                <span class="desc-cell" title="${safeDesc.replace(/"/g, '&quot;')}">${safeDesc}</span>
+            </td>
+            <td>${job.nameManager || 'Sin asignar'}</td>
+            <td>${statusBadge}</td>
+            <td>${btnEvidencias}</td>
         `;
-        grid.appendChild(card);
+        tbody.appendChild(tr);
+
+        // TARJETA (MOBILE)
+        if (mobileContainer) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.flexDirection = 'column';
+            card.style.alignItems = 'flex-start';
+            card.style.padding = '20px';
+            card.innerHTML = `
+                <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 5px;">
+                    <h3 style="margin:0; font-size:1.1rem; color:#0277bd;">${job.clientName}</h3>
+                    ${statusBadge}
+                </div>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-hard-hat"></i> <strong>Jefe:</strong> ${job.nameManager || 'Sin asignar'}</p>
+                <p style="margin: 3px 0; font-size: 13px; color:#666;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
+
+                <div style="margin: 10px 0; padding: 10px; background: #f8faff; border-left: 3px solid #0277bd; border-radius: 6px; width: 100%;">
+                    <p style="margin: 0; font-size: 13px; color: #444; font-style: italic;">"${safeDesc}"</p>
+                </div>
+
+                <div style="margin-top: 10px; width: 100%;">
+                    ${btnEvidencias}
+                </div>
+            `;
+            mobileContainer.appendChild(card);
+        }
     });
 }
 
