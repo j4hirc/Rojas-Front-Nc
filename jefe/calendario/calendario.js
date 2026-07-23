@@ -35,7 +35,7 @@ async function cargarDatosYCronograma(emailActual) {
         const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         allJobs = await resJobs.json();
         
-        const misTrabajos = allJobs.filter(job => job.managerId === myManagerId);
+        const misTrabajos = allJobs; // Mostrar todos los trabajos, sin filtrar por manager
 
         // Cargar filtro
         await cargarFiltroEmpleados(misTrabajos, users);
@@ -219,7 +219,7 @@ function crearEventos(trabajosFiltrados) {
 function filtrarCalendario() {
     const employeeIdSeleccionado = document.getElementById('filterEmployee').value;
     
-    let trabajosFiltrados = allJobs.filter(job => job.managerId === myManagerId);
+    let trabajosFiltrados = allJobs; // Todos los trabajos, sin filtrar por manager
 
     if (employeeIdSeleccionado) {
         trabajosFiltrados = trabajosFiltrados.filter(job => job.employeeId == employeeIdSeleccionado);
