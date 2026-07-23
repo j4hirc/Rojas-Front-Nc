@@ -533,6 +533,48 @@ function formatMDYBodegaAdmin(date) {
     return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
 }
 
+// 🛠️ FUNCIÓN HELPER: Convierte cualquier formato de fecha a "YYYY-MM-DD" para filtrar sin errores
+function normalizarFechaYYYYMMDD(fecha) {
+    if (!fecha) return '';
+
+    // Si viene como Array [YYYY, MM, DD]
+    if (Array.isArray(fecha)) {
+        const y = fecha[0];
+        const m = String(fecha[1]).padStart(2, '0');
+        const d = String(fecha[2]).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+
+    if (typeof fecha === 'string') {
+        const f = fecha.trim().split('T')[0]; // Elimina horas si las hay
+
+        // Si viene como "MM/DD/YYYY"
+        if (f.includes('/')) {
+            const partes = f.split('/');
+            if (partes.length === 3) {
+                const m = partes[0].padStart(2, '0');
+                const d = partes[1].padStart(2, '0');
+                const y = partes[2];
+                return `${y}-${m}-${d}`;
+            }
+        }
+
+        // Si viene como "YYYY-MM-DD" o "MM-DD-YYYY"
+        if (f.includes('-')) {
+            const partes = f.split('-');
+            if (partes.length === 3) {
+                if (partes[0].length === 4) {
+                    return `${partes[0]}-${partes[1].padStart(2, '0')}-${partes[2].padStart(2, '0')}`;
+                } else if (partes[2].length === 4) {
+                    return `${partes[2]}-${partes[0].padStart(2, '0')}-${partes[1].padStart(2, '0')}`;
+                }
+            }
+        }
+    }
+
+    return String(fecha);
+}
+
 function construirBloqueJobBodega(job) {
     const empleado = window.bodegaAdminUsersCache.find(u => u.userId == job.employeeId);
     const nombreEmpleado = empleado ? `${empleado.firstName} ${empleado.lastName}` : `ID: ${job.employeeId}`;
@@ -638,13 +680,11 @@ function renderizarBodegaAdmin(offset) {
         </button>
     </div>`;
 
-    // 🔑 DIFERENCIA CLAVE: NO filtramos por jefe. Todos los trabajos entran.
+    // 🔑 FILTRADO CORREGIDO CON NORMALIZACIÓN DE FECHA
     const itemsDelDia = window.bodegaAdminJobsCache.filter(job => {
         if (!['PENDING', 'IN_PROGRESS'].includes(job.status)) return false;
 
-        let jobDateStr = Array.isArray(job.jobDate)
-            ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
-            : job.jobDate;
+        const jobDateStr = normalizarFechaYYYYMMDD(job.jobDate);
 
         return jobDateStr === fechaStrFiltro;
     });
