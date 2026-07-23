@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Jefe - Rojas Remodeling</title>
     <link rel="icon" type="image/png" href="../image.png">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="../admin/admin.css"> 
+    <link rel="stylesheet" href="../admin/admin.css">
     <link rel="stylesheet" href="../admin/usuarios/usuarios.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -20,10 +22,12 @@
             background: white !important;
             box-shadow: 0 0 0 3px rgba(18, 207, 244, 0.15);
         }
+
         .btn-primary:hover {
             background: #2dd8f8 !important;
             transform: translateY(-2px);
         }
+
         .btn-secondary:hover {
             background: #F4F7FE !important;
         }
@@ -35,13 +39,16 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(11, 11, 13, 0.85); /* Deep black transparente */
+            background: rgba(11, 11, 13, 0.85);
+            /* Deep black transparente */
             backdrop-filter: blur(5px);
             z-index: 9999;
-            display: none; /* OCULTO POR DEFECTO */
+            display: none;
+            /* OCULTO POR DEFECTO */
             justify-content: center;
             align-items: center;
         }
+
         .modal-container {
             background: var(--white);
             border-radius: 24px;
@@ -53,28 +60,40 @@
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             animation: slideUp 0.3s ease-out;
         }
+
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px) scale(0.95); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div class="app-layout">
-        
+
         <aside class="sidebar">
             <div class="sidebar-logo">
                 <img src="../img/logo.png" alt="Rojas Remodeling">
             </div>
-            
+
             <nav class="sidebar-nav">
+                <a href="calendario/calendario.html"><i class="fa-solid fa-calendar-days"></i> Calendario</a>
                 <a href="jefe-dashboard.html" class="active"><i class="fa-solid fa-house"></i> Inicio</a>
                 <a href="usuarios/usuarios.html"><i class="fa-solid fa-users-gear"></i> Mi Personal</a>
                 <a href="trabajos/trabajos.html"><i class="fa-solid fa-hammer"></i> Mis Trabajos</a>
                 <a href="evidencias/evidencias.html"><i class="fa-solid fa-camera"></i> Evidencias</a>
-                <a href="calendario/calendario.html"><i class="fa-solid fa-calendar-days"></i> Calendario</a>
-                
+                <a href="#" onclick="verBodegaHoy(); return false;"><i class="fa-solid fa-truck-fast"></i> Resumen
+                    Bodega</a>
+                <a href="#" onclick="verNominaSemanal(); return false;"><i class="fa-solid fa-money-check-dollar"></i>
+                    Nómina Quincenal</a>
             </nav>
 
             <div class="sidebar-footer">
@@ -87,8 +106,9 @@
         <main class="main-content">
             <header class="top-navbar">
                 <div class="page-title">Resumen de Operaciones</div>
-                
-                <div id="btnPerfilJefe" class="user-profile" style="cursor: pointer; transition: 0.3s;" title="Haz clic para editar tu perfil">
+
+                <div id="btnPerfilJefe" class="user-profile" style="cursor: pointer; transition: 0.3s;"
+                    title="Haz clic para editar tu perfil">
                     <i class="fa-solid fa-user-tie"></i>
                     <span id="jefe-email-display">Cargando...</span>
                     <i class="fa-solid fa-pen" style="font-size: 12px; margin-left: 5px;"></i>
@@ -99,32 +119,54 @@
                 <div class="grid-cards">
                     <div class="card card-blue" onclick="window.location.href='usuarios/usuarios.html'">
                         <div class="card-icon-container"><i class="fa-solid fa-users-gear"></i></div>
-                        <div class="card-info"><h3>Gestión de Personal</h3><p>Administrar empleados</p></div>
+                        <div class="card-info">
+                            <h3>Gestión de Personal</h3>
+                            <p>Administrar empleados</p>
+                        </div>
                     </div>
 
                     <div class="card card-orange" onclick="window.location.href='trabajos/trabajos.html'">
                         <div class="card-icon-container"><i class="fa-solid fa-hammer"></i></div>
-                        <div class="card-info"><h3>Mis Trabajos</h3><p>Proyectos a mi cargo</p></div>
+                        <div class="card-info">
+                            <h3>Mis Trabajos</h3>
+                            <p>Proyectos a mi cargo</p>
+                        </div>
                     </div>
 
                     <div class="card card-green" onclick="window.location.href='calendario/calendario.html'">
                         <div class="card-icon-container"><i class="fa-solid fa-calendar-days"></i></div>
-                        <div class="card-info"><h3>Calendario</h3><p>Cronograma de obras</p></div>
+                        <div class="card-info">
+                            <h3>Calendario</h3>
+                            <p>Cronograma de obras</p>
+                        </div>
                     </div>
 
                     <div class="card card-purple" onclick="window.location.href='evidencias/evidencias.html'">
                         <div class="card-icon-container"><i class="fa-solid fa-images"></i></div>
-                        <div class="card-info"><h3>Mis Evidencias</h3><p>Supervisión de proyectos</p></div>
+                        <div class="card-info">
+                            <h3>Mis Evidencias</h3>
+                            <p>Supervisión de proyectos</p>
+                        </div>
                     </div>
 
+
+
                     <div class="card card-red" onclick="verBodegaHoy()">
-                        <div class="card-icon-container" style="background: rgba(244,163,0,0.15); color: #F4A300;"><i class="fa-solid fa-truck-fast"></i></div>
-                        <div class="card-info"><h3 style="color: #F4A300;">Resumen Bodega</h3><p>Materiales para hoy y mañana</p></div>
+                        <div class="card-icon-container" style="background: rgba(244,163,0,0.15); color: #F4A300;"><i
+                                class="fa-solid fa-truck-fast"></i></div>
+                        <div class="card-info">
+                            <h3 style="color: #F4A300;">Resumen Bodega</h3>
+                            <p>Materiales para hoy y mañana</p>
+                        </div>
                     </div>
 
                     <div class="card card-slate" onclick="verNominaSemanal()">
-                        <div class="card-icon-container" style="background: rgba(244,163,0,0.15); color: #F4A300;"><i class="fa-solid fa-money-check-dollar"></i></div>
-                        <div class="card-info"><h3 style="color: #F4A300;">Nómina Quincenal</h3><p>Cálculo de pagos completados</p></div>
+                        <div class="card-icon-container" style="background: rgba(244,163,0,0.15); color: #F4A300;"><i
+                                class="fa-solid fa-money-check-dollar"></i></div>
+                        <div class="card-info">
+                            <h3 style="color: #F4A300;">Nómina Quincenal</h3>
+                            <p>Cálculo de pagos completados</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -133,53 +175,82 @@
 
     <div class="modal-overlay" id="modalPerfil">
         <div class="modal-container" style="background: #FFFFFF;">
-            <div class="modal-header" style="border-bottom: 1px solid #F4F7FE; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
-                <span id="modalTitulo" style="color: #0B0B0D; font-weight: 700; font-size: 1.2rem;"><i class="fa-solid fa-user-pen" style="color: #12CFF4; margin-right: 10px;"></i> Editar Mi Perfil</span>
-                <button id="btnCerrarModalTop" class="btn-close-modal" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #2E3238;">✕</button>
+            <div class="modal-header"
+                style="border-bottom: 1px solid #F4F7FE; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
+                <span id="modalTitulo" style="color: #0B0B0D; font-weight: 700; font-size: 1.2rem;"><i
+                        class="fa-solid fa-user-pen" style="color: #12CFF4; margin-right: 10px;"></i> Editar Mi
+                    Perfil</span>
+                <button id="btnCerrarModalTop" class="btn-close-modal"
+                    style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #2E3238;">✕</button>
             </div>
-            
+
             <div class="modal-body" style="padding: 25px; overflow-y: auto; max-height: 70vh;">
                 <form id="perfilForm">
                     <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div class="form-group">
-                            <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Nombres</label>
-                            <input type="text" id="perfilFirstName" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                            <label
+                                style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Nombres</label>
+                            <input type="text" id="perfilFirstName" class="input-field"
+                                style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;"
+                                required>
                         </div>
                         <div class="form-group">
-                            <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Apellidos</label>
-                            <input type="text" id="perfilLastName" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                            <label
+                                style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Apellidos</label>
+                            <input type="text" id="perfilLastName" class="input-field"
+                                style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;"
+                                required>
                         </div>
                     </div>
-                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="form-row"
+                        style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
                         <div class="form-group">
-                            <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">DNI / Cédula</label>
-                            <input type="text" id="perfilDni" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                            <label
+                                style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">DNI
+                                / Cédula</label>
+                            <input type="text" id="perfilDni" class="input-field"
+                                style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;"
+                                required>
                         </div>
                         <div class="form-group">
-                            <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Teléfono</label>
-                            <input type="text" id="perfilPhone" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                            <label
+                                style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Teléfono</label>
+                            <input type="text" id="perfilPhone" class="input-field"
+                                style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;"
+                                required>
                         </div>
                     </div>
                     <div class="form-group" style="margin-top: 15px;">
-                        <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Correo Electrónico</label>
-                        <input type="email" id="perfilEmail" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" required>
+                        <label
+                            style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Correo
+                            Electrónico</label>
+                        <input type="email" id="perfilEmail" class="input-field"
+                            style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;"
+                            required>
                     </div>
                     <div class="form-group" style="margin-top: 15px;">
-                        <label style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Nueva Contraseña <small style="color: #666; font-weight: normal; text-transform: none;">(Opcional)</small></label>
-                        <input type="password" id="perfilPassword" class="input-field" style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;" placeholder="Déjalo en blanco para mantener la actual">
+                        <label
+                            style="display: block; font-size: 12px; color: #2E3238; font-weight: bold; margin-bottom: 5px; text-transform: uppercase;">Nueva
+                            Contraseña <small
+                                style="color: #666; font-weight: normal; text-transform: none;">(Opcional)</small></label>
+                        <input type="password" id="perfilPassword" class="input-field"
+                            style="width: 100%; padding: 10px; border: 1.5px solid #E0E5F2; border-radius: 8px; background: #F9FAFC; color: #0B0B0D;"
+                            placeholder="Déjalo en blanco para mantener la actual">
                     </div>
                 </form>
             </div>
-            
+
             <div class="modal-footer" style="display: flex; justify-content: space-between; width: 100%;">
                 <!-- Este botón estará oculto por defecto y el JS lo mostrará si hay más de 1 rol -->
-                <button type="button" id="btnCambiarRol" class="btn-secondary" style="background: #F4A300; color: #fff; border: none; display: none;">
+                <button type="button" id="btnCambiarRol" class="btn-secondary"
+                    style="background: #F4A300; color: #fff; border: none; display: none;">
                     <i class="fa-solid fa-users-arrows-right-left"></i> Cambiar Rol
                 </button>
-                
+
                 <div>
                     <button type="button" id="btnCerrarModalBot" class="btn-secondary">Cancelar</button>
-                    <button type="button" id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar Cambios</button>
+                    <button type="button" id="btnGuardarPerfil" class="btn-primary" style="background: #0f4c81;">Guardar
+                        Cambios</button>
                 </div>
             </div>
         </div>
@@ -187,4 +258,5 @@
 
     <script type="module" src="jefe-dashboard.js"></script>
 </body>
+
 </html>
