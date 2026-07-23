@@ -191,7 +191,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
             url = `${prefijoRaiz}admin/admin-dashboard.html`;
         }
         if (rol === 'ROLE_JEFE') {
-            nombreRol = 'Acceder como Jefe';
+            nombreRol = 'Acceder como Manager';
             url = `${prefijoJefe}jefe-dashboard.html`;
         }
         if (rol === 'ROLE_EMPLOYEE') {
