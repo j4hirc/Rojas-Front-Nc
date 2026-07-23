@@ -146,7 +146,7 @@ async function cargarDatosYCronograma(emailActual) {
                 
                 if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#ff9800'; }
                 if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#1e88e5'; }
-                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#2e7d32'; }
+                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#6c757d'; }
                 if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#d32f2f'; }
 
                 Swal.fire({
@@ -226,7 +226,7 @@ function crearEventos(trabajosFiltrados) {
     return trabajosFiltrados.map(job => {
         let bgColor = '#ff9800'; 
         if(job.status === 'IN_PROGRESS') bgColor = '#1e88e5'; 
-        else if(job.status === 'COMPLETED') bgColor = '#2e7d32'; 
+        else if(job.status === 'COMPLETED') bgColor = '#6c757d'; 
         else if(job.status === 'CANCELLED') bgColor = '#d32f2f'; 
 
         return {
