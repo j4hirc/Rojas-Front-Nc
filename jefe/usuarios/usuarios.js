@@ -411,6 +411,40 @@ window.cerrarSesion = () => {
         });
     }
 };
+
+window.verBodegaHoy = async () => {
+    Swal.fire({ title: 'Cargando ordenes de bodega...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const token = localStorage.getItem('jwt_token');
+
+        const [jobsRes, usersRes] = await Promise.all([
+            fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        bodegaJobsCache = await jobsRes.json();
+        bodegaUsersCache = await usersRes.json();
+
+        bodegaDiaOffset = 0; // Reiniciamos al día actual cada vez que se abre
+
+        Swal.fire({
+            title: '<i class="fa-solid fa-truck-fast" style="color:#F4A300;"></i> Ordenes de Bodega',
+            html: '<div id="bodega-contenedor">Generando reporte...</div>',
+            confirmButtonColor: '#12CFF4',
+            confirmButtonText: 'Cerrar',
+            width: '750px',
+            background: '#FFFFFF'
+        });
+
+        renderizarBodega(bodegaDiaOffset);
+
+    } catch (e) {
+        console.error(e);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la bodega.', confirmButtonColor: '#12CFF4' });
+    }
+};
+
 // Declararla en window asegura que esté disponible globalmente en todo el script
 window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     if (typeof cerrarModalPerfil === 'function') {
