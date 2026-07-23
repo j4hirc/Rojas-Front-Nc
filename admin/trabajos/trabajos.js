@@ -8,6 +8,7 @@ let allJobsCache = [];
 
 let allMaterialsCache = [];
 let materialesEstado = {};
+let blueprintsNuevos = []; // acumula los File objects seleccionados en la sesión de edición actual
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -35,6 +36,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         inputLng.addEventListener('input', window.actualizarMapaDesdeInputs);
     }
 
+    const inputBlueprint = document.getElementById('jobBlueprint');
+    if (inputBlueprint) {
+        inputBlueprint.addEventListener('change', () => {
+            for (let i = 0; i < inputBlueprint.files.length; i++) {
+                const f = inputBlueprint.files[i];
+                const yaExiste = blueprintsNuevos.some(x => x.name === f.name && x.size === f.size);
+                if (!yaExiste) blueprintsNuevos.push(f);
+            }
+            inputBlueprint.value = '';
+            renderizarBlueprintsPendientes();
+        });
+    }
+
     const txtIn = document.getElementById('searchJobInput');
     const estIn = document.getElementById('filterStatusInput');
     const priIn = document.getElementById('filterPriorityInput');
@@ -56,6 +70,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     const matCatIn = document.getElementById('filterCategoryMaterial');
     if (matSearchIn) matSearchIn.addEventListener('input', window.filtrarMateriales);
     if (matCatIn) matCatIn.addEventListener('change', window.filtrarMateriales);
+
+
 
     Swal.close();
 });
@@ -547,6 +563,9 @@ window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
 
+    blueprintsNuevos = [];
+    renderizarBlueprintsPendientes();
+
     if (document.getElementById('jobPriority')) {
         document.getElementById('jobPriority').value = '2';
     }
@@ -619,6 +638,8 @@ window.abrirModalEditarJob = async (id) => {
             const fileInput = document.getElementById('jobBlueprint');
 
             if (fileInput) fileInput.value = '';
+            blueprintsNuevos = [];
+            renderizarBlueprintsPendientes();
 
             if (blueprintContainer) {
                 blueprintContainer.innerHTML = ''; 
@@ -688,6 +709,40 @@ window.abrirModalEditarJob = async (id) => {
         Swal.close();
         console.error("Error al obtener trabajo:", error);
     }
+};
+
+function renderizarBlueprintsPendientes() {
+    let cont = document.getElementById('blueprintPendientesContainer');
+    if (!cont) {
+        const inputBp = document.getElementById('jobBlueprint');
+        cont = document.createElement('div');
+        cont.id = 'blueprintPendientesContainer';
+        cont.style.marginTop = '8px';
+        inputBp.insertAdjacentElement('afterend', cont);
+    }
+
+    if (blueprintsNuevos.length === 0) {
+        cont.innerHTML = '';
+        return;
+    }
+
+    let html = '<div style="display:flex; flex-direction:column; gap:6px;">';
+    blueprintsNuevos.forEach((file, idx) => {
+        html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:#f0f4f8; border-radius:6px; font-size:13px;">
+                <span><i class="fa-solid fa-file"></i> ${file.name}</span>
+                <button type="button" onclick="quitarBlueprintPendiente(${idx})" style="border:none; background:none; color:#d32f2f; cursor:pointer;" title="Quitar">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>`;
+    });
+    html += '</div>';
+    cont.innerHTML = html;
+}
+
+window.quitarBlueprintPendiente = (idx) => {
+    blueprintsNuevos.splice(idx, 1);
+    renderizarBlueprintsPendientes();
 };
 
 function resetearScrollModal() {
@@ -831,12 +886,9 @@ window.guardarTrabajo = async () => {
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
-    const fileInput = document.getElementById('jobBlueprint');
-    if (fileInput && fileInput.files.length > 0) {
-        for (let i = 0; i < fileInput.files.length; i++) {
-            formData.append('files', fileInput.files[i]);
-        }
-    }
+    blueprintsNuevos.forEach(file => {
+        formData.append('files', file);
+    });
 
     try {
         const response = await fetch(url, {
@@ -847,6 +899,7 @@ window.guardarTrabajo = async () => {
 
         if (response.ok) {
             Swal.fire('¡Éxito!', isEditing ? 'Trabajo actualizado.' : 'Trabajo asignado correctamente.', 'success');
+            blueprintsNuevos = [];
             cerrarModalJob();
             await cargarTrabajos();
         } else {
