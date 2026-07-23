@@ -27,48 +27,18 @@ async function cargarDatosYCronograma(emailActual) {
         Swal.fire({ title: 'Armando cronograma...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
-
-        if (resUsers.status === 401) {
-            Swal.close();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Sesión expirada',
-                text: 'Tu sesión ya no es válida, por favor inicia sesión nuevamente.',
-                confirmButtonColor: '#12CFF4'
-            }).then(() => {
-                localStorage.clear();
-                window.location.href = '../../index.html';
-            });
-            return;
-        }
-
         const users = await resUsers.json();
         
         const jefeActual = users.find(u => u.email === emailActual);
         if (jefeActual) myManagerId = jefeActual.userId;
 
         const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
-
-        if (resJobs.status === 401) {
-            Swal.close();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Sesión expirada',
-                text: 'Tu sesión ya no es válida, por favor inicia sesión nuevamente.',
-                confirmButtonColor: '#12CFF4'
-            }).then(() => {
-                localStorage.clear();
-                window.location.href = '../../index.html';
-            });
-            return;
-        }
-
         allJobs = await resJobs.json();
         
         const misTrabajos = allJobs; // Mostrar todos los trabajos, sin filtrar por manager
 
-        // Cargar filtro (todos los subcontratistas registrados, no solo los que ya tienen trabajos)
-        await cargarFiltroEmpleados(users);
+        // Cargar filtro
+        await cargarFiltroEmpleados(misTrabajos, users);
 
         const eventosFormateados = crearEventos(misTrabajos);
 
@@ -195,26 +165,27 @@ async function cargarDatosYCronograma(emailActual) {
     }
 }
 
-function cargarFiltroEmpleados(allUsers) {
+function cargarFiltroEmpleados(misTrabajos, allUsers) {
     const select = document.getElementById('filterEmployee');
     select.innerHTML = '<option value="">Todos los Subcontratistas</option>';
 
-    // Se listan TODOS los usuarios con rol de empleado/subcontratista,
-    // tengan o no un trabajo asignado actualmente.
-    const empleados = allUsers.filter(u => {
-        if (Array.isArray(u.roles)) return u.roles.includes('ROLE_EMPLOYEE');
-        if (typeof u.role === 'string') return u.role === 'ROLE_EMPLOYEE';
-        return false;
+    const empleadosMap = new Map();
+
+    misTrabajos.forEach(job => {
+        if (job.employeeId) {
+            const empleado = allUsers.find(u => u.userId === job.employeeId);
+            if (empleado) {
+                empleadosMap.set(job.employeeId, `${empleado.firstName} ${empleado.lastName}`);
+            }
+        }
     });
 
-    empleados
-        .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`))
-        .forEach(empleado => {
-            const option = document.createElement('option');
-            option.value = empleado.userId;
-            option.textContent = `${empleado.firstName} ${empleado.lastName}`;
-            select.appendChild(option);
-        });
+    empleadosMap.forEach((nombre, id) => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = nombre;
+        select.appendChild(option);
+    });
 
     select.addEventListener('change', filtrarCalendario);
 }
