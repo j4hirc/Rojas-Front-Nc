@@ -33,7 +33,7 @@ loginForm?.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
     submitBtn.textContent = 'Verificando...';
 
-    const email = document.getElementById('email').value.trim().toLowerCase();
+    const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
     try {
