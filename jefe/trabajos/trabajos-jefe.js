@@ -235,6 +235,7 @@ function inicializarMapa(lat, lng) {
                 })
                 .catch(err => console.error('Error geocoding:', err));
         }
+        
 
         inputDireccion.addEventListener('blur', buscarDireccionEnMapa);
         inputDireccion.addEventListener('keydown', (e) => {
