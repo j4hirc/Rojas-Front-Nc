@@ -360,8 +360,8 @@ window.filtrarTrabajosCombinados = () => {
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.clientPhone || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
-            (job.employeeName || '').toLowerCase().includes(texto) || 
-            (job.managerName || '').toLowerCase().includes(texto);  
+            (job.employeeName || '').toLowerCase().includes(texto) ||
+            (job.managerName || '').toLowerCase().includes(texto);
 
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
 
@@ -655,13 +655,13 @@ window.abrirModalEditarJob = async (id) => {
             renderizarBlueprintsPendientes();
 
             if (blueprintContainer) {
-                blueprintContainer.innerHTML = ''; 
+                blueprintContainer.innerHTML = '';
                 const urlsPlanos = data.blueprintUrls || [];
-                
+
                 if (urlsPlanos.length > 0) {
                     blueprintContainer.style.display = 'block';
                     let htmlInner = `<i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i> <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">Planos guardados:</span><br><div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:5px;">`;
-                    
+
                     urlsPlanos.forEach((url, idx) => {
                         htmlInner += `
                             <a href="${url}" target="_blank" style="color: #0f4c81; font-weight: bold; font-size: 13px; text-decoration: underline; background:#f0f4f8; padding:4px 8px; border-radius:4px;">
@@ -870,12 +870,9 @@ window.guardarTrabajo = async () => {
     });
 
     // 🛠️ CONVERSIÓN DE FECHA (YYYY-MM-DD -> MM/dd/yyyy)
-    const rawDate = document.getElementById('jobDate').value;
-    let jobDateFormatted = rawDate;
-    if (rawDate && rawDate.includes('-')) {
-        const [year, month, day] = rawDate.split('-');
-        jobDateFormatted = `${month}/${day}/${year}`;
-    }
+    // El input type="date" entrega yyyy-MM-dd, que es justo lo que espera
+    // un LocalDate de Java al deserializar el JSON. NO convertir a MM/dd/yyyy.
+    const jobDateFormatted = document.getElementById('jobDate').value;
 
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
