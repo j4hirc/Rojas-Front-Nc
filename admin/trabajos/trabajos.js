@@ -88,29 +88,29 @@ function inicializarMapa(lat, lng) {
         marcador = L.marker([lat, lng], { draggable: true }).addTo(mapa);
 
         function obtenerDireccion(latlng) {
-    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&accept-language=es&addressdetails=1`)
-        .then(res => res.json())
-        .then(data => {
-            if (data && data.address) {
-                const a = data.address;
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}&accept-language=es&addressdetails=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.address) {
+                        const a = data.address;
 
-                // Número + calle juntos (si falta el número, no rompe el orden)
-                const calle = [
-                    a.house_number || '',
-                    a.road || a.pedestrian || a.footway || ''
-                ].filter(p => p !== '').join(' ');
+                        // Número + calle juntos (si falta el número, no rompe el orden)
+                        const calle = [
+                            a.house_number || '',
+                            a.road || a.pedestrian || a.footway || ''
+                        ].filter(p => p !== '').join(' ');
 
-                const partes = [
-                    calle,
-                    a.city || a.town || a.village || a.municipality || '',
-                    a.state || ''
-                ].filter(p => p !== '');
+                        const partes = [
+                            calle,
+                            a.city || a.town || a.village || a.municipality || '',
+                            a.state || ''
+                        ].filter(p => p !== '');
 
-                document.getElementById('jobAddress').value = partes.join(', ');
-            }
-        })
-        .catch(err => console.error('Error reverse geocoding:', err));
-}
+                        document.getElementById('jobAddress').value = partes.join(', ');
+                    }
+                })
+                .catch(err => console.error('Error reverse geocoding:', err));
+        }
 
         marcador.on('dragend', function () {
             const posicion = marcador.getLatLng();

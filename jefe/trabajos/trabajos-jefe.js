@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const searchInput = document.getElementById('searchJobInput');
     const statusInput = document.getElementById('filterStatusInput');
     const priorityInput = document.getElementById('filterPriorityInput');
-    const empIn = document.getElementById('filterEmployeeInput'); 
+    const empIn = document.getElementById('filterEmployeeInput');
 
 
     if (searchInput) searchInput.addEventListener('input', filtrarTrabajosCombinados);
@@ -111,12 +111,12 @@ window.filtrarTrabajosCombinados = () => {
     const texto = (document.getElementById('searchJobInput')?.value || '').toLowerCase().trim();
     const estado = (document.getElementById('filterStatusInput')?.value || 'ALL').trim();
     const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
-    const empleadoNombre = document.getElementById('filterEmployeeInput')?.value || ''; 
+    const empleadoNombre = document.getElementById('filterEmployeeInput')?.value || '';
     const fechaDesde = document.getElementById('filterDateFromInput')?.value || '';
     const fechaHasta = document.getElementById('filterDateToInput')?.value || '';
 
     const trabajosFiltrados = allJobsCache.filter(job => {
-        const coincideTexto = 
+        const coincideTexto =
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
             (job.clientPhone || '').toLowerCase().includes(texto) ||
@@ -127,8 +127,8 @@ window.filtrarTrabajosCombinados = () => {
         let coincidePrioridad = true;
         if (prioridadInput !== '') {
             const prioBuscada = parseInt(prioridadInput);
-            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '') 
-                ? parseInt(job.priority) 
+            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '')
+                ? parseInt(job.priority)
                 : 2;
             coincidePrioridad = prioJob === prioBuscada;
         }
@@ -159,13 +159,19 @@ function inicializarMapa(lat, lng) {
                 .then(data => {
                     if (data && data.address) {
                         const a = data.address;
-                        const partes = [
-                            a.road || a.pedestrian || a.footway || '',
+
+                        // Número + calle juntos (si falta el número, no rompe el orden)
+                        const calle = [
                             a.house_number || '',
-                            a.suburb || a.neighbourhood || a.quarter || '',
+                            a.road || a.pedestrian || a.footway || ''
+                        ].filter(p => p !== '').join(' ');
+
+                        const partes = [
+                            calle,
                             a.city || a.town || a.village || a.municipality || '',
                             a.state || ''
                         ].filter(p => p !== '');
+
                         document.getElementById('jobAddress').value = partes.join(', ');
                     }
                 })
@@ -538,7 +544,7 @@ function renderizarTrabajos(trabajos) {
             const card = document.createElement('div');
             card.className = 'card';
             card.style.cssText = 'padding: 20px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; width: 100%; margin-bottom: 15px;';
-            
+
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 10px; margin-bottom:5px;">
                     <h3 style="margin:0; color:#198754; font-size: 16px; word-break: break-word;">${job.clientName}</h3>
@@ -696,13 +702,13 @@ window.abrirModalEditarJob = async (id) => {
             if (fileInput) fileInput.value = '';
 
             if (blueprintContainer) {
-                blueprintContainer.innerHTML = ''; 
+                blueprintContainer.innerHTML = '';
                 const urlsPlanos = data.blueprintUrls || [];
-                
+
                 if (urlsPlanos.length > 0) {
                     blueprintContainer.style.display = 'block';
                     let htmlInner = `<i class="fa-solid fa-check-circle" style="color: #2e7d32;"></i> <span style="font-size: 13px; color: #2e7d32; font-weight: bold;">Planos guardados:</span><br><div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:5px;">`;
-                    
+
                     urlsPlanos.forEach((url, idx) => {
                         htmlInner += `
                             <a href="${url}" target="_blank" style="color: #198754; font-weight: bold; font-size: 13px; text-decoration: underline; background:#E8F5E9; padding:4px 8px; border-radius:4px;">
@@ -854,12 +860,12 @@ window.guardarTrabajo = async () => {
         priority: prioridadSeleccionada
     };
 
-    if (!payload.clientName || !payload.employeeId || !payload.jobDate || 
+    if (!payload.clientName || !payload.employeeId || !payload.jobDate ||
         isNaN(payload.latitude) || isNaN(payload.pay)) {
         return Swal.fire({
-            icon: 'error', 
-            title: 'Campos incompletos', 
-            text: 'Por favor completa: Cliente, Empleado, Fecha, Ubicación y Pago.', 
+            icon: 'error',
+            title: 'Campos incompletos',
+            text: 'Por favor completa: Cliente, Empleado, Fecha, Ubicación y Pago.',
             confirmButtonColor: '#198754'
         });
     }
@@ -947,7 +953,7 @@ window.toggleMaterialOpciones = (matId) => {
     const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
     const matName = checkbox.getAttribute('data-name');
     const matPrice = parseFloat(checkbox.getAttribute('data-price')) || 0;
-    
+
     const matUnit = checkbox.getAttribute('data-unit') || '';
 
     if (!materialesEstado[matId]) materialesEstado[matId] = {};
@@ -995,13 +1001,13 @@ window.agregarMaterialNecesarioDesdeInventario = (matId, name, price, qtyInicial
     if (document.getElementById(`nec-${matId}`)) return;
 
     container.insertAdjacentHTML('beforeend', crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial));
-    calcularTotalMaterialesNecesarios();   
+    calcularTotalMaterialesNecesarios();
 };
 
 window.eliminarMaterialNecesarioPorId = (matId) => {
     const row = document.getElementById(`nec-${matId}`);
     if (row) row.remove();
-    calcularTotalMaterialesNecesarios();   
+    calcularTotalMaterialesNecesarios();
 };
 
 window.calcularTotalMaterialesNecesarios = () => {
@@ -1267,8 +1273,8 @@ window.exportarBodegaPdf = () => {
 window.cerrarSesion = () => {
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) { 
-        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    if (rolesString) {
+        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
     }
 
     if (userRoles.length > 1) {
@@ -1313,7 +1319,7 @@ window.cerrarSesion = () => {
 
 window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
@@ -1331,18 +1337,18 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
-        if (rol === 'ROLE_ADMIN') { 
-            nombreRol = 'Acceder como Administrador'; 
-            url = `${prefijoRaiz}admin/admin-dashboard.html`; 
+
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = 'Acceder como Administrador';
+            url = `${prefijoRaiz}admin/admin-dashboard.html`;
         }
-        if (rol === 'ROLE_JEFE') { 
-            nombreRol = 'Acceder como Manager'; 
-            url = `${prefijoJefe}jefe-dashboard.html`; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = 'Acceder como Manager';
+            url = `${prefijoJefe}jefe-dashboard.html`;
         }
-        if (rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = 'Acceder como Subcontratista'; 
-            url = `${prefijoRaiz}employee/employee-dashboard.html`; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = 'Acceder como Subcontratista';
+            url = `${prefijoRaiz}employee/employee-dashboard.html`;
         }
 
         if (nombreRol) {
@@ -1353,7 +1359,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
             boton.style.backgroundColor = '#00B8A9';
             boton.style.cursor = 'pointer';
             boton.textContent = nombreRol;
-            
+
             boton.addEventListener('click', () => {
                 window.location.href = url;
             });
@@ -1364,7 +1370,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
 
     Swal.fire({
         title: 'Selecciona tu área de trabajo',
-        html: contenedor, 
+        html: contenedor,
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',
