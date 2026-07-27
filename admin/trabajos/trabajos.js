@@ -93,13 +93,20 @@ function inicializarMapa(lat, lng) {
                 .then(data => {
                     if (data && data.address) {
                         const a = data.address;
-                        const partes = [
-                            a.road || a.pedestrian || a.footway || '',
+
+                        // Número + calle juntos en un solo bloque (si falta el número, no rompe el orden)
+                        const calle = [
                             a.house_number || '',
+                            a.road || a.pedestrian || a.footway || ''
+                        ].filter(p => p !== '').join(' ');
+
+                        const partes = [
+                            calle,
                             a.suburb || a.neighbourhood || a.quarter || '',
                             a.city || a.town || a.village || a.municipality || '',
                             a.state || ''
                         ].filter(p => p !== '');
+
                         document.getElementById('jobAddress').value = partes.join(', ');
                     }
                 })
