@@ -1,5 +1,5 @@
-const API_URL = 'https://api-remomn.onrender.com/api/v1/materials';
-const CATEGORIES_URL = 'https://api-remomn.onrender.com/api/v1/categories';
+const API_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/materials';
+const CATEGORIES_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/categories';
 let userToken = '';
 let todosLosMaterialesCache = []; 
 
