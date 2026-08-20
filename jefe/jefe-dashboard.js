@@ -238,8 +238,8 @@ window.verBodegaHoy = async () => {
         const token = localStorage.getItem('jwt_token');
 
         const [jobsRes, usersRes] = await Promise.all([
-            fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         bodegaJobsCache = await jobsRes.json();
@@ -484,8 +484,8 @@ window.verNominaSemanal = async () => {
         const token = localStorage.getItem('jwt_token');
 
         const [resJobs, resUsers] = await Promise.all([
-            fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         nominasJobsCache = await resJobs.json();
         nominasUsersCache = await resUsers.json();
