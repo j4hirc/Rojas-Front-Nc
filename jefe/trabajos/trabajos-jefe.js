@@ -9,6 +9,7 @@ let allJobsCache = [];
 
 let allMaterialsCache = [];
 let materialesEstado = {};
+let blueprintsNuevos = []; // acumula los File objects seleccionados en la sesión de edición actual
 
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
@@ -68,17 +69,39 @@ document.addEventListener("DOMContentLoaded", async () => {
     const statusInput = document.getElementById('filterStatusInput');
     const priorityInput = document.getElementById('filterPriorityInput');
     const empIn = document.getElementById('filterEmployeeInput');
-
+    const manIn = document.getElementById('filterManagerInput'); // 🔥 NUEVO FILTRO MANAGER
+    const btnCl = document.getElementById('clearPriorityBtn');
 
     if (searchInput) searchInput.addEventListener('input', filtrarTrabajosCombinados);
     if (statusInput) statusInput.addEventListener('change', filtrarTrabajosCombinados);
     if (priorityInput) priorityInput.addEventListener('input', filtrarTrabajosCombinados);
     if (empIn) empIn.addEventListener('change', filtrarTrabajosCombinados);
+    if (manIn) manIn.addEventListener('change', filtrarTrabajosCombinados);
 
     const fechaDesdeIn = document.getElementById('filterDateFromInput');
     const fechaHastaIn = document.getElementById('filterDateToInput');
     if (fechaDesdeIn) fechaDesdeIn.addEventListener('change', filtrarTrabajosCombinados);
     if (fechaHastaIn) fechaHastaIn.addEventListener('change', filtrarTrabajosCombinados);
+    
+    if (btnCl) {
+        btnCl.addEventListener('click', () => {
+            if(document.getElementById('filterPriorityInput')) document.getElementById('filterPriorityInput').value = '';
+            window.filtrarTrabajosCombinados();
+        });
+    }
+
+    const inputBlueprint = document.getElementById('jobBlueprint');
+    if (inputBlueprint) {
+        inputBlueprint.addEventListener('change', () => {
+            for (let i = 0; i < inputBlueprint.files.length; i++) {
+                const f = inputBlueprint.files[i];
+                const yaExiste = blueprintsNuevos.some(x => x.name === f.name && x.size === f.size);
+                if (!yaExiste) blueprintsNuevos.push(f);
+            }
+            inputBlueprint.value = '';
+            renderizarBlueprintsPendientes();
+        });
+    }
 
     const matSearchIn = document.getElementById('searchMaterialInput');
     const matCatIn = document.getElementById('filterCategoryMaterial');
@@ -112,6 +135,7 @@ window.filtrarTrabajosCombinados = () => {
     const estado = (document.getElementById('filterStatusInput')?.value || 'ALL').trim();
     const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
     const empleadoNombre = document.getElementById('filterEmployeeInput')?.value || '';
+    const managerIdFiltro = document.getElementById('filterManagerInput')?.value || ''; // 🔥 FILTRO MANAGER
     const fechaDesde = document.getElementById('filterDateFromInput')?.value || '';
     const fechaHasta = document.getElementById('filterDateToInput')?.value || '';
 
@@ -120,7 +144,8 @@ window.filtrarTrabajosCombinados = () => {
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
             (job.clientPhone || '').toLowerCase().includes(texto) ||
-            (job.nameEmployee || '').toLowerCase().includes(texto);
+            (job.nameEmployee || '').toLowerCase().includes(texto) ||
+            (job.nameManager || '').toLowerCase().includes(texto); // 🔥 BUSCA POR MANAGER
 
         const coincideEstado = estado === 'ALL' || job.status === estado;
 
@@ -134,13 +159,16 @@ window.filtrarTrabajosCombinados = () => {
         }
 
         const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
+        
+        // 🔥 FILTRO EXCLUSIVO PARA MANAGER
+        const coincideManager = (managerIdFiltro === '') || (job.managerId == managerIdFiltro);
 
         let coincideFecha = true;
-        const jobDateStr = fechaParaInput(job.jobDate); // ya existe en este mismo archivo
+        const jobDateStr = fechaParaInput(job.jobDate);
         if (fechaDesde && jobDateStr) coincideFecha = coincideFecha && (jobDateStr >= fechaDesde);
         if (fechaHasta && jobDateStr) coincideFecha = coincideFecha && (jobDateStr <= fechaHasta);
 
-        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado && coincideFecha;
+        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado && coincideManager && coincideFecha;
     });
 
     renderizarTrabajos(trabajosFiltrados);
@@ -160,7 +188,6 @@ function inicializarMapa(lat, lng) {
                     if (data && data.address) {
                         const a = data.address;
 
-                        // Número + calle juntos (si falta el número, no rompe el orden)
                         const calle = [
                             a.house_number || '',
                             a.road || a.pedestrian || a.footway || ''
@@ -236,7 +263,6 @@ function inicializarMapa(lat, lng) {
                 .catch(err => console.error('Error geocoding:', err));
         }
         
-
         inputDireccion.addEventListener('blur', buscarDireccionEnMapa);
         inputDireccion.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -340,6 +366,7 @@ async function cargarUsuariosYMateriales(emailActual) {
                 if (jefeActual) myManagerId = jefeActual.userId;
             }
 
+            // 🔥 POBLAR EMPLEADOS
             const selectEmp = document.getElementById('jobEmployee');
             if (selectEmp) {
                 selectEmp.innerHTML = '<option value="">-- Seleccione Subcontratista --</option>';
@@ -349,7 +376,6 @@ async function cargarUsuariosYMateriales(emailActual) {
                     selectEmp.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
                 });
 
-                // 🔥 Filtro por subcontratista, comparando por nombre
                 const filterEmp = document.getElementById('filterEmployeeInput');
                 if (filterEmp) {
                     filterEmp.innerHTML = '<option value="">Todos los Subcontratistas</option>';
@@ -358,6 +384,27 @@ async function cargarUsuariosYMateriales(emailActual) {
                         filterEmp.innerHTML += `<option value="${fullName}">${fullName}</option>`;
                     });
                 }
+            }
+
+            // 🔥 POBLAR MANAGERS (NUEVO: Para filtros y creación si existe)
+            const filterManager = document.getElementById('filterManagerInput');
+            if (filterManager) {
+                filterManager.innerHTML = '<option value="">Todos los Managers</option>';
+                const managers = users.filter(u => u.status !== 'Unemployed' && (u.roles.some(r => r.name === 'ROLE_JEFE') || u.roles.some(r => r.name === 'ROLE_ADMIN')));
+                managers.forEach(u => {
+                    const fullName = u.name || `${u.firstName} ${u.lastName}`;
+                    filterManager.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
+                });
+            }
+
+            const selectManager = document.getElementById('jobManager');
+            if (selectManager) {
+                selectManager.innerHTML = '<option value="">-- Seleccione Manager --</option>';
+                const managers = users.filter(u => u.status !== 'Unemployed' && (u.roles.some(r => r.name === 'ROLE_JEFE') || u.roles.some(r => r.name === 'ROLE_ADMIN')));
+                managers.forEach(u => {
+                    const fullName = u.name || `${u.firstName} ${u.lastName}`;
+                    selectManager.innerHTML += `<option value="${u.userId}">${fullName}</option>`;
+                });
             }
         }
 
@@ -439,15 +486,27 @@ window.filtrarMateriales = () => {
     renderizarMateriales(filtrados);
 };
 
+// 🔥 AHORA EL JEFE TRAE TODOS LOS TRABAJOS (COMO EL ADMIN)
 async function cargarTrabajos() {
     try {
         const res = await fetch(`${API_URL}/all`, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (res.ok) {
-            const todos = await res.json();
-            allJobsCache = todos.filter(j => j.managerId === myManagerId);
-            renderizarTrabajos(allJobsCache);
+            // Ya NO filtramos con `j.managerId === myManagerId` para que vea todo
+            allJobsCache = await res.json(); 
+            filtrarTrabajosCombinados();
         }
     } catch (e) { console.error(e); }
+}
+
+function getPriorityBadge(priority) {
+    const pValor = (priority !== null && priority !== undefined) ? parseInt(priority) : 2;
+    if (pValor === 0 || pValor === 1) {
+        return `<span style="background:#FBE9E7; color:#d32f2f; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold; border: 1px solid #ffccbc;"><i class="fa-solid fa-triangle-exclamation"></i> ${pValor} - Alta</span>`;
+    } else if (pValor === 2) {
+        return `<span style="background:#E8F5E9; color:#2e7d32; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold; border: 1px solid #c8e6c9;"><i class="fa-solid fa-circle-info"></i> ${pValor} - Normal</span>`;
+    } else {
+        return `<span style="background:#ECEFF1; color:#546E7A; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold; border: 1px solid #cfd8dc;"> ${pValor} - Baja</span>`;
+    }
 }
 
 function renderizarTrabajos(trabajos) {
@@ -458,8 +517,8 @@ function renderizarTrabajos(trabajos) {
     if (mobileContainer) mobileContainer.innerHTML = '';
 
     if (trabajos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">No tienes trabajos asignados a tu cargo.</td></tr>`;
-        if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No tienes trabajos asignados a tu cargo.</div>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">No hay trabajos registrados.</td></tr>`;
+        if (mobileContainer) mobileContainer.innerHTML = `<div style="text-align:center; padding: 20px; color: #666;">No hay trabajos registrados.</div>`;
         return;
     }
 
@@ -472,6 +531,7 @@ function renderizarTrabajos(trabajos) {
 
         const priorityBadge = getPriorityBadge(job.priority);
         const empName = job.nameEmployee || 'Sin asignar';
+        const manName = job.nameManager || 'Sin asignar'; // 🔥 SE OBTIENE EL MANAGER
         const fechaTxt = formatearFecha(job.jobDate);
 
         let safeDesc = job.description ? job.description : 'Sin descripción';
@@ -479,7 +539,6 @@ function renderizarTrabajos(trabajos) {
             safeDesc = safeDesc.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
         }
 
-        // 🔥 BOTÓN ÚNICO PARA ABRIR MODAL DE PLANOS
         let btnPlanoTable = '';
         let btnPlanoCard = '';
         const urlsPlanos = job.blueprintUrls || [];
@@ -497,7 +556,6 @@ function renderizarTrabajos(trabajos) {
             `;
         }
 
-        // === FILA DE TABLA DESKTOP ===
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>
@@ -518,7 +576,10 @@ function renderizarTrabajos(trabajos) {
                 </div>
             </td>
             <td>
-                <div class="cell-wrap"><strong>${empName}</strong></div>
+                <div class="cell-wrap">
+                    <span style="color:#198754; font-weight: 500;">E: ${empName}</span><br>
+                    <span style="color:#546e7a; font-size: 13px;">M: ${manName}</span>
+                </div>
             </td>
             <td>${statusBadge}</td>
             <td>${priorityBadge}</td>
@@ -540,7 +601,6 @@ function renderizarTrabajos(trabajos) {
         `;
         tbody.appendChild(tr);
 
-        // === TARJETA MÓVIL ===
         if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
@@ -557,8 +617,19 @@ function renderizarTrabajos(trabajos) {
                 
                 <p style="margin:0; color:#666; font-size: 14px;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</p>
                 <p style="margin:0; color:#666; font-size: 14px; word-break: break-word;"><i class="fa-solid fa-location-dot"></i> ${job.address}</p>
-                <p style="margin:0; color:#198754; font-size: 14px;"><strong>Empleado:</strong> ${empName}</p>
-                <p style="margin:5px 0 0 0; font-weight:bold; color:#2e7d32; font-size: 15px;">Pago: $${job.pay.toFixed(2)}</p>
+                <p style="margin:0; color:#198754; font-size: 14px; font-weight: 600;"><i class="fa-regular fa-calendar"></i> Fecha: ${fechaTxt}</p>
+
+                <div style="margin: 15px 0; padding: 12px; background: #f8faff; border-left: 4px solid #198754; border-radius: 6px; width: 100%;">
+                    <strong style="color: #2B3674; font-size: 12px;"><i class="fa-solid fa-align-left"></i> Descripción del Trabajo:</strong>
+                    <p style="margin: 5px 0 0 0; font-size: 13px; color: #555; font-style: italic;">"${safeDesc}"</p>
+                </div>
+
+                <div style="background: #F9FAFC; padding: 10px; border-radius: 8px; margin-top: 10px; width: 100%;">
+                    <p style="margin: 0; font-size: 13px; color:#198754;"><strong>E:</strong> ${empName}</p>
+                    <p style="margin: 0; font-size: 13px; color:#546e7a;"><strong>M:</strong> ${manName}</p>
+                </div>
+                
+                <p style="margin:10px 0 0 0; font-weight:bold; color:#2e7d32; font-size: 15px;">Pago: $${job.pay.toFixed(2)}</p>
                 
                 <div class="card-actions" style="margin-top:15px; display:flex; gap:8px; width: 100%; flex-wrap: wrap;">
                     ${btnPlanoCard}
@@ -574,7 +645,6 @@ function renderizarTrabajos(trabajos) {
     });
 }
 
-// 🔥 NUEVAS FUNCIONES PARA EL MODAL DE PLANOS
 window.verPlanos = (jobId) => {
     const job = allJobsCache.find(j => j.jobId === jobId);
     if (!job) return;
@@ -606,28 +676,75 @@ window.cerrarModalPlanos = () => {
     document.getElementById('modalVerPlanos').style.display = 'none';
 };
 
-// ==========================================
-
-function getPriorityBadge(priority) {
-    const p = (priority !== null && priority !== undefined) ? parseInt(priority) : 2;
-
-    if (p === 0 || p === 1) {
-        return `<span style="background:#FBE9E7; color:#d32f2f; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${p} - Alta</span>`;
-    } else if (p === 2) {
-        return `<span style="background:#E8F5E9; color:#2e7d32; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${p} - Normal</span>`;
-    } else {
-        return `<span style="background:#ECEFF1; color:#546E7A; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;">${p} - Baja</span>`;
+function renderizarBlueprintsPendientes() {
+    let cont = document.getElementById('blueprintPendientesContainer');
+    if (!cont) {
+        const inputBp = document.getElementById('jobBlueprint');
+        if(inputBp) {
+            cont = document.createElement('div');
+            cont.id = 'blueprintPendientesContainer';
+            cont.style.marginTop = '8px';
+            inputBp.insertAdjacentElement('afterend', cont);
+        }
     }
+
+    if (!cont) return;
+
+    if (blueprintsNuevos.length === 0) {
+        cont.innerHTML = '';
+        return;
+    }
+
+    let html = '<div style="display:flex; flex-direction:column; gap:6px;">';
+    blueprintsNuevos.forEach((file, idx) => {
+        html += `
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; background:#f0f4f8; border-radius:6px; font-size:13px;">
+                <span><i class="fa-solid fa-file"></i> ${file.name}</span>
+                <button type="button" onclick="quitarBlueprintPendiente(${idx})" style="border:none; background:none; color:#d32f2f; cursor:pointer;" title="Quitar">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>`;
+    });
+    html += '</div>';
+    cont.innerHTML = html;
+}
+
+window.quitarBlueprintPendiente = (idx) => {
+    blueprintsNuevos.splice(idx, 1);
+    renderizarBlueprintsPendientes();
+};
+
+function resetearScrollModal() {
+    const modal = document.getElementById('modalJob');  
+    if (!modal) return;
+
+    const resetTodo = () => {
+        modal.scrollTop = 0;
+        modal.querySelectorAll('*').forEach(el => {
+            if (el.scrollHeight > el.clientHeight) {
+                el.scrollTop = 0;
+            }
+        });
+        window.scrollTo(0, 0);
+    };
+
+    requestAnimationFrame(resetTodo);
+    setTimeout(resetTodo, 50);
+    setTimeout(resetTodo, 300);
 }
 
 function limpiarMaterialesNecesarios() {
     document.getElementById('necessaryMaterialsContainer').innerHTML = '';
-    document.getElementById('totalNecessaryMaterials').textContent = '0.00';
+    const totalNecessary = document.getElementById('totalNecessaryMaterials');
+    if(totalNecessary) totalNecessary.textContent = '0.00';
 }
 
 window.abrirModalCrearJob = () => {
     document.getElementById('formJob').reset();
     document.getElementById('jobId').value = '';
+
+    blueprintsNuevos = [];
+    renderizarBlueprintsPendientes();
 
     if (document.getElementById('jobPriority')) {
         document.getElementById('jobPriority').value = '2';
@@ -640,9 +757,13 @@ window.abrirModalCrearJob = () => {
 
     limpiarMaterialesNecesarios();
 
-    // 🔥 Limpiar file y ocultar link de plano
     if (document.getElementById('jobBlueprint')) document.getElementById('jobBlueprint').value = '';
     if (document.getElementById('currentBlueprintContainer')) document.getElementById('currentBlueprintContainer').style.display = 'none';
+
+    // 🔥 SETEAR MANAGER POR DEFECTO AL JEFE ACTUAL SI EL SELECT EXISTE
+    if (document.getElementById('jobManager')) {
+        document.getElementById('jobManager').value = myManagerId;
+    }
 
     const payInput = document.getElementById('jobPay');
     if (payInput) {
@@ -652,8 +773,10 @@ window.abrirModalCrearJob = () => {
 
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-hammer"></i> Nuevo Trabajo';
     document.getElementById('modalJob').style.display = 'flex';
+    resetearScrollModal();
     inicializarMapa(-2.900128, -79.005896);
 };
+
 
 window.abrirModalEditarJob = async (id) => {
     document.getElementById('formJob').reset();
@@ -690,17 +813,22 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobStatus').value = data.status || 'PENDING';
             document.getElementById('jobEmployee').value = data.employeeId;
 
+            if (document.getElementById('jobManager')) {
+                document.getElementById('jobManager').value = data.managerId;
+            }
+
             if (data.priority !== null && data.priority !== undefined) {
                 document.getElementById('jobPriority').value = data.priority;
             } else {
                 document.getElementById('jobPriority').value = '2';
             }
 
-            // 🔥 MOSTRAR LISTA DE PLANOS
             const blueprintContainer = document.getElementById('currentBlueprintContainer');
             const fileInput = document.getElementById('jobBlueprint');
 
             if (fileInput) fileInput.value = '';
+            blueprintsNuevos = [];
+            renderizarBlueprintsPendientes();
 
             if (blueprintContainer) {
                 blueprintContainer.innerHTML = '';
@@ -756,10 +884,14 @@ window.abrirModalEditarJob = async (id) => {
             const payInput = document.getElementById('jobPay');
             if (payInput) {
                 payInput.readOnly = true;
+                if (data.materials?.length === 0 && data.necessaryMaterials?.length === 0) {
+                    payInput.value = data.pay || '0.00';
+                }
             }
 
             Swal.close();
             document.getElementById('modalJob').style.display = 'flex';
+            resetearScrollModal();
             inicializarMapa(data.latitude, data.longitude);
         }
     } catch (error) {
@@ -776,17 +908,18 @@ window.guardarTrabajo = async () => {
     const id = document.getElementById('jobId').value;
     const isEditing = id !== '';
 
-    const matCheckboxes = document.querySelectorAll('input[name="jobMaterials"]:checked');
+    const filasMateriales = document.querySelectorAll('.necessary-material-row');
     const selectedMaterials = [];
-
     let resumenMateriales = '';
-    matCheckboxes.forEach(cb => {
-        const matId = parseInt(cb.value);
-        const nombreMat = cb.getAttribute('data-name');
 
-        const filaNecesaria = document.getElementById(`nec-${matId}`);
-        const qtyInput = filaNecesaria ? filaNecesaria.querySelector('.nec-qty') : null;
-        const unitInput = filaNecesaria ? filaNecesaria.querySelector('.nec-unit') : null;
+    filasMateriales.forEach(row => {
+        const matId = parseInt(row.id.replace('nec-', ''));
+        const nombreMat = row.querySelector('.nec-name')
+            ? row.querySelector('.nec-name').textContent.trim()
+            : 'Material';
+
+        const qtyInput = row.querySelector('.nec-qty');
+        const unitInput = row.querySelector('.nec-unit');
         const cantidadStr = qtyInput ? qtyInput.value.trim() : '1';
         const unidadStr = unitInput ? unitInput.value.trim() : '';
         const cantidadNum = cantidadStr ? parseFloat(cantidadStr) : 1;
@@ -819,7 +952,7 @@ window.guardarTrabajo = async () => {
     const necessaryMaterials = [];
     document.querySelectorAll('.necessary-material-row').forEach(row => {
         const matId = row.id.replace('nec-', '');
-        const name = row.querySelector('div').textContent.trim();
+        const name = row.querySelector('.nec-name') ? row.querySelector('.nec-name').textContent.trim() : 'Material';
         const qtyInput = row.querySelector('.nec-qty');
         const qty = qtyInput ? (parseFloat(qtyInput.value) || 1) : 1;
 
@@ -827,9 +960,6 @@ window.guardarTrabajo = async () => {
         const priceInput = row.querySelector('.nec-price');
         if (priceInput) {
             price = parseFloat(priceInput.value) || 0;
-        } else {
-            const priceMatch = row.textContent.match(/\$([\d.]+)/);
-            if (priceMatch) price = parseFloat(priceMatch[1]) || 0;
         }
 
         const unitInput = row.querySelector('.nec-unit');
@@ -844,6 +974,10 @@ window.guardarTrabajo = async () => {
         });
     });
 
+    // Si el select del manager existe se toma, de lo contrario se asigna al Jefe logueado.
+    const managerSelect = document.getElementById('jobManager');
+    const selectedManagerId = (managerSelect && managerSelect.value) ? parseInt(managerSelect.value) : myManagerId;
+
     const payload = {
         clientName: document.getElementById('jobClientName').value.trim(),
         clientPhone: document.getElementById('jobClientPhone').value.trim(),
@@ -856,13 +990,14 @@ window.guardarTrabajo = async () => {
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
-        managerId: myManagerId,
+        managerId: selectedManagerId, // 🔥 AHORA SOPORTA CUALQUIER MANAGER
         materials: selectedMaterials,
+        necessaryMaterials: necessaryMaterials,
         priority: prioridadSeleccionada
     };
 
     if (!payload.clientName || !payload.employeeId || !payload.jobDate ||
-        isNaN(payload.latitude) || isNaN(payload.pay)) {
+        isNaN(payload.latitude) || isNaN(payload.pay) || !payload.managerId) {
         return Swal.fire({
             icon: 'error',
             title: 'Campos incompletos',
@@ -876,16 +1011,12 @@ window.guardarTrabajo = async () => {
     const url = isEditing ? `${API_URL}/update-job/${id}` : `${API_URL}/create-job`;
     const method = isEditing ? 'PUT' : 'POST';
 
-    // 🔥 EMPAQUETAR LISTA DE ARCHIVOS (PLANOS)
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
-    const fileInput = document.getElementById('jobBlueprint');
-    if (fileInput && fileInput.files.length > 0) {
-        for (let i = 0; i < fileInput.files.length; i++) {
-            formData.append('files', fileInput.files[i]);
-        }
-    }
+    blueprintsNuevos.forEach(file => {
+        formData.append('files', file);
+    });
 
     try {
         const response = await fetch(url, {
@@ -896,6 +1027,7 @@ window.guardarTrabajo = async () => {
 
         if (response.ok) {
             Swal.fire('¡Éxito!', isEditing ? 'Trabajo actualizado.' : 'Trabajo asignado correctamente.', 'success');
+            blueprintsNuevos = [];
             cerrarModalJob();
             await cargarTrabajos();
         } else {
@@ -973,23 +1105,21 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
     const unit = (unitInicial !== undefined && unitInicial !== null) ? unitInicial : '';
 
     return `
-        <div class="necessary-material-row" id="nec-${matId}"
-             style="display: grid; grid-template-columns: 1.8fr 70px 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #e65100;">
-
-            <div style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
-
-            <input type="number" class="input-field nec-qty" value="${qty}" min="1"
-                   style="margin:0; text-align:center; padding:6px; border: 1px solid #e65100;"
-                   oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
-
-            <input type="text" class="input-field nec-unit" placeholder="Unidad" value="${unit}" readonly
-                   style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
-
-            <input type="number" class="input-field nec-price" value="${price}" step="0.01" min="0" readonly
-                   style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
-
-            <button type="button" onclick="eliminarMaterialNecesarioPorId(${matId})"
-                    style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
+        <div class="necessary-material-row" id="nec-${matId}" style="display: grid; grid-template-columns: 1.8fr 70px 90px 80px 40px; gap: 8px; align-items: center; margin-bottom: 10px; padding: 8px; background: white; border-radius: 6px; border-left: 4px solid #198754;">
+            <div class="nec-name" title="${name}" style="font-weight: 500; color:#2B3674; font-size: 13px;">${name}</div>
+            
+            <input type="number" class="nec-qty" value="${qty}" min="1"
+                style="margin:0; text-align:center; padding:6px; border: 1px solid #198754;"
+                oninput="calcularTotalMaterialesNecesarios()" data-matid="${matId}" title="Cantidad (Editable)">
+                
+            <input type="text" class="nec-unit" placeholder="Unidad" value="${unit}" readonly
+                style="margin:0; text-align:center; padding:6px; background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; cursor: not-allowed;" data-matid="${matId}" title="Unidad (Fija)">
+                
+            <input type="number" class="nec-price" value="${price}" step="0.01" min="0" readonly
+                style="margin:0; text-align:right; font-weight: bold; color: #198754; background-color: #e8f5e9; border: 1px solid #a5d6a7; cursor: not-allowed; padding:6px;" data-matid="${matId}" title="Precio Unitario (Fijo)">
+                
+            <button type="button" class="nec-delete" onclick="eliminarMaterialNecesarioPorId(${matId})"
+                style="background:#ef4444; color:white; border:none; border-radius:6px; height:32px; cursor:pointer;" title="Quitar Material">
                 <i class="fa-solid fa-trash"></i>
             </button>
         </div>
@@ -1008,6 +1138,11 @@ window.agregarMaterialNecesarioDesdeInventario = (matId, name, price, qtyInicial
 window.eliminarMaterialNecesarioPorId = (matId) => {
     const row = document.getElementById(`nec-${matId}`);
     if (row) row.remove();
+
+    const checkbox = document.querySelector(`input[name="jobMaterials"][value="${matId}"]`);
+    if (checkbox) checkbox.checked = false;
+    if (materialesEstado[matId]) delete materialesEstado[matId];
+
     calcularTotalMaterialesNecesarios();
 };
 
@@ -1034,7 +1169,7 @@ window.calcularTotalMaterialesNecesarios = () => {
         payInput.value = total.toFixed(2);
     }
 };
-// --- RESUMEN DE BODEGA (Con navegación día por día, igual que Nómina) ---
+
 let bodegaJobsCache = null;
 let bodegaUsersCache = null;
 let bodegaDiaOffset = 0;
@@ -1046,19 +1181,19 @@ window.verBodegaHoy = async () => {
         const token = localStorage.getItem('jwt_token');
 
         const [jobsRes, usersRes] = await Promise.all([
-            fetch('https://api-remomn.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('https://api-remomn.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         bodegaJobsCache = await jobsRes.json();
         bodegaUsersCache = await usersRes.json();
 
-        bodegaDiaOffset = 0; // Reiniciamos al día actual cada vez que se abre
+        bodegaDiaOffset = 0; 
 
         Swal.fire({
             title: '<i class="fa-solid fa-truck-fast" style="color:#F4A300;"></i> Ordenes de Bodega',
             html: '<div id="bodega-contenedor">Generando reporte...</div>',
-            confirmButtonColor: '#12CFF4',
+            confirmButtonColor: '#198754',
             confirmButtonText: 'Cerrar',
             width: '750px',
             background: '#FFFFFF'
@@ -1068,7 +1203,7 @@ window.verBodegaHoy = async () => {
 
     } catch (e) {
         console.error(e);
-        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la bodega.', confirmButtonColor: '#12CFF4' });
+        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la bodega.', confirmButtonColor: '#198754' });
     }
 };
 
@@ -1077,7 +1212,6 @@ window.cambiarDiaBodega = (delta) => {
     renderizarBodega(bodegaDiaOffset);
 };
 
-// Helpers de fecha (mismos criterios que la nómina)
 function getFechaStrLocal(date) {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -1104,10 +1238,12 @@ function renderizarBodega(offset) {
     else etiquetaDia = fechaObjetivo.toLocaleDateString('es-ES', { weekday: 'long' });
     etiquetaDia = etiquetaDia.charAt(0).toUpperCase() + etiquetaDia.slice(1);
 
-    const jefeNombreCompleto = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase();
+    const emailActual = localStorage.getItem('user_email');
+    const miUsuarioActual = bodegaUsersCache.find(u => u.email === emailActual) || {};
+    const jefeNombreCompleto = `${miUsuarioActual.firstName || ''} ${miUsuarioActual.lastName || ''}`.trim().toLowerCase();
 
     let htmlContent = `
-    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #198754; margin-bottom: 15px;">
         <button onclick="cambiarDiaBodega(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px;">
             <i class="fa-solid fa-chevron-left"></i> Anterior
         </button>
@@ -1150,20 +1286,17 @@ function renderizarBodega(offset) {
                 ? `${empleado.firstName} ${empleado.lastName}`
                 : `ID: ${job.employeeId}`;
 
-            // --- Estado del proyecto (mismo estilo que las otras vistas) ---
             let statusBadge = '';
             if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Pendiente</span>`;
             else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">En Progreso</span>`;
             else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Completado</span>`;
             else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Cancelado</span>`;
 
-            // --- Descripción limpia (sin el bloque de materiales pre-asignados en texto) ---
             let descBodega = job.description ? job.description : '';
             if (descBodega.includes('[MATERIALES PRE-ASIGNADOS]:')) {
                 descBodega = descBodega.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
             }
 
-            // --- Combinamos materiales pre-asignados (jefe/admin) + necesarios (puede agregar el subcontratista) ---
             const materialesCombinados = {};
 
             (job.materials || []).forEach(mat => {
@@ -1179,7 +1312,6 @@ function renderizarBodega(offset) {
             (job.necessaryMaterials || []).forEach(mat => {
                 const id = mat.materialId;
                 if (materialesCombinados[id]) {
-                    // Si ya existía, actualizamos cantidad por si el subcontratista la cambió
                     materialesCombinados[id].quantity = parseFloat(mat.quantity || 1);
                     materialesCombinados[id].unit = mat.unit || materialesCombinados[id].unit;
                 } else {
@@ -1228,7 +1360,6 @@ function renderizarBodega(offset) {
     if (contenedor) contenedor.innerHTML = htmlContent;
 }
 
-// ==================== EXPORTAR PDF ====================
 window.exportarBodegaPdf = () => {
     const listaDia = document.getElementById('bodega-lista-dia');
     if (!listaDia) return Swal.fire('Error', 'No hay trabajos para exportar en este día.', 'error');
@@ -1237,7 +1368,9 @@ window.exportarBodegaPdf = () => {
     const textoFecha = lblFecha ? lblFecha.textContent.trim() : new Date().toISOString().split('T')[0];
     const nombreArchivoClean = textoFecha.replace(/[\/]/g, '-');
 
-    const nombreJefe = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`;
+    const emailActual = localStorage.getItem('user_email');
+    const miUsuarioActual = bodegaUsersCache.find(u => u.email === emailActual) || {};
+    const nombreJefe = `${miUsuarioActual.firstName || ''} ${miUsuarioActual.lastName || ''}`.trim();
 
     const contenedorImpresion = document.createElement('div');
     contenedorImpresion.style.padding = "30px";
@@ -1245,14 +1378,14 @@ window.exportarBodegaPdf = () => {
     contenedorImpresion.style.background = "#ffffff";
 
     contenedorImpresion.innerHTML = `
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #12CFF4; padding-bottom: 15px;">
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #198754; padding-bottom: 15px;">
             <h1 style="color: #0B0B0D; margin: 0;">ORDENES DE BODEGA</h1>
-            <p style="margin: 8px 0 0 0; color: #12CFF4; font-weight: bold;">Jefe: ${nombreJefe}</p>
+            <p style="margin: 8px 0 0 0; color: #198754; font-weight: bold;">Jefe: ${nombreJefe}</p>
             <p style="margin: 5px 0 0 0; color: #555;">${textoFecha}</p>
         </div>
         ${listaDia.innerHTML}
         <div style="margin-top: 40px; text-align: center; font-size: 11px; color: #888;">
-            Reporte generado por el Portal RemoMN
+            Reporte generado por el Sistema
         </div>
     `;
 
