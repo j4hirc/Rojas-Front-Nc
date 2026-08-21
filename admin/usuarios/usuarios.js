@@ -2,6 +2,73 @@ const API_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/user';
 let userToken = '';
 let todosLosUsuariosCache = [];
 
+function generarColorHexAleatorio() {
+    const r = Math.floor(Math.random() * 200);
+    const g = Math.floor(Math.random() * 200);
+    const b = Math.floor(Math.random() * 200);
+    return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function pintarColorEnFormulario(hex) {
+    document.getElementById('userColor').value = hex;
+    document.getElementById('userColorPicker').value = hex;
+    validarColorEnVivo();
+}
+
+window.regenerarColor = () => {
+    let colorSugerido = generarColorHexAleatorio();
+    // Evita sugerir un color que ya sabemos que está en uso (chequeo local, el backend valida igual)
+    const idActual = document.getElementById('userId').value;
+    const enUso = c => todosLosUsuariosCache.some(u =>
+        u.color && u.color.toUpperCase() === c.toUpperCase() && String(u.userId) !== idActual);
+
+    let intentos = 0;
+    while (enUso(colorSugerido) && intentos < 20) {
+        colorSugerido = generarColorHexAleatorio();
+        intentos++;
+    }
+    pintarColorEnFormulario(colorSugerido);
+};
+
+// Sincroniza el picker nativo -> input de texto
+document.getElementById('userColorPicker').addEventListener('input', (e) => {
+    document.getElementById('userColor').value = e.target.value.toUpperCase();
+    validarColorEnVivo();
+});
+
+// Sincroniza el input de texto -> picker nativo, y valida formato + unicidad en vivo
+document.getElementById('userColor').addEventListener('input', (e) => {
+    let valor = e.target.value.toUpperCase();
+    if (!valor.startsWith('#')) valor = '#' + valor;
+    e.target.value = valor;
+    validarColorEnVivo();
+});
+
+function validarColorEnVivo() {
+    const valor = document.getElementById('userColor').value;
+    const hint = document.getElementById('colorHint');
+    const esFormatoValido = /^#[0-9A-F]{6}$/.test(valor);
+
+    if (esFormatoValido) {
+        document.getElementById('userColorPicker').value = valor;
+    }
+
+    const idActual = document.getElementById('userId').value;
+    const yaExiste = esFormatoValido && todosLosUsuariosCache.some(u =>
+        u.color && u.color.toUpperCase() === valor && String(u.userId) !== idActual);
+
+    if (!esFormatoValido) {
+        hint.textContent = 'Formato inválido. Debe ser #RRGGBB.';
+        hint.style.color = '#d32f2f';
+    } else if (yaExiste) {
+        hint.textContent = 'Ese color ya está en uso por otro usuario.';
+        hint.style.color = '#d32f2f';
+    } else {
+        hint.textContent = 'Color disponible.';
+        hint.style.color = '#2e7d32';
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
     const rolesString = localStorage.getItem('user_roles');
@@ -119,12 +186,12 @@ function renderizarUsuarios(usuarios) {
 
     usuarios.forEach(user => {
         const mapaRoles = {
-    'ROLE_ADMIN': 'ADMINISTRADOR',
-    'ROLE_JEFE': 'MANAGER',
-    'ROLE_EMPLOYEE': 'SUBCONTRATISTA'
-};
+            'ROLE_ADMIN': 'ADMINISTRADOR',
+            'ROLE_JEFE': 'MANAGER',
+            'ROLE_EMPLOYEE': 'SUBCONTRATISTA'
+        };
 
-const rolesNombres = user.roles.map(r => mapaRoles[r.name] || r.name.replace('ROLE_', '')).join(', ');
+        const rolesNombres = user.roles.map(r => mapaRoles[r.name] || r.name.replace('ROLE_', '')).join(', ');
 
         // Verificamos si es desempleado
         const isUnemployed = (user.status === 'Unemployed');
@@ -146,17 +213,20 @@ const rolesNombres = user.roles.map(r => mapaRoles[r.name] || r.name.replace('RO
         const tr = document.createElement('tr');
         tr.style = trStyle;
         tr.innerHTML = `
-            <td style="color: ${isUnemployed ? '#d32f2f' : '#2E3238'}; font-weight: ${isUnemployed ? 'bold' : 'normal'};">
-                ${nombreMostrar} <br><small style="color: #666;">DNI: ${user.dni || 'N/A'}</small>
-            </td>
-            <td>${user.email}</td>
-            <td>${user.phone}</td>
-            <td><span class="badge rol" style="white-space: normal; display: inline-block; line-height: 1.2;">${rolesNombres}</span><br>${estadoHTML}</td>
-            <td>
-                <button class="btn-edit" onclick="abrirModalEditar(${user.userId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                ${actionBtn}
-            </td>
-        `;
+    <td style="color: ${isUnemployed ? '#d32f2f' : '#2E3238'}; font-weight: ${isUnemployed ? 'bold' : 'normal'};">
+        ${nombreMostrar} <br><small style="color: #666;">DNI: ${user.dni || 'N/A'}</small>
+    </td>
+    <td>${user.email}</td>
+    <td>${user.phone}</td>
+    <td><span class="badge rol">${rolesNombres}</span><br>${estadoHTML}</td>
+    <td>
+        <button class="btn-edit" onclick="abrirModalEditar(${user.userId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        ${actionBtn}
+    </td>
+    <td>
+        <span style="display:inline-block; width:22px; height:22px; border-radius:6px; background-color:${user.color || '#CCCCCC'}; border:1px solid #E0E5F2;" title="${user.color || 'Sin color'}"></span>
+    </td>
+`;
         tableBody.appendChild(tr);
 
         // Tarjeta para versión móvil
@@ -205,6 +275,7 @@ window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
                         lastName: user.lastName, secondSurname: user.secondSurname, email: user.email,
                         phone: user.phone, dateOfBirth: user.dateOfBirth, dateOfEntry: user.dateOfEntry,
                         password: "",
+                        color: user.color, // <-- NUEVO
                         status: nuevoEstado, roles: user.roles.map(r => r.name)
                     };
 
@@ -237,15 +308,17 @@ window.abrirModalCrear = () => {
     document.getElementById('userPassword').placeholder = "Requerida para nuevos usuarios";
 
     document.querySelectorAll('input[name="userRoles"]').forEach(cb => cb.checked = false);
-    
+
+    pintarColorEnFormulario(generarColorHexAleatorio()); // <-- NUEVO
+
     const modal = document.getElementById('modalUsuario');
     modal.style.display = 'flex';
 
     // ✨ MAGIA PARA RESETEAR EL SCROLL AL TOPE ✨
     // Apunta al formulario o al contenedor interno que genera el scroll
     const form = document.getElementById('formUsuario');
-    if (form) form.scrollTop = 0; 
-    
+    if (form) form.scrollTop = 0;
+
     // Por si el scroll está en el propio modal o en un contenedor interno
     modal.scrollTop = 0;
     const scrollableContent = modal.querySelector('.modal-body, .modal-content');
@@ -277,6 +350,8 @@ window.abrirModalEditar = async (id) => {
             document.getElementById('userEntry').value = data.dateOfEntry || '';
             document.getElementById('userStatus').value = data.status || 'Active';
 
+            pintarColorEnFormulario(data.color || generarColorHexAleatorio()); // <-- NUEVO
+
             const checkboxes = document.querySelectorAll('input[name="userRoles"]');
             checkboxes.forEach(cb => { cb.checked = data.roles.some(r => r.name === cb.value); });
 
@@ -286,7 +361,7 @@ window.abrirModalEditar = async (id) => {
             // ✨ MAGIA PARA RESETEAR EL SCROLL AL TOPE ✨
             const form = document.getElementById('formUsuario');
             if (form) form.scrollTop = 0;
-            
+
             modal.scrollTop = 0;
             const scrollableContent = modal.querySelector('.modal-body, .modal-content');
             if (scrollableContent) scrollableContent.scrollTop = 0;
@@ -326,6 +401,17 @@ window.guardarUsuario = async () => {
         return Swal.fire({ icon: 'warning', title: 'DNI Inválido', text: 'El DNI debe contener exactamente 10 números.', confirmButtonColor: '#12CFF4' });
     }
 
+    const colorInput = document.getElementById('userColor').value.toUpperCase();
+    if (!/^#[0-9A-F]{6}$/.test(colorInput)) {
+        return Swal.fire({ icon: 'warning', title: 'Color inválido', text: 'El color debe tener formato hexadecimal, ej: #A1B2C3.', confirmButtonColor: '#12CFF4' });
+    }
+
+    const colorEnUso = todosLosUsuariosCache.some(u =>
+        u.color && u.color.toUpperCase() === colorInput && String(u.userId) !== id);
+    if (colorEnUso) {
+        return Swal.fire({ icon: 'warning', title: 'Color duplicado', text: 'Ese color ya lo tiene asignado otro usuario. Elige otro.', confirmButtonColor: '#12CFF4' });
+    }
+
     const passwordInput = document.getElementById('userPassword').value;
     if (!isEditing && passwordInput.trim() === "") {
         return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'La contraseña es obligatoria para usuarios nuevos.', confirmButtonColor: '#12CFF4' });
@@ -361,6 +447,7 @@ window.guardarUsuario = async () => {
         dateOfEntry: entryDateInput,
         status: document.getElementById('userStatus').value,
         title: title,
+        color: colorInput,
         roles: selectedRoles
     };
 
@@ -408,8 +495,8 @@ window.cerrarSesion = () => {
     // 1. Leer los roles del localStorage de manera segura
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) { 
-        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    if (rolesString) {
+        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
     }
 
     // 2. Si tiene más de 1 rol, mostramos las 3 opciones
@@ -457,36 +544,36 @@ window.cerrarSesion = () => {
 // Función auxiliar para renderizar el selector dinámico de roles desde la subcarpeta
 function mostrarSelectorDeRolesEnSubcarpeta(roles) {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
     }
 
     let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
-    
+
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
-        if(rol === 'ROLE_ADMIN') { 
-            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
-            url = '../admin-dashboard.html'; 
+
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador';
+            url = '../admin-dashboard.html';
         }
-        if(rol === 'ROLE_JEFE') { 
-            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Manager'; 
-            url = '../../jefe/jefe-dashboard.html'; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Manager';
+            url = '../../jefe/jefe-dashboard.html';
         }
-        if(rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista'; 
-            url = '../../employee/employee-dashboard.html'; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista';
+            url = '../../employee/employee-dashboard.html';
         }
 
-        if(nombreRol) {
+        if (nombreRol) {
             opcionesHTML += `<button class="swal2-confirm swal2-styled" style="width: 100%; margin: 0; background-color: #00B8A9;" onclick="window.location.href='${url}'">${nombreRol}</button>`;
         }
     });
-    
+
     opcionesHTML += '</div>';
 
     Swal.fire({

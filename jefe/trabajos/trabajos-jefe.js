@@ -10,6 +10,7 @@ let allJobsCache = [];
 let allMaterialsCache = [];
 let materialesEstado = {};
 let blueprintsNuevos = []; // acumula los File objects seleccionados en la sesión de edición actual
+let colorPorEmpleadoId = {}; // Mapa: userId -> color hex del subcontratista
 
 function formatearFecha(fecha) {
     if (!fecha) return 'Sin fecha asignada';
@@ -82,10 +83,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const fechaHastaIn = document.getElementById('filterDateToInput');
     if (fechaDesdeIn) fechaDesdeIn.addEventListener('change', filtrarTrabajosCombinados);
     if (fechaHastaIn) fechaHastaIn.addEventListener('change', filtrarTrabajosCombinados);
-    
+
     if (btnCl) {
         btnCl.addEventListener('click', () => {
-            if(document.getElementById('filterPriorityInput')) document.getElementById('filterPriorityInput').value = '';
+            if (document.getElementById('filterPriorityInput')) document.getElementById('filterPriorityInput').value = '';
             window.filtrarTrabajosCombinados();
         });
     }
@@ -159,7 +160,7 @@ window.filtrarTrabajosCombinados = () => {
         }
 
         const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
-        
+
         // 🔥 FILTRO EXCLUSIVO PARA MANAGER
         const coincideManager = (managerIdFiltro === '') || (job.managerId == managerIdFiltro);
 
@@ -262,7 +263,7 @@ function inicializarMapa(lat, lng) {
                 })
                 .catch(err => console.error('Error geocoding:', err));
         }
-        
+
         inputDireccion.addEventListener('blur', buscarDireccionEnMapa);
         inputDireccion.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -281,6 +282,7 @@ function inicializarMapa(lat, lng) {
 
     setTimeout(() => { mapa.invalidateSize(); }, 300);
 }
+
 
 window.actualizarMapaDesdeInputs = () => {
     const latVal = parseFloat(document.getElementById('jobLat').value);
@@ -361,6 +363,9 @@ async function cargarUsuariosYMateriales(emailActual) {
         if (resUsers.ok) {
             const users = await resUsers.json();
 
+            colorPorEmpleadoId = {}; // <-- NUEVO
+            users.forEach(u => { colorPorEmpleadoId[u.userId] = u.color; }); // <-- NUEVO
+
             if (typeof myManagerId !== 'undefined') {
                 const jefeActual = users.find(u => u.email === emailActual);
                 if (jefeActual) myManagerId = jefeActual.userId;
@@ -417,6 +422,13 @@ async function cargarUsuariosYMateriales(emailActual) {
     } catch (e) { console.error("Error cargando dependencias", e); }
 }
 
+function hexARgba(hex, alpha) {
+    if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return `rgba(200,200,200,${alpha})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 function obtenerNombreCategoria(mat) {
     return mat.categoryName || (mat.category && (mat.category.name || mat.category)) || '';
 }
@@ -492,7 +504,7 @@ async function cargarTrabajos() {
         const res = await fetch(`${API_URL}/all`, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (res.ok) {
             // Ya NO filtramos con `j.managerId === myManagerId` para que vea todo
-            allJobsCache = await res.json(); 
+            allJobsCache = await res.json();
             filtrarTrabajosCombinados();
         }
     } catch (e) { console.error(e); }
@@ -556,7 +568,10 @@ function renderizarTrabajos(trabajos) {
             `;
         }
 
+        const colorSubcontratista = colorPorEmpleadoId[job.employeeId] || '#CCCCCC';
         const tr = document.createElement('tr');
+        tr.style.borderLeft = `5px solid ${colorSubcontratista}`;
+        tr.style.backgroundColor = hexARgba(colorSubcontratista, 0.06);
         tr.innerHTML = `
             <td>
                 <div class="cell-wrap">
@@ -604,7 +619,7 @@ function renderizarTrabajos(trabajos) {
         if (mobileContainer) {
             const card = document.createElement('div');
             card.className = 'card';
-            card.style.cssText = 'padding: 20px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; width: 100%; margin-bottom: 15px;';
+            card.style.cssText = `padding: 20px; display: flex; flex-direction: column; gap: 8px; box-sizing: border-box; width: 100%; margin-bottom: 15px; border-left: 6px solid ${colorSubcontratista}; background-color: ${hexARgba(colorSubcontratista, 0.06)};`;
 
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 10px; margin-bottom:5px;">
@@ -680,7 +695,7 @@ function renderizarBlueprintsPendientes() {
     let cont = document.getElementById('blueprintPendientesContainer');
     if (!cont) {
         const inputBp = document.getElementById('jobBlueprint');
-        if(inputBp) {
+        if (inputBp) {
             cont = document.createElement('div');
             cont.id = 'blueprintPendientesContainer';
             cont.style.marginTop = '8px';
@@ -715,7 +730,7 @@ window.quitarBlueprintPendiente = (idx) => {
 };
 
 function resetearScrollModal() {
-    const modal = document.getElementById('modalJob');  
+    const modal = document.getElementById('modalJob');
     if (!modal) return;
 
     const resetTodo = () => {
@@ -736,7 +751,7 @@ function resetearScrollModal() {
 function limpiarMaterialesNecesarios() {
     document.getElementById('necessaryMaterialsContainer').innerHTML = '';
     const totalNecessary = document.getElementById('totalNecessaryMaterials');
-    if(totalNecessary) totalNecessary.textContent = '0.00';
+    if (totalNecessary) totalNecessary.textContent = '0.00';
 }
 
 window.abrirModalCrearJob = () => {
@@ -1188,7 +1203,7 @@ window.verBodegaHoy = async () => {
         bodegaJobsCache = await jobsRes.json();
         bodegaUsersCache = await usersRes.json();
 
-        bodegaDiaOffset = 0; 
+        bodegaDiaOffset = 0;
 
         Swal.fire({
             title: '<i class="fa-solid fa-truck-fast" style="color:#F4A300;"></i> Ordenes de Bodega',

@@ -1,6 +1,73 @@
 const API_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/user';
 let userToken = '';
-let todosLosUsuariosCache = []; 
+let todosLosUsuariosCache = [];
+
+function generarColorHexAleatorio() {
+    const r = Math.floor(Math.random() * 200);
+    const g = Math.floor(Math.random() * 200);
+    const b = Math.floor(Math.random() * 200);
+    return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function pintarColorEnFormulario(hex) {
+    document.getElementById('userColor').value = hex;
+    document.getElementById('userColorPicker').value = hex;
+    validarColorEnVivo();
+}
+
+window.regenerarColor = () => {
+    let colorSugerido = generarColorHexAleatorio();
+    // Evita sugerir un color que ya sabemos que está en uso (chequeo local, el backend valida igual)
+    const idActual = document.getElementById('userId').value;
+    const enUso = c => todosLosUsuariosCache.some(u =>
+        u.color && u.color.toUpperCase() === c.toUpperCase() && String(u.userId) !== idActual);
+
+    let intentos = 0;
+    while (enUso(colorSugerido) && intentos < 20) {
+        colorSugerido = generarColorHexAleatorio();
+        intentos++;
+    }
+    pintarColorEnFormulario(colorSugerido);
+};
+
+// Sincroniza el picker nativo -> input de texto
+document.getElementById('userColorPicker').addEventListener('input', (e) => {
+    document.getElementById('userColor').value = e.target.value.toUpperCase();
+    validarColorEnVivo();
+});
+
+// Sincroniza el input de texto -> picker nativo, y valida formato + unicidad en vivo
+document.getElementById('userColor').addEventListener('input', (e) => {
+    let valor = e.target.value.toUpperCase();
+    if (!valor.startsWith('#')) valor = '#' + valor;
+    e.target.value = valor;
+    validarColorEnVivo();
+});
+
+function validarColorEnVivo() {
+    const valor = document.getElementById('userColor').value;
+    const hint = document.getElementById('colorHint');
+    const esFormatoValido = /^#[0-9A-F]{6}$/.test(valor);
+
+    if (esFormatoValido) {
+        document.getElementById('userColorPicker').value = valor;
+    }
+
+    const idActual = document.getElementById('userId').value;
+    const yaExiste = esFormatoValido && todosLosUsuariosCache.some(u =>
+        u.color && u.color.toUpperCase() === valor && String(u.userId) !== idActual);
+
+    if (!esFormatoValido) {
+        hint.textContent = 'Formato inválido. Debe ser #RRGGBB.';
+        hint.style.color = '#d32f2f';
+    } else if (yaExiste) {
+        hint.textContent = 'Ese color ya está en uso por otro usuario.';
+        hint.style.color = '#d32f2f';
+    } else {
+        hint.textContent = 'Color disponible.';
+        hint.style.color = '#2e7d32';
+    }
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -15,7 +82,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             text: 'Solo los Jefes pueden acceder a esta sección.',
             confirmButtonColor: '#12CFF4'
         }).then(() => {
-            window.location.href = '../../index.html'; 
+            window.location.href = '../../index.html';
         });
         return;
     }
@@ -28,7 +95,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 // TRAEMOS A TODOS (ACTIVOS Y DESEMPLEADOS) PARA QUE EL FILTRO NO FALLE
 async function cargarUsuariosDesdeAPI() {
     try {
-        Swal.fire({ title: 'Cargando tu personal...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        Swal.fire({ title: 'Cargando tu personal...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
         // 1. Pedimos los Activos
         const resActivos = await fetch(`${API_URL}/all-users`, {
@@ -61,9 +128,9 @@ async function cargarUsuariosDesdeAPI() {
 
         // Ponemos el selector en Activos por defecto y pintamos
         document.getElementById('filtroEstado').value = 'Active';
-        cargarUsuarios(); 
+        cargarUsuarios();
 
-    } catch (error) { 
+    } catch (error) {
         console.error('Error de red:', error);
         Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudieron cargar los usuarios de la base de datos.', confirmButtonColor: '#12CFF4' });
     }
@@ -75,7 +142,7 @@ window.cargarUsuarios = () => {
     const dniBuscado = document.getElementById('buscadorDni').value.trim().toLowerCase();
 
     let usuariosAFiltrar = todosLosUsuariosCache;
-    
+
     // Filtramos usando "toUpperCase" para evitar errores de mayúsculas/minúsculas de la BD
     if (estadoFiltro === 'Active') {
         usuariosAFiltrar = todosLosUsuariosCache.filter(user => !user.status || user.status.toUpperCase() === 'ACTIVE');
@@ -86,7 +153,7 @@ window.cargarUsuarios = () => {
     if (dniBuscado !== "") {
         usuariosAFiltrar = usuariosAFiltrar.filter(user => user.dni && user.dni.toLowerCase().includes(dniBuscado));
     }
-    
+
     renderizarUsuarios(usuariosAFiltrar);
 };
 
@@ -100,22 +167,22 @@ function renderizarUsuarios(usuarios) {
     const mobileContainer = document.getElementById('mobileCardsContainer');
     tableBody.innerHTML = ''; mobileContainer.innerHTML = '';
 
-    if(usuarios.length === 0) {
+    if (usuarios.length === 0) {
         tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 30px; color: #8a9099;">No se encontraron usuarios en esta categoría.</td></tr>`;
         return;
     }
 
     usuarios.forEach(user => {
         const rolesNombres = user.roles.map(r => r.name.replace('ROLE_', '')).join(', ');
-        
+
         // Identificamos Desempleados sin importar mayúsculas/minúsculas
         const isUnemployed = user.status && (user.status.toUpperCase() === 'UNEMPLOYED' || user.status.toUpperCase() === 'INACTIVE');
-        
-        const nombreMostrar = (user.firstName && user.lastName) 
+
+        const nombreMostrar = (user.firstName && user.lastName)
             ? `${user.firstName} ${user.lastName}` : (user.name || 'Sin Nombre');
 
-        const estadoHTML = isUnemployed 
-            ? '<span style="color:#d32f2f; font-size:12px; font-weight:bold;"><i class="fa-solid fa-circle-xmark"></i> Desempleado</span>' 
+        const estadoHTML = isUnemployed
+            ? '<span style="color:#d32f2f; font-size:12px; font-weight:bold;"><i class="fa-solid fa-circle-xmark"></i> Desempleado</span>'
             : '<span style="color:#2e7d32; font-size:12px; font-weight:bold;"><i class="fa-solid fa-circle-check"></i> Activo</span>';
 
         const actionBtn = isUnemployed
@@ -128,17 +195,20 @@ function renderizarUsuarios(usuarios) {
         const tr = document.createElement('tr');
         tr.style = trStyle;
         tr.innerHTML = `
-            <td style="color: ${isUnemployed ? '#d32f2f' : '#2E3238'}; font-weight: ${isUnemployed ? 'bold' : 'normal'};">
-                ${nombreMostrar} <br><small style="color: #666;">DNI: ${user.dni || 'N/A'}</small>
-            </td>
-            <td>${user.email}</td>
-            <td>${user.phone}</td>
-            <td><span class="badge rol">${rolesNombres}</span><br>${estadoHTML}</td>
-            <td>
-                <button class="btn-edit" onclick="abrirModalEditar(${user.userId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                ${actionBtn}
-            </td>
-        `;
+    <td style="color: ${isUnemployed ? '#d32f2f' : '#2E3238'}; font-weight: ${isUnemployed ? 'bold' : 'normal'};">
+        ${nombreMostrar} <br><small style="color: #666;">DNI: ${user.dni || 'N/A'}</small>
+    </td>
+    <td>${user.email}</td>
+    <td>${user.phone}</td>
+    <td><span class="badge rol">${rolesNombres}</span><br>${estadoHTML}</td>
+    <td>
+        <button class="btn-edit" onclick="abrirModalEditar(${user.userId})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+        ${actionBtn}
+    </td>
+    <td>
+        <span style="display:inline-block; width:22px; height:22px; border-radius:6px; background-color:${user.color || '#CCCCCC'}; border:1px solid #E0E5F2;" title="${user.color || 'Sin color'}"></span>
+    </td>
+`;
         tableBody.appendChild(tr);
 
         // Versión móvil
@@ -166,7 +236,7 @@ function renderizarUsuarios(usuarios) {
 
 window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
     const esDesempleo = nuevoEstado === 'Unemployed';
-    
+
     Swal.fire({
         title: esDesempleo ? '¿Desemplear usuario?' : '¿Re-emplear usuario?',
         text: esDesempleo ? "El usuario ya no tendrá acceso activo." : "El usuario recuperará sus accesos.",
@@ -179,15 +249,16 @@ window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
     }).then(async (result) => {
         if (result.isConfirmed) {
             try {
-                const resGet = await fetch(`${API_URL}/id-user/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` }});
-                if(resGet.ok) {
+                const resGet = await fetch(`${API_URL}/id-user/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` } });
+                if (resGet.ok) {
                     const user = await resGet.json();
                     const payload = {
                         dni: user.dni, title: user.title, firstName: user.firstName, middleName: user.middleName,
                         lastName: user.lastName, secondSurname: user.secondSurname, email: user.email,
                         phone: user.phone, dateOfBirth: user.dateOfBirth, dateOfEntry: user.dateOfEntry,
-                        password: "", 
-                        status: nuevoEstado, roles: user.roles.map(r => r.name) 
+                        password: "",
+                        color: user.color, // <-- NUEVO
+                        status: nuevoEstado, roles: user.roles.map(r => r.name)
                     };
 
                     const resPut = await fetch(`${API_URL}/update-user/${id}`, {
@@ -198,7 +269,7 @@ window.cambiarEstadoUsuario = async (id, nuevoEstado) => {
 
                     if (resPut.ok) {
                         Swal.fire({ icon: 'success', title: '¡Éxito!', text: `Usuario ha sido ${esDesempleo ? 'dado de baja' : 'reactivado'} correctamente.`, confirmButtonColor: '#12CFF4' });
-                        await cargarUsuariosDesdeAPI(); 
+                        await cargarUsuariosDesdeAPI();
                     } else {
                         Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema al cambiar el estado del usuario.', confirmButtonColor: '#12CFF4' });
                     }
@@ -214,11 +285,12 @@ window.abrirModalCrear = () => {
     document.getElementById('formUsuario').reset();
     document.getElementById('userId').value = '';
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-user-plus" style="color:#12CFF4;"></i> Nuevo Usuario';
-    
+
     document.getElementById('userPassword').setAttribute('required', 'true');
     document.getElementById('userPassword').placeholder = "Requerida para nuevos usuarios";
-    
+
     document.querySelectorAll('input[name="userRoles"]').forEach(cb => cb.checked = false);
+    pintarColorEnFormulario(generarColorHexAleatorio()); // <-- NUEVO
     document.getElementById('modalUsuario').style.display = 'flex';
 };
 
@@ -226,15 +298,15 @@ window.abrirModalEditar = async (id) => {
     document.getElementById('formUsuario').reset();
     document.getElementById('modalTitulo').innerHTML = '<i class="fa-solid fa-pen-to-square" style="color:#12CFF4;"></i> Editar Usuario';
     document.getElementById('userId').value = id;
-    
-    document.getElementById('userPassword').removeAttribute('required'); 
+
+    document.getElementById('userPassword').removeAttribute('required');
     document.getElementById('userPassword').placeholder = "Dejar en blanco para no cambiarla";
-    
+
     try {
-        const response = await fetch(`${API_URL}/id-user/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` }});
-        if(response.ok) {
+        const response = await fetch(`${API_URL}/id-user/${id}`, { headers: { 'Authorization': `Bearer ${userToken}` } });
+        if (response.ok) {
             const data = await response.json();
-            
+
             document.getElementById('userDni').value = data.dni || '';
             document.getElementById('userTitle').value = data.title || '';
             document.getElementById('userFirstName').value = data.firstName || '';
@@ -247,12 +319,14 @@ window.abrirModalEditar = async (id) => {
             document.getElementById('userEntry').value = data.dateOfEntry || '';
             document.getElementById('userStatus').value = data.status || 'Active';
 
+            pintarColorEnFormulario(data.color || generarColorHexAleatorio()); // <-- NUEVO
+
             const checkboxes = document.querySelectorAll('input[name="userRoles"]');
             checkboxes.forEach(cb => { cb.checked = data.roles.some(r => r.name === cb.value); });
 
             document.getElementById('modalUsuario').style.display = 'flex';
         }
-    } catch(error) { console.error("Error al obtener usuario:", error); }
+    } catch (error) { console.error("Error al obtener usuario:", error); }
 };
 
 window.cerrarModal = () => {
@@ -262,7 +336,7 @@ window.cerrarModal = () => {
 window.guardarUsuario = async () => {
     const id = document.getElementById('userId').value;
     const isEditing = id !== '';
-    
+
     const roleCheckboxes = document.querySelectorAll('input[name="userRoles"]:checked');
     const selectedRoles = Array.from(roleCheckboxes).map(cb => cb.value);
 
@@ -275,7 +349,7 @@ window.guardarUsuario = async () => {
     const entryDateInput = document.getElementById('userEntry').value;
     const dniInput = document.getElementById('userDni').value.trim();
 
-    if(!firstName || !lastName || !email || !phone || !title || !birthDateInput || !entryDateInput || !dniInput) {
+    if (!firstName || !lastName || !email || !phone || !title || !birthDateInput || !entryDateInput || !dniInput) {
         return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Por favor, llena todos los campos obligatorios.', confirmButtonColor: '#12CFF4' });
     }
 
@@ -283,10 +357,20 @@ window.guardarUsuario = async () => {
         return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Debes seleccionar al menos un rol para el usuario.', confirmButtonColor: '#12CFF4' });
     }
 
-    if(!/^\d{10}$/.test(dniInput)){
+    if (!/^\d{10}$/.test(dniInput)) {
         return Swal.fire({ icon: 'warning', title: 'DNI Inválido', text: 'El DNI debe contener exactamente 10 números.', confirmButtonColor: '#12CFF4' });
     }
 
+    const colorInput = document.getElementById('userColor').value.toUpperCase();
+    if (!/^#[0-9A-F]{6}$/.test(colorInput)) {
+        return Swal.fire({ icon: 'warning', title: 'Color inválido', text: 'El color debe tener formato hexadecimal, ej: #A1B2C3.', confirmButtonColor: '#12CFF4' });
+    }
+
+    const colorEnUso = todosLosUsuariosCache.some(u =>
+        u.color && u.color.toUpperCase() === colorInput && String(u.userId) !== id);
+    if (colorEnUso) {
+        return Swal.fire({ icon: 'warning', title: 'Color duplicado', text: 'Ese color ya lo tiene asignado otro usuario. Elige otro.', confirmButtonColor: '#12CFF4' });
+    }
     const passwordInput = document.getElementById('userPassword').value;
     if (!isEditing && passwordInput.trim() === "") {
         return Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'La contraseña es obligatoria para usuarios nuevos.', confirmButtonColor: '#12CFF4' });
@@ -322,7 +406,8 @@ window.guardarUsuario = async () => {
         dateOfEntry: entryDateInput,
         status: document.getElementById('userStatus').value,
         title: title,
-        roles: selectedRoles 
+        color: colorInput, // <-- NUEVO
+        roles: selectedRoles
     };
 
     const url = isEditing ? `${API_URL}/update-user/${id}` : `${API_URL}/create-user`;
@@ -339,7 +424,7 @@ window.guardarUsuario = async () => {
             Swal.fire({ icon: 'success', title: '¡Éxito!', text: isEditing ? 'Usuario actualizado.' : 'Usuario registrado.', confirmButtonColor: '#12CFF4' });
             cerrarModal();
             document.getElementById('buscadorDni').value = "";
-            await cargarUsuariosDesdeAPI(); 
+            await cargarUsuariosDesdeAPI();
         } else {
             let errorText = 'Por favor verifica los datos.';
             try {
@@ -354,8 +439,8 @@ window.guardarUsuario = async () => {
                     } else {
                         errorText = String(errorData.message);
                     }
-                } 
-            } catch(e) { console.error("No se pudo leer el error del servidor", e); }
+                }
+            } catch (e) { console.error("No se pudo leer el error del servidor", e); }
 
             Swal.fire({ icon: 'error', title: 'Error de validación', html: String(errorText), confirmButtonColor: '#12CFF4' });
         }
@@ -368,8 +453,8 @@ window.guardarUsuario = async () => {
 window.cerrarSesion = () => {
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) { 
-        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    if (rolesString) {
+        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
     }
 
     if (userRoles.length > 1) {
@@ -414,7 +499,7 @@ window.cerrarSesion = () => {
 // Declararla en window asegura que esté disponible globalmente en todo el script
 window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
@@ -432,18 +517,18 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
-        if (rol === 'ROLE_ADMIN') { 
-            nombreRol = 'Acceder como Administrador'; 
-            url = `${prefijoRaiz}admin/admin-dashboard.html`; 
+
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = 'Acceder como Administrador';
+            url = `${prefijoRaiz}admin/admin-dashboard.html`;
         }
-        if (rol === 'ROLE_JEFE') { 
-            nombreRol = 'Acceder como Manager'; 
-            url = `${prefijoJefe}jefe-dashboard.html`; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = 'Acceder como Manager';
+            url = `${prefijoJefe}jefe-dashboard.html`;
         }
-        if (rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = 'Acceder como Subcontratista'; 
-            url = `${prefijoRaiz}employee/employee-dashboard.html`; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = 'Acceder como Subcontratista';
+            url = `${prefijoRaiz}employee/employee-dashboard.html`;
         }
 
         if (nombreRol) {
@@ -454,7 +539,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
             boton.style.backgroundColor = '#00B8A9';
             boton.style.cursor = 'pointer';
             boton.textContent = nombreRol;
-            
+
             boton.addEventListener('click', () => {
                 window.location.href = url;
             });
@@ -465,7 +550,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
 
     Swal.fire({
         title: 'Selecciona tu área de trabajo',
-        html: contenedor, 
+        html: contenedor,
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',

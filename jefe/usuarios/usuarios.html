@@ -94,6 +94,7 @@
                                     <th>Teléfono</th>
                                     <th>Rol</th>
                                     <th>Acciones</th>
+                                    <th>Color</th>
                                 </tr>
                             </thead>
                             <tbody id="userTableBody"></tbody>
@@ -116,7 +117,6 @@
             <div class="modal-body">
                 <form id="formUsuario">
                     <input type="hidden" id="userId">
-                    <input type="hidden" id="userId">
                     <div class="form-grid">
                         <div class="form-row">
                             <div class="form-group">
@@ -129,6 +129,21 @@
                                 <input type="text" id="userTitle" class="input-field" required
                                     placeholder="Ej. Ingeniero (Obligatorio)">
                             </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Color Identificador <span class="text-required">*</span></label>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <input type="color" id="userColorPicker" value="#12CFF4"
+                                    style="width:44px; height:44px; padding:2px; border:1px solid #E0E5F2; border-radius:8px; cursor:pointer;">
+                                <input type="text" id="userColor" class="input-field" required maxlength="7"
+                                    placeholder="#A1B2C3" style="flex:1; text-transform:uppercase;">
+                                <button type="button" class="btn-secondary" onclick="regenerarColor()"
+                                    title="Sugerir uno aleatorio">
+                                    <i class="fa-solid fa-dice"></i>
+                                </button>
+                            </div>
+                            <small id="colorHint" style="color:#8a9099; font-size:12px;"></small>
                         </div>
 
                         <div class="form-row">

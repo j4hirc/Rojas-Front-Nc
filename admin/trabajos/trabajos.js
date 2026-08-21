@@ -7,6 +7,7 @@ let mapa, marcador;
 let allJobsCache = [];
 
 let allMaterialsCache = [];
+let colorPorEmpleadoId = {};
 let materialesEstado = {};
 let blueprintsNuevos = []; // acumula los File objects seleccionados en la sesión de edición actual
 
@@ -230,6 +231,9 @@ async function cargarUsuariosYMateriales(emailActual) {
         if (resUsers.ok) {
             const users = await resUsers.json();
 
+            colorPorEmpleadoId = {}; // <-- NUEVO
+            users.forEach(u => { colorPorEmpleadoId[u.userId] = u.color; }); // <-- NUEVO
+
             if (typeof myManagerId !== 'undefined') {
                 const jefeActual = users.find(u => u.email === emailActual);
                 if (jefeActual) myManagerId = jefeActual.userId;
@@ -450,7 +454,10 @@ function renderizarTrabajos(trabajos) {
             `;
         }
 
+        const colorSubcontratista = colorPorEmpleadoId[job.employeeId] || '#CCCCCC';
         const tr = document.createElement('tr');
+        tr.style.borderLeft = `5px solid ${colorSubcontratista}`;
+        tr.style.backgroundColor = hexARgba(colorSubcontratista, 0.06);
         tr.innerHTML = `
     <td>
         <div class="cell-wrap">
@@ -501,6 +508,8 @@ function renderizarTrabajos(trabajos) {
             card.style.flexDirection = 'column';
             card.style.alignItems = 'flex-start';
             card.style.padding = '20px';
+            card.style.borderLeft = `6px solid ${colorSubcontratista}`; // <-- NUEVO
+            card.style.backgroundColor = hexARgba(colorSubcontratista, 0.06); // <-- NUEVO
 
             card.innerHTML = `
                 <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 5px;">
@@ -765,7 +774,7 @@ window.quitarBlueprintPendiente = (idx) => {
 };
 
 function resetearScrollModal() {
-    const modal = document.getElementById('modalJob');  
+    const modal = document.getElementById('modalJob');
     if (!modal) return;
 
     const resetTodo = () => {
@@ -789,6 +798,14 @@ function resetearScrollModal() {
     requestAnimationFrame(resetTodo);
     setTimeout(resetTodo, 50);
     setTimeout(resetTodo, 300); // coincide con el setTimeout de invalidateSize del mapa
+}
+
+function hexARgba(hex, alpha) {
+    if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return `rgba(200,200,200,${alpha})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 function limpiarMaterialesNecesarios() {
