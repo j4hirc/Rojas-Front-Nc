@@ -564,23 +564,12 @@ function renderizarNomina(offset) {
         finSemana = new Date(year, month + 1, 0, 23, 59, 59, 999);
     }
 
-    // Solo trabajos de ESTE Manager
-    const miId = miUsuarioActual ? miUsuarioActual.userId : null;
-    const jefeNombreCompleto = miUsuarioActual
-        ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase()
-        : '';
-
     let nominas = {};
 
+    // 🔥 GLOBAL: igual que Admin → todos los trabajos COMPLETED de todos
     (window.nominasJobsCache || []).forEach(job => {
         if (job.status !== 'COMPLETED' || !job.employeeId) return;
 
-        // Filtro por Manager (id o nombre)
-        const jobManagerName = (job.nameManager || '').trim().toLowerCase();
-        const esDeEsteJefe = (job.managerId == miId) || (jobManagerName === jefeNombreCompleto);
-        if (!esDeEsteJefe) return;
-
-        // Fecha normalizada (igual que Admin)
         let jobDateStr = Array.isArray(job.jobDate)
             ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
             : job.jobDate;
@@ -595,7 +584,7 @@ function renderizarNomina(offset) {
         }
     });
 
-    // Formato MM/DD/YYYY (igual que Admin)
+    // Formato MM/DD/YYYY
     const formatMDY = (d) => `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}/${d.getFullYear()}`;
     const strInicio = formatMDY(inicioSemana);
     const strFin = formatMDY(finSemana);
@@ -623,7 +612,7 @@ function renderizarNomina(offset) {
     <div id="tabla-nomina-jefe" style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: 'Poppins', sans-serif;">
             <tr style="background-color: #0F2D4A; color: #FFFFFF; position: sticky; top: 0; z-index: 10;">
-                <th style="padding: 15px; font-weight: 700;">Subcontratista a tu cargo</th>
+                <th style="padding: 15px; font-weight: 700;">Personal de la Empresa (Total)</th>
                 <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
             </tr>
     `;
@@ -645,10 +634,10 @@ function renderizarNomina(offset) {
     }
 
     if (!hayDatos) {
-        htmlContent += '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por tu personal en esta quincena.</td></tr>';
+        htmlContent += '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por ningún personal en esta quincena.</td></tr>';
     } else {
         htmlContent += `<tr style="background-color: #f8faff;">
-            <td style="padding: 12px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase; font-size: 12px;">Total de tu equipo:</td>
+            <td style="padding: 12px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase; font-size: 12px;">Total Nómina Global:</td>
             <td style="padding: 12px; font-weight: bold; color: #2e7d32; font-size: 16px; text-align: right;">$${totalNomina.toFixed(2)}</td>
         </tr>`;
     }
