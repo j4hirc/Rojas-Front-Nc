@@ -1,8 +1,9 @@
 const JOBS_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/jobs/all';
 const USERS_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/user/all-users';
+
+
 let userToken = '';
-let myManagerId = null;
-let misTrabajosCache = [];
+let allJobsCache = [];   // ahora global, igual que Admin
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -39,34 +40,21 @@ async function inicializarDatosDelJefe(emailActual) {
     try {
         Swal.fire({ title: 'Cargando evidencias...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-        // A) Buscamos el ID del Jefe actual
-        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
-        if (resUsers.ok) {
-            const users = await resUsers.json();
-            const jefeActual = users.find(u => u.email === emailActual);
-            if (jefeActual) {
-                myManagerId = jefeActual.userId;
-            } else {
-                Swal.fire('Error', 'No se pudo identificar tu cuenta de Jefe.', 'error');
-                return;
-            }
-        }
-
-        // B) Traemos todos los trabajos y filtramos solo los de este Jefe
+        // Ya no filtramos por manager → se ven TODOS los trabajos (igual que Admin)
         const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (resJobs.ok) {
-            const todosLosTrabajos = await resJobs.json();
-            misTrabajosCache = todosLosTrabajos.filter(job => job.managerId === myManagerId);
+            allJobsCache = await resJobs.json();
             window.filtrarTrabajosCombinados();
         }
 
         Swal.close();
+
         const urlParams = new URLSearchParams(window.location.search);
         const jobIdParam = urlParams.get('jobId');
 
         if (jobIdParam) {
             const idNumerico = parseInt(jobIdParam);
-            const trabajoEncontrado = misTrabajosCache.find(j => j.jobId === idNumerico);
+            const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
 
             if (trabajoEncontrado) {
                 if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
@@ -94,11 +82,12 @@ window.filtrarTrabajosCombinados = () => {
     const estado = document.getElementById('filterStatusInput') ? document.getElementById('filterStatusInput').value : 'ALL';
     const prioridad = document.getElementById('filterPriorityInput') ? document.getElementById('filterPriorityInput').value.trim() : '';
 
-    const resultado = misTrabajosCache.filter(job => {
+    const resultado = allJobsCache.filter(job => {
         const coincideTexto =
             (job.clientName || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
-            (job.nameEmployee || '').toLowerCase().includes(texto);
+            (job.nameEmployee || '').toLowerCase().includes(texto) ||
+            (job.nameManager || '').toLowerCase().includes(texto);
 
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
 
@@ -218,7 +207,7 @@ function renderizarTrabajos(trabajos) {
 
 // 5. LÓGICA PARA VER EL HISTORIAL (MODAL)
 window.abrirModalEvidencias = (jobId) => {
-    const job = misTrabajosCache.find(j => j.jobId === jobId);
+    const job = allJobsCache.find(j => j.jobId === jobId);
     if (!job) return;
 
     document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
@@ -291,6 +280,7 @@ window.verFotoGrande = (url) => {
 // --- RESUMEN DE BODEGA (Con navegación día por día, igual que Nómina) ---
 let bodegaJobsCache = null;
 let bodegaUsersCache = null;
+let bodegaMaterialsCache = null;
 let bodegaDiaOffset = 0;
 
 window.verBodegaHoy = async () => {
@@ -299,15 +289,17 @@ window.verBodegaHoy = async () => {
     try {
         const token = localStorage.getItem('jwt_token');
 
-        const [jobsRes, usersRes] = await Promise.all([
+        const [jobsRes, usersRes, matsRes] = await Promise.all([
             fetch('https://api-rojas-remodeling.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/materials/all', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         bodegaJobsCache = await jobsRes.json();
         bodegaUsersCache = await usersRes.json();
+        bodegaMaterialsCache = await matsRes.json();
 
-        bodegaDiaOffset = 0; // Reiniciamos al día actual cada vez que se abre
+        bodegaDiaOffset = 0;
 
         Swal.fire({
             title: '<i class="fa-solid fa-truck-fast" style="color:#F4A300;"></i> Ordenes de Bodega',
@@ -358,7 +350,12 @@ function renderizarBodega(offset) {
     else etiquetaDia = fechaObjetivo.toLocaleDateString('es-ES', { weekday: 'long' });
     etiquetaDia = etiquetaDia.charAt(0).toUpperCase() + etiquetaDia.slice(1);
 
-    const jefeNombreCompleto = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase();
+    // Helper: SIEMPRE unidad de la base de datos
+    const obtenerUnidadDeBase = (materialId, unitDelJob) => {
+        const matInfo = (bodegaMaterialsCache || []).find(m => m.materialId == materialId);
+        if (matInfo && matInfo.unit) return matInfo.unit;
+        return (unitDelJob && unitDelJob !== 'N/A') ? unitDelJob : '';
+    };
 
     let htmlContent = `
     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
@@ -380,11 +377,9 @@ function renderizarBodega(offset) {
         </button>
     </div>`;
 
-    const itemsDelDia = bodegaJobsCache.filter(job => {
-        const jobManagerName = (job.nameManager || "").trim().toLowerCase();
-        const esDeEsteJefe = (jobManagerName === jefeNombreCompleto) || (job.managerId == miUsuarioActual.userId);
-
-        if (!esDeEsteJefe || !['PENDING', 'IN_PROGRESS'].includes(job.status)) return false;
+    // 🔥 GLOBAL: todos los trabajos PENDING / IN_PROGRESS del día (igual que Admin)
+    const itemsDelDia = (bodegaJobsCache || []).filter(job => {
+        if (!['PENDING', 'IN_PROGRESS'].includes(job.status)) return false;
 
         let jobDateStr = Array.isArray(job.jobDate)
             ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
@@ -398,49 +393,48 @@ function renderizarBodega(offset) {
     } else {
         htmlContent += `<div id="bodega-lista-dia" style="max-height: 420px; overflow-y: auto; border: 1px solid #D4D4D4; border-radius: 8px;">`;
 
+        window.bodegaItemsDelDiaCache = itemsDelDia;
+
         itemsDelDia.forEach(job => {
-            const empleado = bodegaUsersCache.find(u => u.userId == job.employeeId);
+            const empleado = (bodegaUsersCache || []).find(u => u.userId == job.employeeId);
             const nombreEmpleado = empleado
                 ? `${empleado.firstName} ${empleado.lastName}`
                 : `ID: ${job.employeeId}`;
 
-            // --- Estado del proyecto (mismo estilo que las otras vistas) ---
+            const nombreManager = job.nameManager || 'Sin manager asignado';
+
             let statusBadge = '';
             if (job.status === 'PENDING') statusBadge = `<span style="background: #FFF3E0; color: #ff9800; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Pendiente</span>`;
             else if (job.status === 'IN_PROGRESS') statusBadge = `<span style="background: #E3F2FD; color: #1e88e5; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">En Progreso</span>`;
-            else if (job.status === 'COMPLETED') statusBadge = `<span style="background: #E8F5E9; color: #2e7d32; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Completado</span>`;
-            else statusBadge = `<span style="background: #FFEBEE; color: #d32f2f; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">Cancelado</span>`;
 
-            // --- Descripción limpia (sin el bloque de materiales pre-asignados en texto) ---
             let descBodega = job.description ? job.description : '';
             if (descBodega.includes('[MATERIALES PRE-ASIGNADOS]:')) {
                 descBodega = descBodega.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
             }
 
-            // --- Combinamos materiales pre-asignados (jefe/admin) + necesarios (puede agregar el subcontratista) ---
             const materialesCombinados = {};
 
             (job.materials || []).forEach(mat => {
-                const id = mat.materialId;
-                materialesCombinados[id] = {
+                materialesCombinados[mat.materialId] = {
                     name: mat.name || mat.material || 'Material',
                     quantity: parseFloat(mat.quantity || mat.cant || 1),
-                    unit: mat.unit || '',
+                    unit: obtenerUnidadDeBase(mat.materialId, mat.unit),
                     origen: 'Pre-asignado'
                 };
             });
 
             (job.necessaryMaterials || []).forEach(mat => {
                 const id = mat.materialId;
+                const unidadBase = obtenerUnidadDeBase(id, mat.unit);
+
                 if (materialesCombinados[id]) {
-                    // Si ya existía, actualizamos cantidad por si el subcontratista la cambió
                     materialesCombinados[id].quantity = parseFloat(mat.quantity || 1);
-                    materialesCombinados[id].unit = mat.unit || materialesCombinados[id].unit;
+                    if (unidadBase) materialesCombinados[id].unit = unidadBase;
                 } else {
                     materialesCombinados[id] = {
                         name: mat.name || 'Material',
                         quantity: parseFloat(mat.quantity || 1),
-                        unit: mat.unit || '',
+                        unit: unidadBase,
                         origen: 'Agregado por subcontratista'
                     };
                 }
@@ -457,6 +451,9 @@ function renderizarBodega(offset) {
                     <span style="color: #F4A300; font-weight: bold;">${nombreEmpleado}</span>
                 </div>
             </div>
+            <p style="margin: 0 0 6px 0; font-size: 12px; color: #0f4c81; font-weight: 600;">
+                <i class="fa-solid fa-user-shield"></i> Manager: ${nombreManager}
+            </p>
             ${descBodega ? `<p style="margin: 0 0 8px 0; font-size: 12px; color: #777; font-style: italic;">${descBodega}</p>` : ''}`;
 
             if (listaMateriales.length > 0) {
@@ -465,7 +462,8 @@ function renderizarBodega(offset) {
                     const etiquetaOrigen = mat.origen === 'Agregado por subcontratista'
                         ? `<span style="color:#e65100; font-size:11px; font-weight:600;"> (agregado por subcontratista)</span>`
                         : '';
-                    htmlContent += `<li><strong>${mat.name}</strong> — ${mat.quantity} ${mat.unit}${etiquetaOrigen}</li>`;
+                    const textoUnidad = mat.unit ? ` ${mat.unit}` : '';
+                    htmlContent += `<li><strong>${mat.name}</strong> — ${mat.quantity}${textoUnidad}${etiquetaOrigen}</li>`;
                 });
                 htmlContent += `</ul>`;
             } else {
