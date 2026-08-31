@@ -703,11 +703,8 @@ window.abrirModalEditarJob = async (id) => {
                     const nombreMat = matInfo ? matInfo.name : (m.name || 'Material');
                     const precioMat = matInfo ? (matInfo.price || 0) : (m.price || 0);
 
-                    // Preferir unidad del inventario si la del job viene vacía o es N/A
-                    let unidad = m.unit;
-                    if (!unidad || unidad === 'N/A') {
-                        unidad = matInfo?.unit || '';
-                    }
+                    // SIEMPRE de la base de datos
+                    const unidad = (matInfo && matInfo.unit) ? matInfo.unit : (m.unit || '');
 
                     agregarMaterialNecesarioDesdeInventario(m.materialId, nombreMat, precioMat, m.quantity, unidad);
                 });
@@ -721,13 +718,17 @@ window.abrirModalEditarJob = async (id) => {
                     const matInfo = allMaterialsCache.find(x => x.materialId == mat.materialId);
                     const precio = mat.estimatedPrice || mat.price || 0;
 
-                    let unidad = mat.unit;
-                    if (!unidad || unidad === 'N/A') {
-                        unidad = matInfo?.unit || '';
-                    }
+                    // SIEMPRE de la base de datos
+                    const unidad = (matInfo && matInfo.unit) ? matInfo.unit : (mat.unit || '');
 
                     container.insertAdjacentHTML('beforeend',
-                        crearFilaMaterialNecesario(mat.materialId, mat.name || 'Material', precio, mat.quantity || 1, unidad)
+                        crearFilaMaterialNecesario(
+                            mat.materialId,
+                            mat.name || (matInfo ? matInfo.name : 'Material'),
+                            precio,
+                            mat.quantity || 1,
+                            unidad
+                        )
                     );
                 });
             }
@@ -1142,10 +1143,21 @@ function crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial)
 
 window.agregarMaterialNecesarioDesdeInventario = (matId, name, price, qtyInicial, unitInicial) => {
     const container = document.getElementById('necessaryMaterialsContainer');
-
     if (document.getElementById(`nec-${matId}`)) return;
 
-    container.insertAdjacentHTML('beforeend', crearFilaMaterialNecesario(matId, name, price, qtyInicial, unitInicial));
+    // SIEMPRE cogemos la unidad real de la base de datos
+    const matInfo = allMaterialsCache.find(x => x.materialId == matId);
+    const finalUnit = (matInfo && matInfo.unit) ? matInfo.unit : (unitInicial || '');
+
+    container.insertAdjacentHTML('beforeend',
+        crearFilaMaterialNecesario(
+            matId,
+            name || (matInfo ? matInfo.name : 'Material'),
+            price !== undefined ? price : (matInfo ? (matInfo.price || 0) : 0),
+            qtyInicial,
+            finalUnit          // ← siempre de la base
+        )
+    );
     calcularTotalMaterialesNecesarios();
 };
 

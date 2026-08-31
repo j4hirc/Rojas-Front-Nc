@@ -482,6 +482,7 @@ window.exportarNominaSemanalAPdf = () => {
 // =================================================================================
 window.bodegaAdminJobsCache = null;
 window.bodegaAdminUsersCache = null;
+window.bodegaAdminMaterialsCache = null;   // ← NUEVO
 window.bodegaAdminDiaOffset = 0;
 
 window.verBodegaGlobal = async () => {
@@ -490,13 +491,15 @@ window.verBodegaGlobal = async () => {
     try {
         const token = localStorage.getItem('jwt_token') || localStorage.getItem('token');
 
-        const [jobsRes, usersRes] = await Promise.all([
+        const [jobsRes, usersRes, matsRes] = await Promise.all([
             fetch('https://api-rojas-remodeling.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/materials/all', { headers: { 'Authorization': `Bearer ${token}` } })  // ← NUEVO
         ]);
 
         window.bodegaAdminJobsCache = await jobsRes.json();
         window.bodegaAdminUsersCache = await usersRes.json();
+        window.bodegaAdminMaterialsCache = await matsRes.json();   // ← NUEVO
 
         window.bodegaAdminDiaOffset = 0;
 
@@ -533,27 +536,6 @@ function formatMDYBodegaAdmin(date) {
     return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${date.getFullYear()}`;
 }
 
-function normalizarUnidadMaterial(unit, name) {
-    // Si ya viene una unidad válida, la usamos
-    if (unit && unit.trim() !== '' && unit.trim().toUpperCase() !== 'N/A') {
-        return unit.trim();
-    }
-
-    // Intentamos extraerla del nombre (ej: "... (FT)" o "... (CAJA = 23.77 SQ.FT)")
-    if (name) {
-        const match = name.match(/\(([^)]+)\)\s*$/);
-        if (match) {
-            const inside = match[1].trim();
-            // Caso "CAJA = 23.77 SQ.FT" → nos quedamos con "CAJA"
-            if (inside.includes('=')) {
-                return inside.split('=')[0].trim();
-            }
-            // Caso normal "FT", "SQ.FT.", "Sq. Ft.", etc.
-            return inside;
-        }
-    }
-    return '';
-}
 
 function construirBloqueJobBodega(job) {
     const empleado = window.bodegaAdminUsersCache.find(u => u.userId == job.employeeId);
@@ -571,12 +553,20 @@ function construirBloqueJobBodega(job) {
 
     const materialesCombinados = {};
 
+    // Helper: siempre coge la unidad de la base de datos
+    const obtenerUnidadDeBase = (materialId, unitDelJob) => {
+        const matInfo = (window.bodegaAdminMaterialsCache || []).find(m => m.materialId == materialId);
+        if (matInfo && matInfo.unit) return matInfo.unit;
+        // Solo como último recurso usamos lo que venga en el job (nunca del nombre)
+        return (unitDelJob && unitDelJob !== 'N/A') ? unitDelJob : '';
+    };
+
     (job.materials || []).forEach(mat => {
         const nombre = mat.name || mat.material || 'Material';
         materialesCombinados[mat.materialId] = {
             name: nombre,
             quantity: parseFloat(mat.quantity || mat.cant || 1),
-            unit: normalizarUnidadMaterial(mat.unit, nombre),
+            unit: obtenerUnidadDeBase(mat.materialId, mat.unit),   // ← siempre de la base
             origen: 'Pre-asignado'
         };
     });
@@ -584,19 +574,19 @@ function construirBloqueJobBodega(job) {
     (job.necessaryMaterials || []).forEach(mat => {
         const id = mat.materialId;
         const nombre = mat.name || 'Material';
-        const unidadLimpia = normalizarUnidadMaterial(mat.unit, nombre);
+        const unidadBase = obtenerUnidadDeBase(id, mat.unit);
 
         if (materialesCombinados[id]) {
             materialesCombinados[id].quantity = parseFloat(mat.quantity || 1);
-            // Solo sobreescribimos la unidad si la nueva es válida
-            if (unidadLimpia) {
-                materialesCombinados[id].unit = unidadLimpia;
+            // Solo actualizamos la unidad si la de la base es válida
+            if (unidadBase) {
+                materialesCombinados[id].unit = unidadBase;
             }
         } else {
             materialesCombinados[id] = {
                 name: nombre,
                 quantity: parseFloat(mat.quantity || 1),
-                unit: unidadLimpia,
+                unit: unidadBase,   // ← siempre de la base
                 origen: 'Agregado por subcontratista'
             };
         }
@@ -625,7 +615,6 @@ function construirBloqueJobBodega(job) {
                 ? `<span style="color:#e65100; font-size:11px; font-weight:600;"> (agregado por subcontratista)</span>`
                 : '';
 
-            // Solo mostramos la unidad si existe
             const textoUnidad = mat.unit ? ` ${mat.unit}` : '';
 
             html += `<li><strong>${mat.name}</strong> — ${mat.quantity}${textoUnidad}${etiquetaOrigen}</li>`;
