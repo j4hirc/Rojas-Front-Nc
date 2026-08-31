@@ -472,11 +472,11 @@ window.exportarBodegaPdf = () => {
 };
 
 // =================================================================================
-// --- NÓMINA QUINCENAL CON VIAJE EN EL TIEMPO SIN BUGS ---
+// --- NÓMINA QUINCENAL (igual que Admin, pero solo del Manager actual) ---
 // =================================================================================
-let nominasJobsCache = null;
-let nominasUsersCache = null;
-let quincenaOffset = 0;
+window.nominasJobsCache = null;
+window.nominasUsersCache = null;
+window.quincenaOffset = 0;
 
 window.verNominaSemanal = async () => {
     Swal.fire({ title: 'Obteniendo registros...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
@@ -487,10 +487,10 @@ window.verNominaSemanal = async () => {
             fetch('https://api-rojas-remodeling.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
             fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
-        nominasJobsCache = await resJobs.json();
-        nominasUsersCache = await resUsers.json();
+        window.nominasJobsCache = await resJobs.json();
+        window.nominasUsersCache = await resUsers.json();
 
-        quincenaOffset = 0; // Reiniciamos a la quincena actual
+        window.quincenaOffset = 0; // Reiniciar a la quincena actual
 
         Swal.fire({
             title: '<h2 style="color: #0F2D4A; font-weight: 800; margin: 0; display: flex; align-items: center; justify-content: center;"><span style="background: #12CFF4; color: #FFFFFF; padding: 4px 10px; border-radius: 8px; font-size: 0.7em; margin-right: 12px;"><i class="fa-solid fa-money-check-dollar"></i></span>Tu Nómina Quincenal</h2>',
@@ -501,7 +501,7 @@ window.verNominaSemanal = async () => {
             background: '#FFFFFF'
         });
 
-        renderizarNomina(quincenaOffset);
+        renderizarNomina(window.quincenaOffset);
 
     } catch (e) {
         console.error(e);
@@ -510,11 +510,12 @@ window.verNominaSemanal = async () => {
 };
 
 window.cambiarSemana = (delta) => {
-    quincenaOffset += delta;
-    renderizarNomina(quincenaOffset);
+    window.quincenaOffset += delta;
+    renderizarNomina(window.quincenaOffset);
 };
 
 function renderizarNomina(offset) {
+    // Misma lógica de quincenas que Admin
     let year = new Date().getFullYear();
     let month = new Date().getMonth();
     let part = new Date().getDate() <= 15 ? 1 : 2;
@@ -531,44 +532,50 @@ function renderizarNomina(offset) {
         }
     }
 
-    let inicio, fin;
+    let inicioSemana, finSemana;
     if (part === 1) {
-        inicio = new Date(year, month, 1);
-        fin = new Date(year, month, 15, 23, 59, 59, 999);
+        inicioSemana = new Date(year, month, 1, 0, 0, 0, 0);
+        finSemana = new Date(year, month, 15, 23, 59, 59, 999);
     } else {
-        inicio = new Date(year, month, 16);
-        fin = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        inicioSemana = new Date(year, month, 16, 0, 0, 0, 0);
+        finSemana = new Date(year, month + 1, 0, 23, 59, 59, 999);
     }
 
-    const jefeNombreCompleto = `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase();
+    // Solo trabajos de ESTE Manager
+    const miId = miUsuarioActual ? miUsuarioActual.userId : null;
+    const jefeNombreCompleto = miUsuarioActual
+        ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}`.trim().toLowerCase()
+        : '';
+
     let nominas = {};
 
-    nominasJobsCache.forEach(job => {
-        const jobManagerName = (job.nameManager || "").trim().toLowerCase();
-        const esDeEsteJefe = (jobManagerName === jefeNombreCompleto) || (job.managerId == miUsuarioActual.userId);
+    (window.nominasJobsCache || []).forEach(job => {
+        if (job.status !== 'COMPLETED' || !job.employeeId) return;
 
-        if (!esDeEsteJefe || job.status !== 'COMPLETED' || !job.employeeId) return;
+        // Filtro por Manager (id o nombre)
+        const jobManagerName = (job.nameManager || '').trim().toLowerCase();
+        const esDeEsteJefe = (job.managerId == miId) || (jobManagerName === jefeNombreCompleto);
+        if (!esDeEsteJefe) return;
 
+        // Fecha normalizada (igual que Admin)
         let jobDateStr = Array.isArray(job.jobDate)
             ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
             : job.jobDate;
 
         const jobDate = new Date(jobDateStr);
         if (isNaN(jobDate.getTime())) return;
-
         jobDate.setHours(12, 0, 0, 0);
 
-        if (jobDate >= inicio && jobDate <= fin) {
+        if (jobDate >= inicioSemana && jobDate <= finSemana) {
             if (!nominas[job.employeeId]) nominas[job.employeeId] = 0;
             nominas[job.employeeId] += (job.pay || 0);
         }
     });
 
-    // ✅ CAMBIO PRINCIPAL: Formato Mes/Día/Año
+    // Formato MM/DD/YYYY (igual que Admin)
     const formatMDY = (d) => `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}/${d.getFullYear()}`;
-
-    const strInicio = formatMDY(inicio);
-    const strFin = formatMDY(fin);
+    const strInicio = formatMDY(inicioSemana);
+    const strFin = formatMDY(finSemana);
 
     let htmlContent = `
     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; background: #F4F7FE; padding: 12px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
@@ -591,7 +598,7 @@ function renderizarNomina(offset) {
     </div>
 
     <div id="tabla-nomina-jefe" style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: 'Poppins', sans-serif;">
             <tr style="background-color: #0F2D4A; color: #FFFFFF; position: sticky; top: 0; z-index: 10;">
                 <th style="padding: 15px; font-weight: 700;">Subcontratista a tu cargo</th>
                 <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
@@ -603,64 +610,67 @@ function renderizarNomina(offset) {
 
     for (let empId in nominas) {
         hayDatos = true;
-        const emp = nominasUsersCache.find(u => u.userId == empId);
+        const emp = (window.nominasUsersCache || []).find(u => u.userId == empId);
         const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
         const pago = nominas[empId];
         totalNomina += pago;
 
         htmlContent += `<tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; color: #2E3238;">${nombre}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #eee; color: #2E3238; font-weight: 500;">${nombre}</td>
             <td style="padding: 10px; border-bottom: 1px solid #eee; color: #F4A300; font-weight: bold; text-align: right;">$${pago.toFixed(2)}</td>
         </tr>`;
     }
 
     if (!hayDatos) {
-        htmlContent += '<tr><td colspan="2" style="padding: 15px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por tu personal en esta quincena.</td></tr>';
+        htmlContent += '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por tu personal en esta quincena.</td></tr>';
     } else {
         htmlContent += `<tr style="background-color: #f8faff;">
-            <td style="padding: 10px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase;">Total de tu equipo:</td>
-            <td style="padding: 10px; font-weight: bold; color: #2e7d32; font-size: 16px; text-align: right;">$${totalNomina.toFixed(2)}</td>
+            <td style="padding: 12px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase; font-size: 12px;">Total de tu equipo:</td>
+            <td style="padding: 12px; font-weight: bold; color: #2e7d32; font-size: 16px; text-align: right;">$${totalNomina.toFixed(2)}</td>
         </tr>`;
     }
     htmlContent += '</table></div>';
 
-    document.getElementById('nomina-contenedor').innerHTML = htmlContent;
+    const contenedor = document.getElementById('nomina-contenedor');
+    if (contenedor) contenedor.innerHTML = htmlContent;
 }
 
-window.exportarNominaJefePdf = async () => {
+window.exportarNominaJefePdf = () => {
     const lblRango = document.getElementById('lblRangoNomina');
     const textoRango = lblRango ? lblRango.textContent.trim() : 'Nomina_Quincenal';
     const nombreArchivoClean = textoRango.replace(/[\/]/g, '-').replace(/\s+/g, '_');
 
     const tablaElemento = document.getElementById('tabla-nomina-jefe');
-    if (!tablaElemento) return Swal.fire('Error', 'No hay datos para exportar.', 'error');
+    if (!tablaElemento) {
+        return Swal.fire('Error', 'No hay datos para exportar.', 'error');
+    }
 
-    const nombreJefe = miUsuarioActual ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}` : 'Jefe';
+    const nombreJefe = miUsuarioActual ? `${miUsuarioActual.firstName} ${miUsuarioActual.lastName}` : 'Manager';
 
     const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.style.padding = "30px 40px";
-    contenedorImpresion.style.background = "#ffffff";
+    contenedorImpresion.style.padding = '30px 40px';
+    contenedorImpresion.style.background = '#ffffff';
     contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
 
     contenedorImpresion.innerHTML = `
         <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="../img/logonegro.png" alt="Logo" style="height: 55px; width: auto;">
+                <img src="../img/logonegro.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain;" onerror="this.src='../../logo.jpeg'">
                 <div>
                     <h1 style="color: #0B0B0D; margin: 0; font-size: 22px; font-weight: bold; text-transform: uppercase;">NÓMINA QUINCENAL</h1>
-                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold;">Jefe: ${nombreJefe}</p>
+                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold;">Manager: ${nombreJefe}</p>
                 </div>
             </div>
             <div style="text-align: right; color: #2E3238;">
-                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase;">Período:</p>
+                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período:</p>
                 <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango}</p>
             </div>
         </div>
         <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
             ${tablaElemento.innerHTML}
         </div>
-        <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center;">
-            Reporte generado por el Portal RemoMN
+        <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
+            Reporte generado por el Portal RemoMN — Área de Manager
         </div>
     `;
 
@@ -668,11 +678,16 @@ window.exportarNominaJefePdf = async () => {
         margin: [12, 12, 12, 12],
         filename: `Nomina_Quincenal_${nombreArchivoClean}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2.5, useCORS: true },
+        html2canvas: { scale: 2.5, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    Swal.fire({ title: 'Generando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({
+        title: 'Generando PDF...',
+        text: 'Preparando desglose de la quincena.',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
 
     html2pdf().set(opt).from(contenedorImpresion).save()
         .then(() => Swal.close())
