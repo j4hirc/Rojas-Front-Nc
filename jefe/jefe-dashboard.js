@@ -229,6 +229,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
 // --- RESUMEN DE BODEGA (GLOBAL: todos los managers, con navegación día por día) ---
 let bodegaJobsCache = null;
 let bodegaUsersCache = null;
+let bodegaMaterialsCache = null;   // ← NUEVO
 let bodegaDiaOffset = 0;
 
 window.verBodegaHoy = async () => {
@@ -237,15 +238,17 @@ window.verBodegaHoy = async () => {
     try {
         const token = localStorage.getItem('jwt_token');
 
-        const [jobsRes, usersRes] = await Promise.all([
+        const [jobsRes, usersRes, matsRes] = await Promise.all([
             fetch('https://api-rojas-remodeling.onrender.com/api/v1/jobs/all', { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/user/all-users', { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch('https://api-rojas-remodeling.onrender.com/api/v1/materials/all', { headers: { 'Authorization': `Bearer ${token}` } })  // ← NUEVO
         ]);
 
         bodegaJobsCache = await jobsRes.json();
         bodegaUsersCache = await usersRes.json();
+        bodegaMaterialsCache = await matsRes.json();   // ← NUEVO
 
-        bodegaDiaOffset = 0; // Reiniciamos al día actual cada vez que se abre
+        bodegaDiaOffset = 0;
 
         Swal.fire({
             title: '<i class="fa-solid fa-truck-fast" style="color:#F4A300;"></i> Ordenes de Bodega',
@@ -301,29 +304,46 @@ function construirBloqueJobBodega(job) {
         descBodega = descBodega.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim();
     }
 
+    // Helper: SIEMPRE coge la unidad de la base de datos
+    const obtenerUnidadDeBase = (materialId, unitDelJob) => {
+        const matInfo = (bodegaMaterialsCache || []).find(m => m.materialId == materialId);
+        if (matInfo && matInfo.unit) return matInfo.unit;
+        // Último recurso: lo que venga en el job (nunca del nombre)
+        return (unitDelJob && unitDelJob !== 'N/A') ? unitDelJob : '';
+    };
+
     const materialesCombinados = {};
+
     (job.materials || []).forEach(mat => {
+        const nombre = mat.name || mat.material || 'Material';
         materialesCombinados[mat.materialId] = {
-            name: mat.name || mat.material || 'Material',
+            name: nombre,
             quantity: parseFloat(mat.quantity || mat.cant || 1),
-            unit: mat.unit || '',
+            unit: obtenerUnidadDeBase(mat.materialId, mat.unit),
             origen: 'Pre-asignado'
         };
     });
+
     (job.necessaryMaterials || []).forEach(mat => {
         const id = mat.materialId;
+        const nombre = mat.name || 'Material';
+        const unidadBase = obtenerUnidadDeBase(id, mat.unit);
+
         if (materialesCombinados[id]) {
             materialesCombinados[id].quantity = parseFloat(mat.quantity || 1);
-            materialesCombinados[id].unit = mat.unit || materialesCombinados[id].unit;
+            if (unidadBase) {
+                materialesCombinados[id].unit = unidadBase;
+            }
         } else {
             materialesCombinados[id] = {
-                name: mat.name || 'Material',
+                name: nombre,
                 quantity: parseFloat(mat.quantity || 1),
-                unit: mat.unit || '',
+                unit: unidadBase,
                 origen: 'Agregado por subcontratista'
             };
         }
     });
+
     const listaMateriales = Object.values(materialesCombinados);
 
     let html = `
@@ -346,7 +366,10 @@ function construirBloqueJobBodega(job) {
             const etiquetaOrigen = mat.origen === 'Agregado por subcontratista'
                 ? `<span style="color:#e65100; font-size:11px; font-weight:600;"> (agregado por subcontratista)</span>`
                 : '';
-            html += `<li><strong>${mat.name}</strong> — ${mat.quantity} ${mat.unit}${etiquetaOrigen}</li>`;
+
+            const textoUnidad = mat.unit ? ` ${mat.unit}` : '';
+
+            html += `<li><strong>${mat.name}</strong> — ${mat.quantity}${textoUnidad}${etiquetaOrigen}</li>`;
         });
         html += `</ul>`;
     } else {
