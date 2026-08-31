@@ -702,7 +702,14 @@ window.abrirModalEditarJob = async (id) => {
                     const matInfo = allMaterialsCache.find(x => x.materialId == m.materialId);
                     const nombreMat = matInfo ? matInfo.name : (m.name || 'Material');
                     const precioMat = matInfo ? (matInfo.price || 0) : (m.price || 0);
-                    agregarMaterialNecesarioDesdeInventario(m.materialId, nombreMat, precioMat, m.quantity, m.unit);
+
+                    // Preferir unidad del inventario si la del job viene vacía o es N/A
+                    let unidad = m.unit;
+                    if (!unidad || unidad === 'N/A') {
+                        unidad = matInfo?.unit || '';
+                    }
+
+                    agregarMaterialNecesarioDesdeInventario(m.materialId, nombreMat, precioMat, m.quantity, unidad);
                 });
             }
 
@@ -711,9 +718,16 @@ window.abrirModalEditarJob = async (id) => {
                 data.necessaryMaterials.forEach(mat => {
                     if (document.getElementById(`nec-${mat.materialId}`)) return;
 
+                    const matInfo = allMaterialsCache.find(x => x.materialId == mat.materialId);
                     const precio = mat.estimatedPrice || mat.price || 0;
+
+                    let unidad = mat.unit;
+                    if (!unidad || unidad === 'N/A') {
+                        unidad = matInfo?.unit || '';
+                    }
+
                     container.insertAdjacentHTML('beforeend',
-                        crearFilaMaterialNecesario(mat.materialId, mat.name || 'Material', precio, mat.quantity || 1, mat.unit)
+                        crearFilaMaterialNecesario(mat.materialId, mat.name || 'Material', precio, mat.quantity || 1, unidad)
                     );
                 });
             }
