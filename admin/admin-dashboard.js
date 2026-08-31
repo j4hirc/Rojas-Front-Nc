@@ -331,147 +331,228 @@ function renderizarNominaAdmin(offset) {
         finSemana = new Date(year, month + 1, 0, 23, 59, 59, 999);
     }
 
-    let nominas = {};
+    // Agrupamos por empleado: { empId: { total, jobs: [{clientName, pay, jobDate}] } }
+    const nominas = {};
 
-    window.nominasJobsCache.forEach(job => {
-        if (job.status === 'COMPLETED' && job.employeeId) {
-            let jobDateStr = Array.isArray(job.jobDate)
-                ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2,'0')}-${String(job.jobDate[2]).padStart(2,'0')}`
-                : job.jobDate;
+    (window.nominasJobsCache || []).forEach(job => {
+        if (job.status !== 'COMPLETED' || !job.employeeId) return;
 
-            const jobDate = new Date(jobDateStr);
-            jobDate.setHours(12,0,0,0);
+        let jobDateStr = Array.isArray(job.jobDate)
+            ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
+            : job.jobDate;
 
-            if (jobDate >= inicioSemana && jobDate <= finSemana) {
-                if (!nominas[job.employeeId]) nominas[job.employeeId] = 0;
-                nominas[job.employeeId] += (job.pay || 0);
+        const jobDate = new Date(jobDateStr);
+        if (isNaN(jobDate.getTime())) return;
+        jobDate.setHours(12, 0, 0, 0);
+
+        if (jobDate >= inicioSemana && jobDate <= finSemana) {
+            if (!nominas[job.employeeId]) {
+                nominas[job.employeeId] = { total: 0, jobs: [] };
             }
+            nominas[job.employeeId].total += (job.pay || 0);
+            nominas[job.employeeId].jobs.push({
+                clientName: job.clientName || 'Cliente sin nombre',
+                pay: job.pay || 0,
+                jobDate: jobDateStr
+            });
         }
     });
 
-    // ✅ CAMBIO: Formato Mes/Día/Año (MM/DD/YYYY)
-    const formatMDY = (d) => `${(d.getMonth() + 1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}/${d.getFullYear()}`;
-
+    const formatMDY = (d) => `${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getDate().toString().padStart(2, '0')}/${d.getFullYear()}`;
     const strInicio = formatMDY(inicioSemana);
     const strFin = formatMDY(finSemana);
 
     let htmlContent = `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px;">
-            <button onclick="cambiarSemanaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #F4F7FE; padding: 15px; border-radius: 12px; border: 1px solid #12CFF4; margin-bottom: 15px; flex-wrap: wrap; gap: 8px;">
+            <button onclick="cambiarSemanaAdmin(-1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">
                 <i class="fa-solid fa-chevron-left"></i> Anterior
             </button>
-            <div style="text-align: center; font-family: 'Poppins', sans-serif;">
+            <div style="text-align: center; flex: 1; min-width: 140px;">
                 <span style="display: block; font-size: 11px; color: #2E3238; text-transform: uppercase; font-weight: bold;">Quincena del</span>
                 <span id="lblRangoSemanas" style="font-size: 14px; color: #0F2D4A;"><b>${strInicio}</b> al <b>${strFin}</b></span>
             </div>
-            <button type="button" onclick="exportarNominaSemanalAPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.85rem;" title="Exportar a PDF">
+            <button type="button" onclick="exportarNominaSemanalAPdf()" style="background: #d32f2f; color: white; border: none; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer;">
                 <i class="fa-solid fa-file-pdf"></i> PDF
             </button>
-            <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 8px;">
+            <button onclick="cambiarSemanaAdmin(1)" style="background: #0F2D4A; color: #FFFFFF; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">
                 Siguiente <i class="fa-solid fa-chevron-right"></i>
             </button>
         </div>
 
-        <div id="tabla-exportar-pdf-container" style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-family: 'Poppins', sans-serif;">
-                <tr style="background-color: #0F2D4A; color: #FFFFFF; position: sticky; top: 0; z-index: 10;">
-                    <th style="padding: 15px; font-weight: 700;">Personal de la Empresa (Total)</th>
-                    <th style="padding: 15px; text-align: right; font-weight: 700;">Total a Pagar</th>
-                </tr>
+        <div id="tabla-exportar-pdf-container" style="max-height: 380px; overflow-y: auto; border-radius: 8px; border: 1px solid #D4D4D4;">
     `;
 
     let totalNominaGlobal = 0;
-    let hayDatos = false;
+    const empIds = Object.keys(nominas);
 
-    for (let empId in nominas) {
-        hayDatos = true;
-        const emp = window.nominasUsersCache.find(u => u.userId == empId);
-        const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
-        const pago = nominas[empId];
-        totalNominaGlobal += pago;
-
-        htmlContent += `<tr>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; color: #2E3238; font-weight: 500; text-transform: capitalize;">${nombre.toLowerCase()}</td>
-            <td style="padding: 10px; border-bottom: 1px solid #eee; color: #F4A300; font-weight: bold; text-align: right;">$${pago.toFixed(2)}</td>
-        </tr>`;
-    }
-
-    if(!hayDatos) {
-        htmlContent += '<tr><td colspan="2" style="padding: 25px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados por ningún personal en esta quincena.</td></tr>';
+    if (empIds.length === 0) {
+        htmlContent += `<div style="padding: 30px; text-align: center; color: #8a9099; font-style: italic;">No hay trabajos completados en esta quincena.</div>`;
     } else {
-        htmlContent += `<tr style="background-color: #f8faff;">
-            <td style="padding: 12px; font-weight: bold; text-align: right; color: #0B0B0D; text-transform: uppercase; font-size: 12px;">Total Nómina Global:</td>
-            <td style="padding: 12px; font-weight: bold; color: #2e7d32; font-size: 16px; text-align: right;">$${totalNominaGlobal.toFixed(2)}</td>
-        </tr>`;
+        empIds.forEach(empId => {
+            const emp = (window.nominasUsersCache || []).find(u => u.userId == empId);
+            const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
+            const data = nominas[empId];
+            totalNominaGlobal += data.total;
+
+            htmlContent += `
+                <div style="border-bottom: 2px solid #e2e8f0;">
+                    <div style="background: #0F2D4A; color: white; padding: 10px 15px; font-weight: 700; font-size: 14px;">
+                        ${nombre}
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-family: 'Poppins', sans-serif;">
+                        <tbody>
+            `;
+
+            data.jobs.forEach(j => {
+                htmlContent += `
+                    <tr>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 13px;">
+                            ${j.clientName}
+                        </td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #0f172a; font-weight: 600; font-size: 13px; white-space: nowrap;">
+                            $${j.pay.toFixed(2)}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            htmlContent += `
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f8fafc;">
+                                <td style="padding: 8px 15px; font-weight: 700; color: #0F2D4A; font-size: 13px; text-align: right;">Subtotal</td>
+                                <td style="padding: 8px 15px; font-weight: 700; color: #F4A300; font-size: 14px; text-align: right;">$${data.total.toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            `;
+        });
+
+        htmlContent += `
+            <div style="background: #e8f5e9; padding: 14px 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 800; color: #1b5e20; text-transform: uppercase; font-size: 13px;">Total Nómina Global</span>
+                <span style="font-weight: 800; color: #2e7d32; font-size: 18px;">$${totalNominaGlobal.toFixed(2)}</span>
+            </div>
+        `;
     }
-    htmlContent += '</table></div>';
+
+    htmlContent += `</div>`;
 
     const contenedor = document.getElementById('nomina-contenedor-admin');
-    if (contenedor) {
-        contenedor.innerHTML = htmlContent;
-    }
+    if (contenedor) contenedor.innerHTML = htmlContent;
+
+    // Guardamos para el PDF
+    window._nominaAdminData = { nominas, strInicio, strFin, totalNominaGlobal };
 }
 
 // 3. FUNCIÓN CORREGIDA DE DESCARGA PDF
 
 window.exportarNominaSemanalAPdf = () => {
-    const lblRango = document.getElementById('lblRangoSemanas');
-    const textoRango = lblRango ? lblRango.textContent.trim() : "Reporte_Nomina";
-    const nombreArchivoClean = textoRango.replace(/\//g, '-').replace(/\s+/g, '_');
-
-    const tablaElemento = document.getElementById('tabla-exportar-pdf-container');
-    if (!tablaElemento) {
-        return Swal.fire('Error', 'No se encontraron registros renderizados para procesar el archivo.', 'error');
+    const data = window._nominaAdminData;
+    if (!data || !data.nominas || Object.keys(data.nominas).length === 0) {
+        return Swal.fire('Error', 'No hay datos para exportar en esta quincena.', 'error');
     }
 
+    const { nominas, strInicio, strFin, totalNominaGlobal } = data;
+    const nombreArchivoClean = `${strInicio}_al_${strFin}`.replace(/\//g, '-');
+
     const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.style.padding = "30px 40px";
-    contenedorImpresion.style.background = "#ffffff";
+    contenedorImpresion.style.padding = '28px 32px';
+    contenedorImpresion.style.background = '#ffffff';
     contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
+    contenedorImpresion.style.color = '#0f172a';
+
+    let bodyHtml = '';
+
+    Object.keys(nominas).forEach(empId => {
+        const emp = (window.nominasUsersCache || []).find(u => u.userId == empId);
+        const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
+        const d = nominas[empId];
+
+        bodyHtml += `
+            <div style="margin-bottom: 22px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <div style="background: #0F2D4A; color: #fff; padding: 10px 14px; font-weight: 700; font-size: 14px;">
+                    ${nombre}
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 8px 14px; text-align: left; font-weight: 600; color: #475569;">Cliente / Trabajo</th>
+                            <th style="padding: 8px 14px; text-align: right; font-weight: 600; color: #475569;">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        d.jobs.forEach(j => {
+            bodyHtml += `
+                <tr>
+                    <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9;">${j.clientName}</td>
+                    <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">$${j.pay.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        bodyHtml += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f8fafc;">
+                            <td style="padding: 8px 14px; text-align: right; font-weight: 700; color: #0F2D4A;">Subtotal</td>
+                            <td style="padding: 8px 14px; text-align: right; font-weight: 700; color: #d97706;">$${d.total.toFixed(2)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        `;
+    });
 
     contenedorImpresion.innerHTML = `
-        <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <img src="../img/logonegro.png" alt="Logo" style="height: 55px; width: auto; object-fit: contain; display: block;" onerror="this.src='../../logo.jpeg'">
+        <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <img src="../img/logonegro.png" alt="Logo" style="height: 52px; width: auto;" onerror="this.src='../../logo.jpeg'">
                 <div>
-                    <h1 style="color: #0B0B0D; margin: 0; font-size: 24px; font-weight: bold; text-transform: uppercase;">REPORTE DE NÓMINA GENERAL</h1>
-                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 12px; font-weight: bold; letter-spacing: 1px;">Plataforma RemoMN — Área de Administración</p>
+                    <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #0B0B0D; text-transform: uppercase; letter-spacing: 0.5px;">Reporte de Nómina Quincenal</h1>
+                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 11px; font-weight: 700; letter-spacing: 0.8px;">REMOMN — PANEL DE ADMINISTRACIÓN</p>
                 </div>
             </div>
-            <div style="text-align: right; color: #2E3238;">
-                <p style="margin: 0; font-weight: bold; font-size: 11px; text-transform: uppercase; color: #666;">Período Reportado:</p>
-                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: bold;">${textoRango}</p>
+            <div style="text-align: right;">
+                <p style="margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600;">Período</p>
+                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: 700;">${strInicio} — ${strFin}</p>
             </div>
         </div>
-        <div style="margin-top: 20px;">
-            <div style="border: 1px solid #D4D4D4; border-radius: 8px; overflow: hidden;">
-                ${tablaElemento.innerHTML}
-            </div>
+
+        ${bodyHtml}
+
+        <div style="margin-top: 8px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 800; color: #1b5e20; text-transform: uppercase; font-size: 13px;">Total Nómina Global</span>
+            <span style="font-weight: 800; color: #2e7d32; font-size: 20px;">$${totalNominaGlobal.toFixed(2)}</span>
         </div>
-        <div style="margin-top: 45px; font-size: 10px; color: #8a9099; text-align: center; border-top: 1px dashed #E0E5F2; padding-top: 10px;">
-            Este documento es un reporte financiero confidencial generado automáticamente por el Panel de Administración de RemoMN.
+
+        <div style="margin-top: 36px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align: center; font-size: 9.5px; color: #94a3b8;">
+            Documento confidencial generado automáticamente por el sistema RemoMN · ${new Date().toLocaleString('es-ES')}
         </div>
     `;
 
-    const opcionesConfiguracion = {
-        margin:       [12, 12, 12, 12],
-        filename:     `Nomina_Quincenal_${nombreArchivoClean}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2.5, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    const opt = {
+        margin: [12, 12, 12, 12],
+        filename: `Nomina_Quincenal_${nombreArchivoClean}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2.5, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     Swal.fire({
-        title: 'Generando archivo PDF...',
-        text: 'Preparando desglose financiero de la quincena.',
+        title: 'Generando PDF profesional...',
+        text: 'Preparando desglose completo de la quincena.',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
 
-    generarYEntregarPDF(opcionesConfiguracion, contenedorImpresion, `Nomina_Quincenal_${nombreArchivoClean}.pdf`)
+    generarYEntregarPDF(opt, contenedorImpresion, `Nomina_Quincenal_${nombreArchivoClean}.pdf`)
         .catch(err => {
-            console.error("Fallo al exportar reporte PDF:", err);
-            Swal.fire('Error', 'No se pudo compilar el archivo PDF.', 'error');
+            console.error(err);
+            Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
         });
 };
 
