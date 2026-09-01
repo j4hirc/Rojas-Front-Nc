@@ -304,32 +304,44 @@ window.cambiarSemanaAdmin = (delta) => {
     renderizarNominaAdmin(window.quincenaOffset);
 };
 
-// Renderizado dinámico por QUINCENAS (Cálculo automático de meses)
+// Renderizado dinámico por QUINCENAS ANCLADAS A LUNES (siempre lunes a domingo, 14 días)
 function renderizarNominaAdmin(offset) {
-    let year = new Date().getFullYear();
-    let month = new Date().getMonth();
-    let part = new Date().getDate() <= 15 ? 1 : 2;
 
-    if (offset > 0) {
-        for (let i = 0; i < offset; i++) {
-            if (part === 1) part = 2;
-            else { part = 1; month++; if (month > 11) { month = 0; year++; } }
-        }
-    } else if (offset < 0) {
-        for (let i = 0; i > offset; i--) {
-            if (part === 2) part = 1;
-            else { part = 2; month--; if (month < 0) { month = 11; year--; } }
-        }
+    // --- Helper: obtiene el lunes de la semana de una fecha dada ---
+    function obtenerLunes(fecha) {
+        const d = new Date(fecha);
+        const dia = d.getDay(); // 0=Dom, 1=Lun, ... 6=Sab
+        const diff = (dia === 0 ? -6 : 1 - dia); // días a restar/sumar para llegar al lunes
+        d.setDate(d.getDate() + diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
     }
 
-    let inicioSemana, finSemana;
-    if (part === 1) {
-        inicioSemana = new Date(year, month, 1, 0, 0, 0, 0);
-        finSemana = new Date(year, month, 15, 23, 59, 59, 999);
-    } else {
-        inicioSemana = new Date(year, month, 16, 0, 0, 0, 0);
-        finSemana = new Date(year, month + 1, 0, 23, 59, 59, 999);
-    }
+    // --- Fecha de referencia fija: 1 de enero de 2024 (es LUNES) ---
+    // Esto garantiza que TODAS las quincenas, sin importar el año, caigan lunes-a-domingo.
+    const epochLunes = new Date(2024, 0, 1, 0, 0, 0, 0);
+
+    const hoy = new Date();
+    const lunesDeHoy = obtenerLunes(hoy);
+
+    // Cuántas semanas completas hay entre el lunes ancla y el lunes de hoy
+    const diffMs = lunesDeHoy - epochLunes;
+    const diffSemanas = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
+
+    // Cada quincena = 2 semanas. Determinamos en qué bloque de quincena estamos hoy,
+    // y le sumamos el offset (navegación anterior/siguiente)
+    const indiceQuincenaActual = Math.floor(diffSemanas / 2);
+    const indiceQuincena = indiceQuincenaActual + offset;
+
+    // Lunes de inicio de la quincena solicitada
+    const inicioSemana = new Date(epochLunes);
+    inicioSemana.setDate(inicioSemana.getDate() + indiceQuincena * 14);
+    inicioSemana.setHours(0, 0, 0, 0);
+
+    // Domingo de fin de la quincena (14 días después, es decir día 13 al final del día)
+    const finSemana = new Date(inicioSemana);
+    finSemana.setDate(finSemana.getDate() + 13);
+    finSemana.setHours(23, 59, 59, 999);
 
     // Agrupamos por empleado: { empId: { total, jobs: [{clientName, pay, jobDate}] } }
     const nominas = {};
