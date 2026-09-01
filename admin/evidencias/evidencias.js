@@ -1,8 +1,10 @@
 const JOBS_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/jobs/all';
 const USERS_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/user/all-users';
-let userToken = '';
 
+
+let userToken = '';
 let allJobsCache = [];
+let colorPorEmpleadoId = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -22,9 +24,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('admin-email-display').textContent = userEmail || 'Admin';
 
     // --- PANTALLA DE CARGA ---
-    Swal.fire({ 
-        title: 'Cargando evidencias...', 
-        allowOutsideClick: false, 
+    Swal.fire({
+        title: 'Cargando evidencias...',
+        allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
 
@@ -50,15 +52,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 // 1. OBTENEMOS A LOS JEFES PARA EL FILTRO
 async function cargarFiltroJefes() {
     try {
-        const res = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const res = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (res.ok) {
             const users = await res.json();
+
+            // Mapa de colores por empleado
+            colorPorEmpleadoId = {};
+            users.forEach(u => {
+                if (u.color) colorPorEmpleadoId[u.userId] = u.color;
+            });
+
             const selectManager = document.getElementById('filterManager');
-            
-            const jefes = users.filter(u => u.roles.some(r => r.name === 'ROLE_JEFE'));
-            
+            const jefes = users.filter(u => u.roles && u.roles.some(r => r.name === 'ROLE_JEFE'));
+
             jefes.forEach(jefe => {
-                selectManager.innerHTML += `<option value="${jefe.userId}">${jefe.name}</option>`;
+                const nombre = jefe.name || `${jefe.firstName || ''} ${jefe.lastName || ''}`.trim();
+                selectManager.innerHTML += `<option value="${jefe.userId}">${nombre}</option>`;
             });
         }
     } catch (e) {
@@ -69,12 +78,12 @@ async function cargarFiltroJefes() {
 // 2. OBTENEMOS LOS TRABAJOS CON SUS ACTUALIZACIONES
 async function cargarTrabajos() {
     try {
-        const res = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const res = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (res.ok) {
             allJobsCache = await res.json();
-            
+
             // 1. Primero dibujamos todo con los filtros combinados
-            window.filtrarTrabajosCombinados(); 
+            window.filtrarTrabajosCombinados();
 
             // --- CERRAMOS LA PANTALLA DE CARGA AQUÍ, ANTES DE CUALQUIER OTRA ALERTA ---
             Swal.close();
@@ -85,9 +94,9 @@ async function cargarTrabajos() {
 
             if (jobIdParam) {
                 const idNumerico = parseInt(jobIdParam);
-                
+
                 const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
-                
+
                 if (trabajoEncontrado) {
                     if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
                         window.abrirModalEvidencias(idNumerico);
@@ -140,6 +149,14 @@ window.filtrarTrabajosCombinados = () => {
     renderizarTrabajos(trabajosFiltrados);
 };
 
+function hexARgba(hex, alpha) {
+    if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return `rgba(200,200,200,${alpha})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // 4. BADGES DE ESTADO Y PRIORIDAD (mismo estilo que trabajos.js)
 function getStatusBadge(status) {
     if (status === 'PENDING') return `<span style="background: #FFF3E0; color: #ff9800; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">Pendiente</span>`;
@@ -175,6 +192,8 @@ function renderizarTrabajos(trabajos) {
 
     trabajos.forEach(job => {
         const numUpdates = job.updateJob ? job.updateJob.length : 0;
+        const colorSub = colorPorEmpleadoId[job.employeeId] || '#CCCCCC';
+
         let numFotos = 0;
         if (job.updateJob) {
             job.updateJob.forEach(update => {
@@ -193,17 +212,19 @@ function renderizarTrabajos(trabajos) {
 
         // FILA DE TABLA (DESKTOP)
         const tr = document.createElement('tr');
+        tr.style.borderLeft = `5px solid ${colorSub}`;
+        tr.style.backgroundColor = hexARgba(colorSub, 0.06);
         tr.innerHTML = `
-            <td>
-                <strong>${job.clientName}</strong><br>
-                <span class="desc-cell" title="${safeDesc.replace(/"/g, '&quot;')}">${safeDesc}</span>
-            </td>
-            <td>${job.nameManager || 'Sin asignar'}</td>
-            <td>${job.nameEmployee || 'Sin asignar'}</td>
-            <td>${statusBadge}</td>
-            <td>${priorityBadge}</td>
-            <td>${btnEvidencias}</td>
-        `;
+    <td>
+        <strong>${job.clientName}</strong><br>
+        <span class="desc-cell" title="${safeDesc.replace(/"/g, '&quot;')}">${safeDesc}</span>
+    </td>
+    <td>${job.nameManager || 'Sin asignar'}</td>
+    <td>${job.nameEmployee || 'Sin asignar'}</td>
+    <td>${statusBadge}</td>
+    <td>${priorityBadge}</td>
+    <td>${btnEvidencias}</td>
+`;
         tbody.appendChild(tr);
 
         // TARJETA (MOBILE)
@@ -213,6 +234,8 @@ function renderizarTrabajos(trabajos) {
             card.style.flexDirection = 'column';
             card.style.alignItems = 'flex-start';
             card.style.padding = '20px';
+            card.style.borderLeft = `6px solid ${colorSub}`;
+            card.style.backgroundColor = hexARgba(colorSub, 0.06);
             card.innerHTML = `
                 <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 5px;">
                     <h3 style="margin:0; font-size:1.1rem; color:#0f4c81;">${job.clientName}</h3>
@@ -241,12 +264,12 @@ function renderizarTrabajos(trabajos) {
 // 6. LÓGICA PARA VER EL HISTORIAL (MODAL)
 window.abrirModalEvidencias = (jobId) => {
     const job = allJobsCache.find(j => j.jobId === jobId);
-    if(!job) return;
+    if (!job) return;
 
     document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
-    
+
     document.getElementById('jobDescriptionText').innerHTML = `<strong>Descripción de obra:</strong> <br> ${job.description || 'Sin descripción'}`;
-    
+
     const timeline = document.getElementById('evidencesTimeline');
     timeline.innerHTML = '';
 
@@ -254,13 +277,13 @@ window.abrirModalEvidencias = (jobId) => {
 
     updatesOrdenados.forEach(update => {
         const fechaObj = new Date(update.date);
-        const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+        const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
         let galeriaHTML = '';
-        if(update.evidences && update.evidences.length > 0) {
+        if (update.evidences && update.evidences.length > 0) {
             update.evidences.forEach(evi => {
                 const urlLower = evi.imageUri.toLowerCase();
-                
+
                 if (urlLower.includes('.pdf')) {
                     galeriaHTML += `
                         <a href="${evi.imageUri}" target="_blank" class="pdf-btn" title="Descargar Reporte PDF">
@@ -309,8 +332,8 @@ window.verFotoGrande = (url) => {
 window.cerrarSesion = () => {
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) { 
-        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    if (rolesString) {
+        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
     }
 
     if (userRoles.length > 1) {
@@ -355,36 +378,36 @@ window.cerrarSesion = () => {
 
 function mostrarSelectorDeRolesEnSubcarpeta(roles) {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
     }
 
     let opcionesHTML = '<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">';
-    
+
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
-        if(rol === 'ROLE_ADMIN') { 
-            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador'; 
-            url = '../admin-dashboard.html'; 
+
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = '<i class="fa-solid fa-user-tie"></i> Acceder como Administrador';
+            url = '../admin-dashboard.html';
         }
-        if(rol === 'ROLE_JEFE') { 
-            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Manager'; 
-            url = '../../jefe/jefe-dashboard.html'; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = '<i class="fa-solid fa-user-shield"></i> Acceder como Manager';
+            url = '../../jefe/jefe-dashboard.html';
         }
-        if(rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista'; 
-            url = '../../employee/employee-dashboard.html'; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = '<i class="fa-solid fa-helmet-safety"></i> Acceder como Subcontratista';
+            url = '../../employee/employee-dashboard.html';
         }
 
-        if(nombreRol) {
+        if (nombreRol) {
             opcionesHTML += `<button class="swal2-confirm swal2-styled" style="width: 100%; margin: 0; background-color: #00B8A9;" onclick="window.location.href='${url}'">${nombreRol}</button>`;
         }
     });
-    
+
     opcionesHTML += '</div>';
 
     Swal.fire({

@@ -3,7 +3,8 @@ const USERS_URL = 'https://api-rojas-remodeling.onrender.com/api/v1/user/all-use
 
 
 let userToken = '';
-let allJobsCache = [];   // ahora global, igual que Admin
+let allJobsCache = [];
+let colorPorEmpleadoId = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
     userToken = localStorage.getItem('jwt_token');
@@ -40,7 +41,23 @@ async function inicializarDatosDelJefe(emailActual) {
     try {
         Swal.fire({ title: 'Cargando evidencias...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-        // Ya no filtramos por manager → se ven TODOS los trabajos (igual que Admin)
+        // 1) Usuarios → colores + nombre del jefe
+        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        if (resUsers.ok) {
+            const users = await resUsers.json();
+
+            colorPorEmpleadoId = {};
+            users.forEach(u => {
+                if (u.color) colorPorEmpleadoId[u.userId] = u.color;
+            });
+
+            const yo = users.find(u => u.email && u.email.toLowerCase() === (emailActual || '').toLowerCase());
+            if (yo) {
+                document.getElementById('jefe-email-display').textContent = `${yo.firstName} ${yo.lastName}`;
+            }
+        }
+
+        // 2) Trabajos (todos)
         const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (resJobs.ok) {
             allJobsCache = await resJobs.json();
@@ -125,6 +142,14 @@ function getPriorityBadge(priority) {
     return `<span style="background: #ECEFF1; color: #546E7A; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; border: 1px solid #cfd8dc;"> ${pValor} - Baja</span>`;
 }
 
+function hexARgba(hex, alpha) {
+    if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return `rgba(200,200,200,${alpha})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 // 4. DIBUJAMOS TABLA (desktop) + TARJETAS (mobile)
 function renderizarTrabajos(trabajos) {
     const tbody = document.getElementById('jobTableBody');
@@ -141,6 +166,7 @@ function renderizarTrabajos(trabajos) {
 
     trabajos.forEach(job => {
         const numUpdates = job.updateJob ? job.updateJob.length : 0;
+        const colorSub = colorPorEmpleadoId[job.employeeId] || '#CCCCCC';
         let numArchivos = 0;
 
         if (job.updateJob) {
@@ -160,18 +186,20 @@ function renderizarTrabajos(trabajos) {
 
         // FILA DE TABLA (DESKTOP)
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <strong>${job.clientName}</strong><br>
-                <span class="desc-cell" title="${safeDesc.replace(/"/g, '&quot;')}">${safeDesc}</span>
-            </td>
-            <td>${job.nameManager || 'Sin asignar'}</td>
-            <td>${job.nameEmployee || 'Sin asignar'}</td>
-            <td>${statusBadge}</td>
-            <td>${priorityBadge}</td>
-            <td>${btnEvidencias}</td>
-        `;
-        tbody.appendChild(tr);
+tr.style.borderLeft = `5px solid ${colorSub}`;
+tr.style.backgroundColor = hexARgba(colorSub, 0.06);
+tr.innerHTML = `
+    <td>
+        <strong>${job.clientName}</strong><br>
+        <span class="desc-cell" title="${safeDesc.replace(/"/g, '&quot;')}">${safeDesc}</span>
+    </td>
+    <td>${job.nameManager || 'Sin asignar'}</td>
+    <td>${job.nameEmployee || 'Sin asignar'}</td>
+    <td>${statusBadge}</td>
+    <td>${priorityBadge}</td>
+    <td>${btnEvidencias}</td>
+`;
+tbody.appendChild(tr);
 
         // TARJETA (MOBILE)
         if (mobileContainer) {
@@ -180,6 +208,8 @@ function renderizarTrabajos(trabajos) {
             card.style.flexDirection = 'column';
             card.style.alignItems = 'flex-start';
             card.style.padding = '20px';
+            card.style.borderLeft = `6px solid ${colorSub}`;
+            card.style.backgroundColor = hexARgba(colorSub, 0.06);
             card.innerHTML = `
                 <div style="width: 100%; display: flex; justify-content: space-between; border-bottom: 1px dashed #E0E5F2; padding-bottom: 10px; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 5px;">
                     <h3 style="margin:0; font-size:1.1rem; color:#198754;">${job.clientName}</h3>
