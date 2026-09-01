@@ -307,38 +307,33 @@ window.cambiarSemanaAdmin = (delta) => {
 // Renderizado dinámico por QUINCENAS ANCLADAS A LUNES (siempre lunes a domingo, 14 días)
 function renderizarNominaAdmin(offset) {
 
-    // --- Helper: obtiene el lunes de la semana de una fecha dada ---
-    function obtenerLunes(fecha) {
+    // --- Helper: obtiene el domingo (inicio de semana) de una fecha dada ---
+    function obtenerDomingo(fecha) {
         const d = new Date(fecha);
         const dia = d.getDay(); // 0=Dom, 1=Lun, ... 6=Sab
-        const diff = (dia === 0 ? -6 : 1 - dia); // días a restar/sumar para llegar al lunes
-        d.setDate(d.getDate() + diff);
+        d.setDate(d.getDate() - dia); // retrocede hasta el domingo
         d.setHours(0, 0, 0, 0);
         return d;
     }
 
-    // --- Fecha de referencia fija: 1 de enero de 2024 (es LUNES) ---
-    // Esto garantiza que TODAS las quincenas, sin importar el año, caigan lunes-a-domingo.
-    const epochLunes = new Date(2024, 0, 1, 0, 0, 0, 0);
+    // --- Fecha de referencia fija: 31 de diciembre de 2023 (es DOMINGO) ---
+    // Verificado: de aquí al 9 de agosto de 2026 hay 136 semanas exactas (par),
+    // por lo que las quincenas caen en 8/9–8/22, 8/23–9/5, etc.
+    const epochDomingo = new Date(2023, 11, 31, 0, 0, 0, 0);
 
     const hoy = new Date();
-    const lunesDeHoy = obtenerLunes(hoy);
+    const domingoDeHoy = obtenerDomingo(hoy);
 
-    // Cuántas semanas completas hay entre el lunes ancla y el lunes de hoy
-    const diffMs = lunesDeHoy - epochLunes;
+    const diffMs = domingoDeHoy - epochDomingo;
     const diffSemanas = Math.round(diffMs / (7 * 24 * 60 * 60 * 1000));
 
-    // Cada quincena = 2 semanas. Determinamos en qué bloque de quincena estamos hoy,
-    // y le sumamos el offset (navegación anterior/siguiente)
     const indiceQuincenaActual = Math.floor(diffSemanas / 2);
     const indiceQuincena = indiceQuincenaActual + offset;
 
-    // Lunes de inicio de la quincena solicitada
-    const inicioSemana = new Date(epochLunes);
+    const inicioSemana = new Date(epochDomingo);
     inicioSemana.setDate(inicioSemana.getDate() + indiceQuincena * 14);
     inicioSemana.setHours(0, 0, 0, 0);
 
-    // Domingo de fin de la quincena (14 días después, es decir día 13 al final del día)
     const finSemana = new Date(inicioSemana);
     finSemana.setDate(finSemana.getDate() + 13);
     finSemana.setHours(23, 59, 59, 999);
