@@ -151,6 +151,14 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg-body); color: va
 
 .swal2-container { z-index: 20000 !important; }
 
+/* Ajuste para que las imágenes de evidencia no se salgan de la pantalla */
+.img-evidencia-full {
+    max-height: 85vh !important; /* Límite de alto: 85% de la pantalla */
+    max-width: 90vw !important;  /* Límite de ancho: 90% de la pantalla */
+    object-fit: contain !important; /* Mantiene la proporción sin deformarse */
+    margin: 0 auto !important; /* La centra en la pantalla */
+}
+
 /* RESPONSIVE MÓVIL */
 @media (max-width: 768px) {
     .app-layout { flex-direction: column; overflow: auto; height: 100vh; }

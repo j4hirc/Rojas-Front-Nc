@@ -41,23 +41,19 @@ async function inicializarDatosDelJefe(emailActual) {
     try {
         Swal.fire({ title: 'Cargando evidencias...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
 
-        // 1) Usuarios → colores + nombre del jefe
         const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (resUsers.ok) {
             const users = await resUsers.json();
-
             colorPorEmpleadoId = {};
             users.forEach(u => {
                 if (u.color) colorPorEmpleadoId[u.userId] = u.color;
             });
-
             const yo = users.find(u => u.email && u.email.toLowerCase() === (emailActual || '').toLowerCase());
             if (yo) {
                 document.getElementById('jefe-email-display').textContent = `${yo.firstName} ${yo.lastName}`;
             }
         }
 
-        // 2) Trabajos (todos)
         const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
         if (resJobs.ok) {
             allJobsCache = await resJobs.json();
@@ -75,7 +71,10 @@ async function inicializarDatosDelJefe(emailActual) {
 
             if (trabajoEncontrado) {
                 if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
-                    window.abrirModalEvidencias(idNumerico);
+                    // 🔥 Agregado el setTimeout
+                    setTimeout(() => {
+                        window.abrirModalEvidencias(idNumerico);
+                    }, 300);
                 } else {
                     Swal.fire({
                         icon: 'info',
@@ -86,7 +85,6 @@ async function inicializarDatosDelJefe(emailActual) {
                 }
             }
         }
-
     } catch (e) {
         console.error("Error al inicializar datos:", e);
         Swal.fire('Error', 'No se pudieron cargar los datos.', 'error');
@@ -118,6 +116,22 @@ window.filtrarTrabajosCombinados = () => {
         }
 
         return coincideTexto && coincideEstado && coincidePrioridad;
+    });
+
+    // 🔥 ORDENAMIENTO EXACTO (El más nuevo arriba)
+    resultado.sort((a, b) => {
+        let timeB = Array.isArray(b.jobDate) 
+            ? new Date(b.jobDate[0], b.jobDate[1] - 1, b.jobDate[2]).getTime() 
+            : new Date(b.jobDate || 0).getTime();
+            
+        let timeA = Array.isArray(a.jobDate) 
+            ? new Date(a.jobDate[0], a.jobDate[1] - 1, a.jobDate[2]).getTime() 
+            : new Date(a.jobDate || 0).getTime();
+            
+        if (timeB !== timeA) {
+            return timeB - timeA;
+        }
+        return b.jobId - a.jobId;
     });
 
     renderizarTrabajos(resultado);
@@ -247,10 +261,28 @@ window.abrirModalEvidencias = (jobId) => {
     const timeline = document.getElementById('evidencesTimeline');
     timeline.innerHTML = '';
 
-    const updatesOrdenados = job.updateJob.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 🔥 ORDENAMIENTO DE FECHAS: A prueba de errores, ya sea texto o arreglo numérico
+    const updatesOrdenados = job.updateJob.sort((a, b) => {
+        let timeA = Array.isArray(a.date) 
+            ? new Date(a.date[0], a.date[1] - 1, a.date[2], a.date[3] || 0, a.date[4] || 0).getTime() 
+            : new Date(a.date).getTime();
+        
+        let timeB = Array.isArray(b.date) 
+            ? new Date(b.date[0], b.date[1] - 1, b.date[2], b.date[3] || 0, b.date[4] || 0).getTime() 
+            : new Date(b.date).getTime();
+            
+        return timeB - timeA;
+    });
 
     updatesOrdenados.forEach(update => {
-        const fechaObj = new Date(update.date);
+        // Formateo de fecha seguro
+        let fechaObj;
+        if (Array.isArray(update.date)) {
+            fechaObj = new Date(update.date[0], update.date[1] - 1, update.date[2], update.date[3] || 0, update.date[4] || 0);
+        } else {
+            fechaObj = new Date(update.date);
+        }
+
         const dia = String(fechaObj.getDate()).padStart(2, '0');
         const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
         const anio = fechaObj.getFullYear();
@@ -299,11 +331,14 @@ window.verFotoGrande = (url) => {
     Swal.fire({
         imageUrl: url,
         imageAlt: 'Evidencia del Trabajo',
-        width: '80%',
+        width: 'auto', // Cambiamos esto a auto para que respete el alto
         showConfirmButton: false,
         showCloseButton: true,
         background: 'transparent',
-        backdrop: `rgba(0,0,0,0.8)`
+        backdrop: `rgba(0,0,0,0.85)`,
+        customClass: {
+            image: 'img-evidencia-full' // Agregamos esta clase para controlarla con CSS
+        }
     });
 };
 

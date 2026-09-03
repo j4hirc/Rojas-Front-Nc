@@ -85,7 +85,7 @@ async function cargarTrabajos() {
             // 1. Primero dibujamos todo con los filtros combinados
             window.filtrarTrabajosCombinados();
 
-            // --- CERRAMOS LA PANTALLA DE CARGA AQUÍ, ANTES DE CUALQUIER OTRA ALERTA ---
+            // --- CERRAMOS LA PANTALLA DE CARGA AQUÍ ---
             Swal.close();
 
             // 2. Detectamos si en la URL viene el ID del proyecto (?jobId=...)
@@ -94,12 +94,14 @@ async function cargarTrabajos() {
 
             if (jobIdParam) {
                 const idNumerico = parseInt(jobIdParam);
-
                 const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
 
                 if (trabajoEncontrado) {
                     if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
-                        window.abrirModalEvidencias(idNumerico);
+                        // 🔥 Agregado el setTimeout para que cargue bien
+                        setTimeout(() => {
+                            window.abrirModalEvidencias(idNumerico);
+                        }, 300);
                     } else {
                         Swal.fire({
                             icon: 'info',
@@ -131,7 +133,6 @@ window.filtrarTrabajosCombinados = () => {
             (job.nameManager || '').toLowerCase().includes(texto);
 
         const coincideJefe = (managerId === 'ALL') || (job.managerId == managerId);
-
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
 
         let coincidePrioridad = true;
@@ -144,6 +145,22 @@ window.filtrarTrabajosCombinados = () => {
         }
 
         return coincideTexto && coincideJefe && coincideEstado && coincidePrioridad;
+    });
+
+    // 🔥 ORDENAMIENTO DE LA BASE DE DATOS (El más nuevo arriba)
+    trabajosFiltrados.sort((a, b) => {
+        let timeB = Array.isArray(b.jobDate) 
+            ? new Date(b.jobDate[0], b.jobDate[1] - 1, b.jobDate[2]).getTime() 
+            : new Date(b.jobDate || 0).getTime();
+            
+        let timeA = Array.isArray(a.jobDate) 
+            ? new Date(a.jobDate[0], a.jobDate[1] - 1, a.jobDate[2]).getTime() 
+            : new Date(a.jobDate || 0).getTime();
+            
+        if (timeB !== timeA) {
+            return timeB - timeA;
+        }
+        return b.jobId - a.jobId;
     });
 
     renderizarTrabajos(trabajosFiltrados);
@@ -267,16 +284,32 @@ window.abrirModalEvidencias = (jobId) => {
     if (!job) return;
 
     document.getElementById('modalTitulo').innerHTML = `<i class="fa-solid fa-folder-open"></i> Evidencias - ${job.clientName}`;
-
     document.getElementById('jobDescriptionText').innerHTML = `<strong>Descripción de obra:</strong> <br> ${job.description || 'Sin descripción'}`;
 
     const timeline = document.getElementById('evidencesTimeline');
     timeline.innerHTML = '';
 
-    const updatesOrdenados = job.updateJob.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 🔥 ORDENAMIENTO DE FECHAS DE EVIDENCIAS
+    const updatesOrdenados = job.updateJob.sort((a, b) => {
+        let timeA = Array.isArray(a.date) 
+            ? new Date(a.date[0], a.date[1] - 1, a.date[2], a.date[3] || 0, a.date[4] || 0).getTime() 
+            : new Date(a.date).getTime();
+        
+        let timeB = Array.isArray(b.date) 
+            ? new Date(b.date[0], b.date[1] - 1, b.date[2], b.date[3] || 0, b.date[4] || 0).getTime() 
+            : new Date(b.date).getTime();
+            
+        return timeB - timeA;
+    });
 
     updatesOrdenados.forEach(update => {
-        const fechaObj = new Date(update.date);
+        // Formateo de fecha seguro
+        let fechaObj;
+        if (Array.isArray(update.date)) {
+            fechaObj = new Date(update.date[0], update.date[1] - 1, update.date[2], update.date[3] || 0, update.date[4] || 0);
+        } else {
+            fechaObj = new Date(update.date);
+        }
         const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
         let galeriaHTML = '';
@@ -321,11 +354,14 @@ window.verFotoGrande = (url) => {
     Swal.fire({
         imageUrl: url,
         imageAlt: 'Evidencia del Trabajo',
-        width: '80%',
+        width: 'auto', // Ajustado a auto
         showConfirmButton: false,
         showCloseButton: true,
         background: 'transparent',
-        backdrop: `rgba(0,0,0,0.8)`
+        backdrop: `rgba(0,0,0,0.85)`,
+        customClass: {
+            image: 'img-evidencia-full' // Conecta con la regla CSS
+        }
     });
 };
 

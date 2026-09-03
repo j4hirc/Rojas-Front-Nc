@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!userToken || !rolesString || !JSON.parse(rolesString).includes('ROLE_JEFE')) {
         Swal.fire({ icon: 'error', title: 'Acceso Denegado', confirmButtonColor: '#12CFF4' })
-        .then(() => { window.location.href = '../../index.html'; });
+            .then(() => { window.location.href = '../../index.html'; });
         return;
     }
 
@@ -24,9 +24,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 async function cargarDatosYCronograma(emailActual) {
     try {
-        Swal.fire({ title: 'Armando cronograma...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+        Swal.fire({ title: 'Armando cronograma...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resUsers = await fetch(USERS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
 
         if (resUsers.status === 401) {
             Swal.close();
@@ -43,11 +43,11 @@ async function cargarDatosYCronograma(emailActual) {
         }
 
         const users = await resUsers.json();
-        
+
         const jefeActual = users.find(u => u.email === emailActual);
         if (jefeActual) myManagerId = jefeActual.userId;
 
-        const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` }});
+        const resJobs = await fetch(JOBS_URL, { headers: { 'Authorization': `Bearer ${userToken}` } });
 
         if (resJobs.status === 401) {
             Swal.close();
@@ -64,7 +64,7 @@ async function cargarDatosYCronograma(emailActual) {
         }
 
         allJobs = await resJobs.json();
-        
+
         const misTrabajos = allJobs; // Mostrar todos los trabajos, sin filtrar por manager
 
         // Cargar filtro (todos los subcontratistas registrados, no solo los que ya tienen trabajos)
@@ -74,9 +74,9 @@ async function cargarDatosYCronograma(emailActual) {
 
         var calendarEl = document.getElementById('calendar');
         calendarInstance = new FullCalendar.Calendar(calendarEl, {
-            initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth', 
+            initialView: window.innerWidth < 768 ? 'listWeek' : 'dayGridMonth',
             locale: 'es',
-            height: 'auto', 
+            height: 'auto',
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
@@ -89,15 +89,15 @@ async function cargarDatosYCronograma(emailActual) {
                 list: 'Agenda'
             },
             events: eventosFormateados,
-            
-            eventContent: function(arg) {
+
+            eventContent: function (arg) {
                 let p = arg.event.extendedProps;
                 let icon = '';
-                
-                if(p.status === 'PENDING') icon = '<i class="fa-solid fa-clock"></i>';
-                if(p.status === 'IN_PROGRESS') icon = '<i class="fa-solid fa-gear fa-spin"></i>';
-                if(p.status === 'COMPLETED') icon = '<i class="fa-solid fa-check-double"></i>';
-                if(p.status === 'CANCELLED') icon = '<i class="fa-solid fa-ban"></i>';
+
+                if (p.status === 'PENDING') icon = '<i class="fa-solid fa-clock"></i>';
+                if (p.status === 'IN_PROGRESS') icon = '<i class="fa-solid fa-gear fa-spin"></i>';
+                if (p.status === 'COMPLETED') icon = '<i class="fa-solid fa-check-double"></i>';
+                if (p.status === 'CANCELLED') icon = '<i class="fa-solid fa-ban"></i>';
 
                 let viewType = arg.view.type;
 
@@ -138,16 +138,17 @@ async function cargarDatosYCronograma(emailActual) {
                 }
             },
 
-            eventClick: function(info) {
+            eventClick: function (info) {
                 const p = info.event.extendedProps;
-                
+                const jobId = info.event.id; // Obtenemos el ID del trabajo
+
                 let estadoTxt = '';
                 let badgeColor = '';
-                
-                if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#ff9800'; }
-                if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#1e88e5'; }
-                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#6c757d'; }
-                if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#d32f2f'; }
+
+                if (p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#ff9800'; }
+                if (p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#1e88e5'; }
+                if (p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#6c757d'; }
+                if (p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#d32f2f'; }
 
                 Swal.fire({
                     title: `<h3 style="color:#0f4c81; margin:0; font-weight:700;">${info.event.title}</h3>`,
@@ -178,9 +179,21 @@ async function cargarDatosYCronograma(emailActual) {
                             </div>
                         </div>
                     `,
-                    confirmButtonColor: '#12CFF4',
-                    confirmButtonText: 'Cerrar detalle',
+                    // Configuración de los botones
+                    showCancelButton: true,
+                    confirmButtonColor: '#00B8A9', // Color para el botón de ir al trabajo
+                    cancelButtonColor: '#2E3238',  // Color para cerrar
+                    confirmButtonText: '<i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Evidencias   ',
+                    cancelButtonText: 'Cerrar detalle',
                     width: '450px'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // AQUÍ DEBES PONER LA RUTA A TU PÁGINA DE DETALLES
+                        // Ejemplo: window.location.href = `../trabajos/detalle.html?id=${jobId}`;
+                        // Si están en la misma carpeta:
+                        window.location.href = `../evidencias/evidencias.html?jobId=${jobId}`;
+
+                    }
                 });
             }
         });
@@ -224,15 +237,15 @@ function cargarFiltroEmpleados(allUsers) {
 
 function crearEventos(trabajosFiltrados) {
     return trabajosFiltrados.map(job => {
-        let bgColor = '#ff9800'; 
-        if(job.status === 'IN_PROGRESS') bgColor = '#1e88e5'; 
-        else if(job.status === 'COMPLETED') bgColor = '#6c757d'; 
-        else if(job.status === 'CANCELLED') bgColor = '#d32f2f'; 
+        let bgColor = '#ff9800';
+        if (job.status === 'IN_PROGRESS') bgColor = '#1e88e5';
+        else if (job.status === 'COMPLETED') bgColor = '#6c757d';
+        else if (job.status === 'CANCELLED') bgColor = '#d32f2f';
 
         return {
             id: job.jobId,
             title: job.clientName,
-            start: job.jobDate ? job.jobDate.split('T')[0] : new Date().toISOString().split('T')[0], 
+            start: job.jobDate ? job.jobDate.split('T')[0] : new Date().toISOString().split('T')[0],
             backgroundColor: bgColor,
             borderColor: bgColor,
             extendedProps: {
@@ -250,7 +263,7 @@ function crearEventos(trabajosFiltrados) {
 
 function filtrarCalendario() {
     const employeeIdSeleccionado = document.getElementById('filterEmployee').value;
-    
+
     let trabajosFiltrados = allJobs; // Todos los trabajos, sin filtrar por manager
 
     if (employeeIdSeleccionado) {
@@ -258,7 +271,7 @@ function filtrarCalendario() {
     }
 
     const nuevosEventos = crearEventos(trabajosFiltrados);
-    
+
     if (calendarInstance) {
         calendarInstance.removeAllEvents();
         calendarInstance.addEventSource(nuevosEventos);
@@ -509,8 +522,8 @@ window.exportarBodegaPdf = () => {
 window.cerrarSesion = () => {
     const rolesString = localStorage.getItem('user_roles');
     let userRoles = [];
-    if (rolesString) { 
-        try { userRoles = JSON.parse(rolesString); } catch(e) { console.error("Error al leer roles"); } 
+    if (rolesString) {
+        try { userRoles = JSON.parse(rolesString); } catch (e) { console.error("Error al leer roles"); }
     }
 
     if (userRoles.length > 1) {
@@ -555,7 +568,7 @@ window.cerrarSesion = () => {
 // Declararla en window asegura que esté disponible globalmente en todo el script
 window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     if (typeof cerrarModalPerfil === 'function') {
-        cerrarModalPerfil(); 
+        cerrarModalPerfil();
     } else {
         const modales = document.querySelectorAll('.modal-overlay');
         modales.forEach(m => m.style.display = 'none');
@@ -573,18 +586,18 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
     roles.forEach(rol => {
         let nombreRol = '';
         let url = '';
-        
-        if (rol === 'ROLE_ADMIN') { 
-            nombreRol = 'Acceder como Administrador'; 
-            url = `${prefijoRaiz}admin/admin-dashboard.html`; 
+
+        if (rol === 'ROLE_ADMIN') {
+            nombreRol = 'Acceder como Administrador';
+            url = `${prefijoRaiz}admin/admin-dashboard.html`;
         }
-        if (rol === 'ROLE_JEFE') { 
-            nombreRol = 'Acceder como Manager'; 
-            url = `${prefijoJefe}jefe-dashboard.html`; 
+        if (rol === 'ROLE_JEFE') {
+            nombreRol = 'Acceder como Manager';
+            url = `${prefijoJefe}jefe-dashboard.html`;
         }
-        if (rol === 'ROLE_EMPLOYEE') { 
-            nombreRol = 'Acceder como Subcontratista'; 
-            url = `${prefijoRaiz}employee/employee-dashboard.html`; 
+        if (rol === 'ROLE_EMPLOYEE') {
+            nombreRol = 'Acceder como Subcontratista';
+            url = `${prefijoRaiz}employee/employee-dashboard.html`;
         }
 
         if (nombreRol) {
@@ -595,7 +608,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
             boton.style.backgroundColor = '#00B8A9';
             boton.style.cursor = 'pointer';
             boton.textContent = nombreRol;
-            
+
             boton.addEventListener('click', () => {
                 window.location.href = url;
             });
@@ -606,7 +619,7 @@ window.mostrarSelectorDeRolesDesdeJefe = (roles, esSubcarpeta) => {
 
     Swal.fire({
         title: 'Selecciona tu área de trabajo',
-        html: contenedor, 
+        html: contenedor,
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: 'Cancelar',

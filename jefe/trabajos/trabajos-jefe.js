@@ -136,7 +136,7 @@ window.filtrarTrabajosCombinados = () => {
     const estado = (document.getElementById('filterStatusInput')?.value || 'ALL').trim();
     const prioridadInput = (document.getElementById('filterPriorityInput')?.value || '').trim();
     const empleadoNombre = document.getElementById('filterEmployeeInput')?.value || '';
-    const managerIdFiltro = document.getElementById('filterManagerInput')?.value || ''; // 🔥 FILTRO MANAGER
+    const managerIdFiltro = document.getElementById('filterManagerInput')?.value || ''; 
     const fechaDesde = document.getElementById('filterDateFromInput')?.value || '';
     const fechaHasta = document.getElementById('filterDateToInput')?.value || '';
 
@@ -146,7 +146,7 @@ window.filtrarTrabajosCombinados = () => {
             (job.description || '').toLowerCase().includes(texto) ||
             (job.clientPhone || '').toLowerCase().includes(texto) ||
             (job.nameEmployee || '').toLowerCase().includes(texto) ||
-            (job.nameManager || '').toLowerCase().includes(texto); // 🔥 BUSCA POR MANAGER
+            (job.nameManager || '').toLowerCase().includes(texto); 
 
         const coincideEstado = estado === 'ALL' || job.status === estado;
 
@@ -160,8 +160,6 @@ window.filtrarTrabajosCombinados = () => {
         }
 
         const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
-
-        // 🔥 FILTRO EXCLUSIVO PARA MANAGER
         const coincideManager = (managerIdFiltro === '') || (job.managerId == managerIdFiltro);
 
         let coincideFecha = true;
@@ -170,6 +168,27 @@ window.filtrarTrabajosCombinados = () => {
         if (fechaHasta && jobDateStr) coincideFecha = coincideFecha && (jobDateStr <= fechaHasta);
 
         return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado && coincideManager && coincideFecha;
+    });
+
+    // 🔥 ORDENAMIENTO EXACTO COMO TU BASE DE DATOS (job_date DESC)
+    trabajosFiltrados.sort((a, b) => {
+        // 1. Extraer fecha B (puede venir como array [2026,9,4] o texto "2026-09-04")
+        let timeB = Array.isArray(b.jobDate) 
+            ? new Date(b.jobDate[0], b.jobDate[1] - 1, b.jobDate[2]).getTime() 
+            : new Date(b.jobDate || 0).getTime();
+            
+        // 2. Extraer fecha A
+        let timeA = Array.isArray(a.jobDate) 
+            ? new Date(a.jobDate[0], a.jobDate[1] - 1, a.jobDate[2]).getTime() 
+            : new Date(a.jobDate || 0).getTime();
+            
+        // 3. Comparar las fechas (El más reciente arriba)
+        if (timeB !== timeA) {
+            return timeB - timeA;
+        }
+        
+        // 4. Si son del mismo día, ordenamos por ID (el creado más recientemente va arriba)
+        return b.jobId - a.jobId;
     });
 
     renderizarTrabajos(trabajosFiltrados);

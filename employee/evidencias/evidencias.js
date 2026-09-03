@@ -54,7 +54,33 @@ async function inicializarDatosDelEmpleado(emailActual) {
         if (resJobs.ok) {
             const todosLosTrabajos = await resJobs.json();
             misTrabajosCache = todosLosTrabajos.filter(job => job.employeeId === myEmployeeId);
-            renderizarTrabajos(misTrabajosCache);
+            
+            // Llamamos a la función para que los ordene y los pinte en pantalla
+            window.filtrarTrabajosEmpleado();
+
+            // 🔥 MAGIA: Leer URL para abrir evidencias automáticamente
+            const urlParams = new URLSearchParams(window.location.search);
+            const jobIdParam = urlParams.get('jobId');
+
+            if (jobIdParam) {
+                const idNumerico = parseInt(jobIdParam);
+                const trabajoEncontrado = misTrabajosCache.find(j => j.jobId === idNumerico);
+
+                if (trabajoEncontrado) {
+                    if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
+                        setTimeout(() => {
+                            window.abrirModalEvidencias(idNumerico);
+                        }, 300);
+                    } else {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Sin evidencias',
+                            text: `El proyecto de "${trabajoEncontrado.clientName}" no registra avances fotográficos todavía.`,
+                            confirmButtonColor: '#0277bd'
+                        });
+                    }
+                }
+            }
         }
         
         Swal.close();
@@ -82,6 +108,22 @@ window.filtrarTrabajosEmpleado = () => {
                                (job.nameManager || '').toLowerCase().includes(texto);
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
         return coincideTexto && coincideEstado;
+    });
+
+    // 🔥 ORDENAMIENTO EXACTO (Fechas más nuevas arriba)
+    filtrados.sort((a, b) => {
+        let timeB = Array.isArray(b.jobDate) 
+            ? new Date(b.jobDate[0], b.jobDate[1] - 1, b.jobDate[2]).getTime() 
+            : new Date(b.jobDate || 0).getTime();
+            
+        let timeA = Array.isArray(a.jobDate) 
+            ? new Date(a.jobDate[0], a.jobDate[1] - 1, a.jobDate[2]).getTime() 
+            : new Date(a.jobDate || 0).getTime();
+            
+        if (timeB !== timeA) {
+            return timeB - timeA;
+        }
+        return b.jobId - a.jobId;
     });
 
     renderizarTrabajos(filtrados);
@@ -167,10 +209,28 @@ window.abrirModalEvidencias = (jobId) => {
     const timeline = document.getElementById('evidencesTimeline');
     timeline.innerHTML = '';
 
-    const updatesOrdenados = job.updateJob.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 🔥 ORDENAMIENTO DE FECHAS A PRUEBA DE ERRORES
+    const updatesOrdenados = job.updateJob.sort((a, b) => {
+        let timeA = Array.isArray(a.date) 
+            ? new Date(a.date[0], a.date[1] - 1, a.date[2], a.date[3] || 0, a.date[4] || 0).getTime() 
+            : new Date(a.date).getTime();
+        
+        let timeB = Array.isArray(b.date) 
+            ? new Date(b.date[0], b.date[1] - 1, b.date[2], b.date[3] || 0, b.date[4] || 0).getTime() 
+            : new Date(b.date).getTime();
+            
+        return timeB - timeA;
+    });
 
     updatesOrdenados.forEach(update => {
-        const fechaObj = new Date(update.date);
+        // Formateo de fecha seguro
+        let fechaObj;
+        if (Array.isArray(update.date)) {
+            fechaObj = new Date(update.date[0], update.date[1] - 1, update.date[2], update.date[3] || 0, update.date[4] || 0);
+        } else {
+            fechaObj = new Date(update.date);
+        }
+
         const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' });
 
         let galeriaHTML = '';
@@ -214,11 +274,14 @@ window.verFotoGrande = (url) => {
     Swal.fire({
         imageUrl: url,
         imageAlt: 'Evidencia',
-        width: '80%',
+        width: 'auto', // Ajustado a auto
         showConfirmButton: false,
         showCloseButton: true,
         background: 'transparent',
-        backdrop: `rgba(0,0,0,0.8)`
+        backdrop: `rgba(0,0,0,0.85)`,
+        customClass: {
+            image: 'img-evidencia-full' // Conexión con el CSS
+        }
     });
 };
 

@@ -263,7 +263,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                 }
             },
 
-            eventClick: function (info) {
+eventClick: function (info) {
                 const p = info.event.extendedProps;
                 currentJobInfo = p;
 
@@ -314,7 +314,6 @@ async function cargarCalendarioEmpleado(emailActual) {
                     listaMaterialesHtml = `<li style="font-size: 13px; color: #666; list-style: none;">No hay materiales registrados en la orden.</li>`;
                 }
 
-                // 🔥 BOTÓN PARA MOSTRAR LOS PLANOS EN EL MODAL DEL EMPLEADO
                 const urlsPlanos = p.blueprintUrls || [];
                 let planoHtml = '';
                 if (urlsPlanos.length > 0) {
@@ -381,22 +380,29 @@ async function cargarCalendarioEmpleado(emailActual) {
 
                 ${notasHtml}
                             
-                            <div style="position: relative; margin-top: 15px;">
-                                <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
-                                <a href="https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;">
-                                    <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
-                                </a>
-                            </div>
+                <div style="position: relative; margin-top: 15px;">
+                    <div id="swalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #ddd; z-index: 10;"></div>
+                    <a href="https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}" target="_blank" style="position: absolute; bottom: 10px; right: 10px; background: #111C44; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 12px; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: 0.2s;">
+                        <i class="fa-solid fa-map-location-dot"></i> Ir a la Obra
+                    </a>
+                </div>
                             
-                            ${htmlBloqueo}
-                        </div>
+                ${htmlBloqueo}
+            </div>
                     `,
                     showCancelButton: true,
-                    showConfirmButton: !estaBloqueado,
-                    confirmButtonColor: '#00B8A9',
-                    cancelButtonColor: '#1B254B',
+                    showDenyButton: true, // 🔥 NUEVO: Activa un tercer botón
+                    showConfirmButton: !estaBloqueado, 
+                    
+                    // Configuración de los 3 botones
+                    confirmButtonColor: '#00B8A9',   // Botón 1: Hacer reporte (verde)
+                    denyButtonColor: '#0F2D4A',      // Botón 2: Ver Evidencias (azul oscuro)
+                    cancelButtonColor: '#1B254B',    // Botón 3: Cerrar (azul muy oscuro)
+                    
                     confirmButtonText: '<i class="fa-solid fa-camera"></i> Hacer Reporte',
+                    denyButtonText: '<i class="fa-solid fa-folder-open"></i> Ver Evidencias',
                     cancelButtonText: 'Cerrar',
+                    
                     width: '450px',
                     didOpen: () => {
                         let swalMap = L.map('swalMap').setView([p.latitude, p.longitude], 15);
@@ -405,8 +411,14 @@ async function cargarCalendarioEmpleado(emailActual) {
                         setTimeout(() => swalMap.invalidateSize(), 100);
                     }
                 }).then((result) => {
+                    // Si el usuario presiona "Hacer Reporte"
                     if (result.isConfirmed && !estaBloqueado) {
                         abrirModalEvidence(info.event.id);
+                    }
+                    // Si el usuario presiona "Ver Evidencias" (sin importar si está bloqueado o no)
+                    else if (result.isDenied) {
+                        // Navega a la página de evidencias que tiene el empleado pasándole el ID
+                        window.location.href = `evidencias/evidencias.html?jobId=${info.event.id}`;
                     }
                 });
             }

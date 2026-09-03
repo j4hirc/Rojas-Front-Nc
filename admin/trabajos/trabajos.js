@@ -349,48 +349,100 @@ window.filtrarMateriales = () => {
 
 async function cargarTrabajos() {
     try {
-        const response = await fetch(`${API_URL}/all`, { method: 'GET', headers: { 'Authorization': `Bearer ${userToken}` } });
+        // 🔥 CORREGIDO: Usamos API_URL como lo tenías originalmente
+        const response = await fetch(`${API_URL}/all`, { 
+            method: 'GET', 
+            headers: { 'Authorization': `Bearer ${userToken}` } 
+        });
+        
         if (response.ok) {
             allJobsCache = await response.json();
-            filtrarTrabajosCombinados();
+
+            // 1. Dibujamos y ordenamos todo
+            window.filtrarTrabajosCombinados();
+
+            // --- CERRAMOS LA PANTALLA DE CARGA AQUÍ ---
+            Swal.close();
+
+            // 2. Detectamos si en la URL viene el ID del proyecto (?jobId=...)
+            const urlParams = new URLSearchParams(window.location.search);
+            const jobIdParam = urlParams.get('jobId');
+
+            if (jobIdParam) {
+                const idNumerico = parseInt(jobIdParam);
+                const trabajoEncontrado = allJobsCache.find(j => j.jobId === idNumerico);
+
+                if (trabajoEncontrado) {
+                    if (trabajoEncontrado.updateJob && trabajoEncontrado.updateJob.length > 0) {
+                        setTimeout(() => {
+                            window.abrirModalEvidencias(idNumerico);
+                        }, 300);
+                    } else {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Sin evidencias',
+                            text: `El proyecto de "${trabajoEncontrado.clientName}" no registra avances fotográficos todavía.`,
+                            confirmButtonColor: '#12CFF4'
+                        });
+                    }
+                }
+            }
         }
-    } catch (error) { console.error("Error al cargar trabajos", error); }
+    } catch (error) { 
+        console.error("Error al cargar trabajos", error); 
+        Swal.fire('Error', 'No se pudieron cargar los trabajos.', 'error');
+    }
 }
 
 window.filtrarTrabajosCombinados = () => {
     const texto = document.getElementById('searchJobInput') ? document.getElementById('searchJobInput').value.toLowerCase().trim() : '';
+    const managerId = document.getElementById('filterManager') ? document.getElementById('filterManager').value : 'ALL';
     const estado = document.getElementById('filterStatusInput') ? document.getElementById('filterStatusInput').value : 'ALL';
     const prioridad = document.getElementById('filterPriorityInput') ? document.getElementById('filterPriorityInput').value.trim() : '';
-    const empleadoNombre = document.getElementById('filterEmployeeInput') ? document.getElementById('filterEmployeeInput').value : '';
     const fechaDesde = document.getElementById('filterDateFromInput') ? document.getElementById('filterDateFromInput').value : '';
     const fechaHasta = document.getElementById('filterDateToInput') ? document.getElementById('filterDateToInput').value : '';
 
     const trabajosFiltrados = allJobsCache.filter(job => {
         const coincideTexto =
             (job.clientName || '').toLowerCase().includes(texto) ||
-            (job.clientPhone || '').toLowerCase().includes(texto) ||
             (job.description || '').toLowerCase().includes(texto) ||
-            (job.employeeName || '').toLowerCase().includes(texto) ||
-            (job.managerName || '').toLowerCase().includes(texto);
+            (job.nameEmployee || '').toLowerCase().includes(texto) ||
+            (job.nameManager || '').toLowerCase().includes(texto);
 
+        const coincideJefe = (managerId === 'ALL') || (job.managerId == managerId);
         const coincideEstado = (estado === 'ALL') || (job.status === estado);
 
         let coincidePrioridad = true;
         if (prioridad !== '') {
             const prioBuscada = parseInt(prioridad);
-            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '') ? parseInt(job.priority) : 2;
+            const prioJob = (job.priority !== null && job.priority !== undefined && job.priority !== '')
+                ? parseInt(job.priority)
+                : 2;
             coincidePrioridad = prioJob === prioBuscada;
         }
 
-        const coincideEmpleado = (empleadoNombre === '') || (job.nameEmployee === empleadoNombre);
-
-        // 🔥 NUEVO: filtro por rango de fechas
         let coincideFecha = true;
-        const jobDateStr = fechaParaInput(job.jobDate); // ya existe esta función, normaliza a 'yyyy-mm-dd'
+        const jobDateStr = fechaParaInput(job.jobDate);
         if (fechaDesde && jobDateStr) coincideFecha = coincideFecha && (jobDateStr >= fechaDesde);
         if (fechaHasta && jobDateStr) coincideFecha = coincideFecha && (jobDateStr <= fechaHasta);
 
-        return coincideTexto && coincideEstado && coincidePrioridad && coincideEmpleado && coincideFecha;
+        return coincideTexto && coincideJefe && coincideEstado && coincidePrioridad && coincideFecha;
+    });
+
+    // 🔥 ORDENAMIENTO EXACTO COMO TU BASE DE DATOS (El más nuevo arriba)
+    trabajosFiltrados.sort((a, b) => {
+        let timeB = Array.isArray(b.jobDate) 
+            ? new Date(b.jobDate[0], b.jobDate[1] - 1, b.jobDate[2]).getTime() 
+            : new Date(b.jobDate || 0).getTime();
+            
+        let timeA = Array.isArray(a.jobDate) 
+            ? new Date(a.jobDate[0], a.jobDate[1] - 1, a.jobDate[2]).getTime() 
+            : new Date(a.jobDate || 0).getTime();
+            
+        if (timeB !== timeA) {
+            return timeB - timeA;
+        }
+        return b.jobId - a.jobId;
     });
 
     renderizarTrabajos(trabajosFiltrados);
