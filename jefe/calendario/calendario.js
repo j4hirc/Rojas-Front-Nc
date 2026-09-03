@@ -138,17 +138,17 @@ async function cargarDatosYCronograma(emailActual) {
                 }
             },
 
-            eventClick: function (info) {
+            eventClick: function(info) {
                 const p = info.event.extendedProps;
                 const jobId = info.event.id; // Obtenemos el ID del trabajo
-
+                
                 let estadoTxt = '';
                 let badgeColor = '';
-
-                if (p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#ff9800'; }
-                if (p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#1e88e5'; }
-                if (p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#6c757d'; }
-                if (p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#d32f2f'; }
+                
+                if(p.status === 'PENDING') { estadoTxt = 'Pendiente'; badgeColor = '#ff9800'; }
+                if(p.status === 'IN_PROGRESS') { estadoTxt = 'En Progreso'; badgeColor = '#1e88e5'; }
+                if(p.status === 'COMPLETED') { estadoTxt = 'Completado'; badgeColor = '#6c757d'; }
+                if(p.status === 'CANCELLED') { estadoTxt = 'Cancelado'; badgeColor = '#d32f2f'; }
 
                 Swal.fire({
                     title: `<h3 style="color:#0f4c81; margin:0; font-weight:700;">${info.event.title}</h3>`,
@@ -179,20 +179,24 @@ async function cargarDatosYCronograma(emailActual) {
                             </div>
                         </div>
                     `,
-                    // Configuración de los botones
+                    // Configuración de 3 botones
                     showCancelButton: true,
-                    confirmButtonColor: '#00B8A9', // Color para el botón de ir al trabajo
-                    cancelButtonColor: '#2E3238',  // Color para cerrar
-                    confirmButtonText: '<i class="fa-solid fa-arrow-up-right-from-square"></i> Ver Evidencias   ',
-                    cancelButtonText: 'Cerrar detalle',
+                    showDenyButton: true,
+                    confirmButtonColor: '#12CFF4', // Botón principal: Abrir Trabajo
+                    denyButtonColor: '#198754',    // Botón secundario: Ver Evidencias
+                    cancelButtonColor: '#2E3238',  // Cerrar modal
+                    
+                    confirmButtonText: '<i class="fa-solid fa-pen-to-square"></i> Abrir Trabajo',
+                    denyButtonText: '<i class="fa-solid fa-camera"></i> Ver Evidencias',
+                    cancelButtonText: 'Cerrar',
                     width: '450px'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        // AQUÍ DEBES PONER LA RUTA A TU PÁGINA DE DETALLES
-                        // Ejemplo: window.location.href = `../trabajos/detalle.html?id=${jobId}`;
-                        // Si están en la misma carpeta:
+                        // Navega a trabajos y da la orden de abrir el modal automáticamente
+                        window.location.href = `../trabajos/trabajos.html?abrir=${jobId}`; 
+                    } else if (result.isDenied) {
+                        // Navega a evidencias pasándole el ID
                         window.location.href = `../evidencias/evidencias.html?jobId=${jobId}`;
-
                     }
                 });
             }

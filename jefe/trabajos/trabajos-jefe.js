@@ -522,11 +522,33 @@ async function cargarTrabajos() {
     try {
         const res = await fetch(`${API_URL}/all`, { headers: { 'Authorization': `Bearer ${userToken}` } });
         if (res.ok) {
-            // Ya NO filtramos con `j.managerId === myManagerId` para que vea todo
             allJobsCache = await res.json();
-            filtrarTrabajosCombinados();
+            
+            // 1. Filtramos y dibujamos la tabla
+            window.filtrarTrabajosCombinados();
+
+            // --- CERRAMOS LA PANTALLA DE CARGA AQUÍ ---
+            if (Swal.isVisible()) {
+                Swal.close();
+            }
+
+            // 🔥 2. MAGIA: Detectar si venimos del calendario para ABRIR EL MODAL DE EDICIÓN
+            const urlParams = new URLSearchParams(window.location.search);
+            const trabajoParaAbrir = urlParams.get('abrir');
+
+            if (trabajoParaAbrir) {
+                const idNumerico = parseInt(trabajoParaAbrir);
+                
+                // Le damos 300ms a la pantalla para que termine de acomodarse y abrimos el modal
+                setTimeout(() => {
+                    window.abrirModalEditarJob(idNumerico);
+                }, 300);
+            }
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e); 
+        Swal.close();
+    }
 }
 
 function getPriorityBadge(priority) {
