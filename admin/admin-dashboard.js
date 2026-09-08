@@ -465,35 +465,23 @@ window.exportarNominaSemanalAPdf = () => {
     const nombreArchivoClean = `${strInicio}_al_${strFin}`.replace(/\//g, '-');
 
     const contenedorImpresion = document.createElement('div');
-    contenedorImpresion.style.padding = '28px 32px';
-    contenedorImpresion.style.background = '#ffffff';
     contenedorImpresion.style.fontFamily = "'Poppins', sans-serif";
+    contenedorImpresion.style.background = "#ffffff";
     contenedorImpresion.style.color = '#0f172a';
 
-    let bodyHtml = '';
+    const empIds = Object.keys(nominas);
 
-    Object.keys(nominas).forEach(empId => {
+    // Mapeamos cada empleado como si fuera una página individual (tal como se hace en Bodega)
+    const paginas = empIds.map((empId, idx) => {
         const emp = (window.nominasUsersCache || []).find(u => u.userId == empId);
         const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
         const d = nominas[empId];
+        const esUltimo = idx === empIds.length - 1;
 
-        bodyHtml += `
-            <div style="margin-bottom: 22px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                <div style="background: #0F2D4A; color: #fff; padding: 10px 14px; font-weight: 700; font-size: 14px;">
-                    ${nombre}
-                </div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
-                    <thead>
-                        <tr style="background: #f1f5f9;">
-                            <th style="padding: 8px 14px; text-align: left; font-weight: 600; color: #475569;">Cliente / Trabajo</th>
-                            <th style="padding: 8px 14px; text-align: right; font-weight: 600; color: #475569;">Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
+        // Construimos las filas de los trabajos de ESTE empleado
+        let jobsHtml = '';
         d.jobs.forEach(j => {
-            bodyHtml += `
+            jobsHtml += `
                 <tr>
                     <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9;">${j.clientName}</td>
                     <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">$${j.pay.toFixed(2)}</td>
@@ -501,57 +489,87 @@ window.exportarNominaSemanalAPdf = () => {
             `;
         });
 
-        bodyHtml += `
-                    </tbody>
-                    <tfoot>
-                        <tr style="background: #f8fafc;">
-                            <td style="padding: 8px 14px; text-align: right; font-weight: 700; color: #0F2D4A;">Subtotal</td>
-                            <td style="padding: 8px 14px; text-align: right; font-weight: 700; color: #d97706;">$${d.total.toFixed(2)}</td>
-                        </tr>
-                    </tfoot>
-                </table>
+        // El cuadro del "Total General Global" lo mostraremos solo en la ÚLTIMA página, para no repetirlo
+        let totalGlobalHtml = '';
+        if (esUltimo) {
+            totalGlobalHtml = `
+                <div style="margin-top: 24px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 800; color: #1b5e20; text-transform: uppercase; font-size: 13px;">Total Nómina Global Empresa</span>
+                    <span style="font-weight: 800; color: #2e7d32; font-size: 20px;">$${totalNominaGlobal.toFixed(2)}</span>
+                </div>
+            `;
+        }
+
+        // Estructura completa de la HOJA para este empleado con "page-break-after"
+        return `
+            <div class="job-pdf-page" style="padding: 30px; ${esUltimo ? '' : 'page-break-after: always;'}">
+                
+                <!-- CABECERA REPETIDA EN CADA HOJA -->
+                <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <img src="../img/logonegro.png" alt="Logo" style="height: 52px; width: auto;" onerror="this.src='../../logo.jpeg'">
+                        <div>
+                            <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #0B0B0D; text-transform: uppercase; letter-spacing: 0.5px;">Nómina Quincenal</h1>
+                            <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 11px; font-weight: 700; letter-spacing: 0.8px;">REMOMN — COPIA SUBCONTRATISTA</p>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600;">Período</p>
+                        <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: 700;">${strInicio} — ${strFin}</p>
+                    </div>
+                </div>
+
+                <!-- DESGLOSE DEL EMPLEADO -->
+                <div style="margin-bottom: 22px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                    <div style="background: #0F2D4A; color: #fff; padding: 10px 14px; font-weight: 700; font-size: 14px;">
+                        Trabajos realizados por: ${nombre}
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
+                        <thead>
+                            <tr style="background: #f1f5f9;">
+                                <th style="padding: 8px 14px; text-align: left; font-weight: 600; color: #475569;">Cliente / Trabajo</th>
+                                <th style="padding: 8px 14px; text-align: right; font-weight: 600; color: #475569;">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${jobsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f8fafc;">
+                                <td style="padding: 8px 14px; text-align: right; font-weight: 700; color: #0F2D4A;">Pago Total Quincena</td>
+                                <td style="padding: 8px 14px; text-align: right; font-weight: 700; color: #d97706; font-size: 14px;">$${d.total.toFixed(2)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                ${totalGlobalHtml}
+
+                <!-- PIE DE PÁGINA INDIVIDUAL -->
+                <div style="margin-top: 36px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align: center; font-size: 9.5px; color: #94a3b8;">
+                    Documento confidencial generado automáticamente por el sistema RemoMN · ${new Date().toLocaleString('es-ES')}
+                </div>
+
             </div>
         `;
     });
 
-    contenedorImpresion.innerHTML = `
-        <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <img src="../img/logonegro.png" alt="Logo" style="height: 52px; width: auto;" onerror="this.src='../../logo.jpeg'">
-                <div>
-                    <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #0B0B0D; text-transform: uppercase; letter-spacing: 0.5px;">Reporte de Nómina Quincenal</h1>
-                    <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 11px; font-weight: 700; letter-spacing: 0.8px;">REMOMN — PANEL DE ADMINISTRACIÓN</p>
-                </div>
-            </div>
-            <div style="text-align: right;">
-                <p style="margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600;">Período</p>
-                <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: 700;">${strInicio} — ${strFin}</p>
-            </div>
-        </div>
+    // Unimos todas las hojas
+    contenedorImpresion.innerHTML = paginas.join('');
 
-        ${bodyHtml}
-
-        <div style="margin-top: 8px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-weight: 800; color: #1b5e20; text-transform: uppercase; font-size: 13px;">Total Nómina Global</span>
-            <span style="font-weight: 800; color: #2e7d32; font-size: 20px;">$${totalNominaGlobal.toFixed(2)}</span>
-        </div>
-
-        <div style="margin-top: 36px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align: center; font-size: 9.5px; color: #94a3b8;">
-            Documento confidencial generado automáticamente por el sistema RemoMN · ${new Date().toLocaleString('es-ES')}
-        </div>
-    `;
-
+    // Configuramos html2pdf permitiendo el modo css para los saltos de página
     const opt = {
-        margin: [12, 12, 12, 12],
+        margin: [15, 15, 15, 15], // Márgenes igual que en bodega
         filename: `Nomina_Quincenal_${nombreArchivoClean}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2.5, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] } // CRÍTICO: Activa los saltos de página por CSS
     };
 
     Swal.fire({
-        title: 'Generando PDF profesional...',
-        text: 'Preparando desglose completo de la quincena.',
+        title: 'Generando PDF...',
+        text: 'Preparando desglose individual por empleado...',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });
