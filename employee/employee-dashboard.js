@@ -950,18 +950,9 @@ window.guardarReporteYPdf = async () => {
         }
     };
 
-    let pdfBlob;
+let pdfBlob;
     try {
         pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
-
-        if (esIOS()) {
-            await manejarDescargaPDF(pdfBlob, nombreArchivoPDF);
-        } else {
-            html2pdf().set(opt).from(pdfTemplate).save();
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            window.open(pdfUrl, '_blank');
-        }
-
     } catch (e) {
         console.error("Error al hacer el PDF:", e);
         pdfWrapper.style.display = 'none';
@@ -999,15 +990,56 @@ window.guardarReporteYPdf = async () => {
             body: formData
         });
 
+
         if (response.ok) {
             Swal.fire({
                 icon: 'success',
                 title: '¡Éxito!',
-                text: 'El reporte se subió y el PDF fue guardado.',
-                confirmButtonColor: '#00B8A9'
-            }).then(() => {
-                cerrarModalEvidence();
-                window.location.reload();
+                html: `
+                    <p style="color: #2B3674; font-size: 15px; margin-bottom: 20px;">El reporte y las fotos se guardaron correctamente en el servidor.</p>
+                    
+                    <button id="btnCompartirFinal" style="width: 100%; padding: 14px; background: #00B8A9; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 4px 6px rgba(0, 184, 169, 0.3);">
+                        <i class="fa-solid fa-share-nodes"></i> Compartir / Descargar PDF
+                    </button>
+                    
+                    <button id="btnCerrarSinCompartir" style="margin-top: 15px; width: 100%; padding: 10px; background: transparent; color: #64748B; border: none; font-size: 14px; text-decoration: underline; cursor: pointer;">
+                        Cerrar sin compartir
+                    </button>
+                `,
+                showConfirmButton: false, 
+                allowOutsideClick: false, 
+                didOpen: () => {
+                    const btnCompartir = document.getElementById('btnCompartirFinal');
+                    const btnCerrar = document.getElementById('btnCerrarSinCompartir');
+
+                    btnCompartir.addEventListener('click', async () => {
+                        if (esIOS()) {
+                            try {
+                                const file = new File([pdfBlob], nombreArchivoPDF, { type: 'application/pdf' });
+                                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                                    await navigator.share({ files: [file], title: nombreArchivoPDF });
+                                } else {
+                                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                                    window.open(pdfUrl, '_blank');
+                                }
+                            } catch (e) {
+                                console.log('Cancelado', e);
+                            }
+                        } else {
+                            html2pdf().set(opt).from(pdfTemplate).save();
+                            const pdfUrl = URL.createObjectURL(pdfBlob);
+                            window.open(pdfUrl, '_blank');
+                        }
+                        
+                        cerrarModalEvidence();
+                        window.location.reload();
+                    });
+
+                    btnCerrar.addEventListener('click', () => {
+                        cerrarModalEvidence();
+                        window.location.reload();
+                    });
+                }
             });
         } else {
             let errorText = await response.text();
