@@ -263,7 +263,7 @@ async function cargarCalendarioEmpleado(emailActual) {
                 }
             },
 
-eventClick: function (info) {
+            eventClick: function (info) {
                 const p = info.event.extendedProps;
                 currentJobInfo = p;
 
@@ -392,17 +392,17 @@ eventClick: function (info) {
                     `,
                     showCancelButton: true,
                     showDenyButton: true, // 🔥 NUEVO: Activa un tercer botón
-                    showConfirmButton: !estaBloqueado, 
-                    
+                    showConfirmButton: !estaBloqueado,
+
                     // Configuración de los 3 botones
                     confirmButtonColor: '#00B8A9',   // Botón 1: Hacer reporte (verde)
                     denyButtonColor: '#0F2D4A',      // Botón 2: Ver Evidencias (azul oscuro)
                     cancelButtonColor: '#1B254B',    // Botón 3: Cerrar (azul muy oscuro)
-                    
+
                     confirmButtonText: '<i class="fa-solid fa-camera"></i> Hacer Reporte',
                     denyButtonText: '<i class="fa-solid fa-folder-open"></i> Ver Evidencias',
                     cancelButtonText: 'Cerrar',
-                    
+
                     width: '450px',
                     didOpen: () => {
                         let swalMap = L.map('swalMap').setView([p.latitude, p.longitude], 15);
@@ -807,7 +807,7 @@ window.guardarReporteYPdf = async () => {
     if (isCanvasBlank(canvasSub)) {
         return Swal.fire({ icon: 'warning', title: 'Falta tu Firma', text: 'Debes firmar el reporte.', confirmButtonColor: '#12CFF4' });
     }
-    
+
     if (archivosSeleccionados.length === 0) return Swal.fire({ icon: 'warning', title: 'Faltan fotos', text: 'Debes adjuntar al menos una imagen.', confirmButtonColor: '#00B8A9' });
 
     const idsOriginales = (currentJobInfo.materials || []).map(m => m.materialId);
@@ -950,7 +950,7 @@ window.guardarReporteYPdf = async () => {
         }
     };
 
-let pdfBlob;
+    let pdfBlob;
     try {
         pdfBlob = await html2pdf().set(opt).from(pdfTemplate).output('blob');
     } catch (e) {
@@ -1006,8 +1006,8 @@ let pdfBlob;
                         Cerrar sin compartir
                     </button>
                 `,
-                showConfirmButton: false, 
-                allowOutsideClick: false, 
+                showConfirmButton: false,
+                allowOutsideClick: false,
                 didOpen: () => {
                     const btnCompartir = document.getElementById('btnCompartirFinal');
                     const btnCerrar = document.getElementById('btnCerrarSinCompartir');
@@ -1030,7 +1030,7 @@ let pdfBlob;
                             const pdfUrl = URL.createObjectURL(pdfBlob);
                             window.open(pdfUrl, '_blank');
                         }
-                        
+
                         cerrarModalEvidence();
                         window.location.reload();
                     });
@@ -1042,14 +1042,27 @@ let pdfBlob;
                 }
             });
         } else {
-            let errorText = await response.text();
-            try {
-                const jsonError = JSON.parse(errorText);
-                errorText = jsonError.message || 'Error del servidor';
-            } catch (e) { }
+            // 🔥 AQUÍ EMPIEZA EL CAMBIO PARA VER EL ERROR EN EL IPHONE
+            const rawText = await response.text();
+            let errorMsg = rawText;
 
-            console.error("Error exacto del servidor:", errorText);
-            Swal.fire({ icon: 'error', title: 'Fallo al Guardar', html: `Java respondió: <br> ${errorText}`, confirmButtonColor: '#00B8A9' });
+            try {
+                const jsonError = JSON.parse(rawText);
+                errorMsg = JSON.stringify(jsonError, null, 2);
+            } catch (e) {
+                // Si no es JSON, se queda como texto crudo
+            }
+
+            Swal.fire({
+                icon: 'error',
+                title: `Error HTTP: ${response.status}`,
+                html: `
+                    <div style="font-size:11px; text-align:left; max-height:250px; overflow-y:auto; background:#f8f9fa; padding:10px; border: 1px solid #ddd; color: #d32f2f; white-space: pre-wrap; word-wrap: break-word;">
+${errorMsg || 'La respuesta vino completamente vacía'}
+                    </div>`,
+                confirmButtonColor: '#00B8A9'
+            });
+            // 🔥 AQUÍ TERMINA EL CAMBIO
         }
     } catch (error) {
         console.error("Problema de conexión:", error);
