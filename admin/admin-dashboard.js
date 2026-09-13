@@ -287,7 +287,7 @@ window.verNominaSemanalGlobal = async () => {
             html: '<div id="nomina-contenedor-admin">Generando reporte...</div>',
             confirmButtonColor: '#12CFF4',
             confirmButtonText: 'Cerrar',
-            width: '600px',
+            width: '650px',
             background: '#FFFFFF'
         });
 
@@ -317,8 +317,6 @@ function renderizarNominaAdmin(offset) {
     }
 
     // --- Fecha de referencia fija: 31 de diciembre de 2023 (es DOMINGO) ---
-    // Verificado: de aquí al 9 de agosto de 2026 hay 136 semanas exactas (par),
-    // por lo que las quincenas caen en 8/9–8/22, 8/23–9/5, etc.
     const epochDomingo = new Date(2023, 11, 31, 0, 0, 0, 0);
 
     const hoy = new Date();
@@ -338,15 +336,16 @@ function renderizarNominaAdmin(offset) {
     finSemana.setDate(finSemana.getDate() + 13);
     finSemana.setHours(23, 59, 59, 999);
 
-    // Agrupamos por empleado: { empId: { total, jobs: [{clientName, pay, jobDate}] } }
+    // Agrupamos por empleado: { empId: { total, jobs: [{clientName, pay, jobDateFormatted}] } }
     const nominas = {};
 
     (window.nominasJobsCache || []).forEach(job => {
         if (job.status !== 'COMPLETED' || !job.employeeId) return;
 
+        // Limpiar la fecha asegurando formato ISO con T12:00:00 para evitar cambios de timezone
         let jobDateStr = Array.isArray(job.jobDate)
-            ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}`
-            : job.jobDate;
+            ? `${job.jobDate[0]}-${String(job.jobDate[1]).padStart(2, '0')}-${String(job.jobDate[2]).padStart(2, '0')}T12:00:00`
+            : `${job.jobDate}T12:00:00`;
 
         const jobDate = new Date(jobDateStr);
         if (isNaN(jobDate.getTime())) return;
@@ -357,10 +356,14 @@ function renderizarNominaAdmin(offset) {
                 nominas[job.employeeId] = { total: 0, jobs: [] };
             }
             nominas[job.employeeId].total += (job.pay || 0);
+
+            // Formatear Fecha como MM/DD/YYYY
+            const formatJobDate = `${(jobDate.getMonth() + 1).toString().padStart(2, '0')}/${jobDate.getDate().toString().padStart(2, '0')}/${jobDate.getFullYear()}`;
+
             nominas[job.employeeId].jobs.push({
                 clientName: job.clientName || 'Cliente sin nombre',
                 pay: job.pay || 0,
-                jobDate: jobDateStr
+                jobDateFormatted: formatJobDate // Guardamos la fecha del trabajo con el formato estandarizado
             });
         }
     });
@@ -407,13 +410,23 @@ function renderizarNominaAdmin(offset) {
                         ${nombre}
                     </div>
                     <table style="width: 100%; border-collapse: collapse; font-family: 'Poppins', sans-serif;">
+                        <thead>
+                            <tr style="background: #f1f5f9; text-align: left; font-size: 12px; color: #475569;">
+                                <th style="padding: 6px 15px;">Fecha</th>
+                                <th style="padding: 6px 15px;">Cliente / Trabajo</th>
+                                <th style="padding: 6px 15px; text-align: right;">Monto</th>
+                            </tr>
+                        </thead>
                         <tbody>
             `;
 
             data.jobs.forEach(j => {
                 htmlContent += `
                     <tr>
-                        <td style="padding: 8px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 13px;">
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 12.5px; white-space: nowrap;">
+                            ${j.jobDateFormatted}
+                        </td>
+                        <td style="padding: 8px 15px; border-bottom: 1px solid #f1f5f9; color: #334155; font-size: 12.5px;">
                             ${j.clientName}
                         </td>
                         <td style="padding: 8px 15px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #0f172a; font-weight: 600; font-size: 13px; white-space: nowrap;">
@@ -427,7 +440,7 @@ function renderizarNominaAdmin(offset) {
                         </tbody>
                         <tfoot>
                             <tr style="background: #f8fafc;">
-                                <td style="padding: 8px 15px; font-weight: 700; color: #0F2D4A; font-size: 13px; text-align: right;">Subtotal</td>
+                                <td colspan="2" style="padding: 8px 15px; font-weight: 700; color: #0F2D4A; font-size: 13px; text-align: right;">Subtotal</td>
                                 <td style="padding: 8px 15px; font-weight: 700; color: #F4A300; font-size: 14px; text-align: right;">$${data.total.toFixed(2)}</td>
                             </tr>
                         </tfoot>
@@ -453,7 +466,7 @@ function renderizarNominaAdmin(offset) {
     window._nominaAdminData = { nominas, strInicio, strFin, totalNominaGlobal };
 }
 
-// 3. FUNCIÓN CORREGIDA DE DESCARGA PDF
+// 3. FUNCIÓN CORREGIDA DE DESCARGA PDF (CON HOJA FINAL DE RESUMEN PARA ADMIN)
 
 window.exportarNominaSemanalAPdf = () => {
     const data = window._nominaAdminData;
@@ -470,41 +483,39 @@ window.exportarNominaSemanalAPdf = () => {
     contenedorImpresion.style.color = '#0f172a';
 
     const empIds = Object.keys(nominas);
+    let filasResumenHtml = ''; // Aquí guardaremos las filas para la tabla resumen del jefe
 
-    // Mapeamos cada empleado como si fuera una página individual (tal como se hace en Bodega)
-    const paginas = empIds.map((empId, idx) => {
+    // 1. Mapeamos cada empleado como una página individual estricta
+    const paginas = empIds.map((empId) => {
         const emp = (window.nominasUsersCache || []).find(u => u.userId == empId);
         const nombre = emp ? `${emp.firstName} ${emp.lastName}` : `ID: ${empId}`;
         const d = nominas[empId];
-        const esUltimo = idx === empIds.length - 1;
+
+        // Guardamos el dato de este empleado para la página final de resumen
+        filasResumenHtml += `
+            <tr>
+                <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9;">${nombre}</td>
+                <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">$${d.total.toFixed(2)}</td>
+            </tr>
+        `;
 
         // Construimos las filas de los trabajos de ESTE empleado
         let jobsHtml = '';
         d.jobs.forEach(j => {
             jobsHtml += `
                 <tr>
-                    <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9;">${j.clientName}</td>
+                    <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9; text-align: center;">${j.jobDateFormatted}</td>
+                    <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9; text-align: left;">${j.clientName}</td>
                     <td style="padding: 7px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600;">$${j.pay.toFixed(2)}</td>
                 </tr>
             `;
         });
 
-        // El cuadro del "Total General Global" lo mostraremos solo en la ÚLTIMA página, para no repetirlo
-        let totalGlobalHtml = '';
-        if (esUltimo) {
-            totalGlobalHtml = `
-                <div style="margin-top: 24px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 800; color: #1b5e20; text-transform: uppercase; font-size: 13px;">Total Nómina Global Empresa</span>
-                    <span style="font-weight: 800; color: #2e7d32; font-size: 20px;">$${totalNominaGlobal.toFixed(2)}</span>
-                </div>
-            `;
-        }
-
-        // Estructura completa de la HOJA para este empleado con "page-break-after"
+        // TODAS las hojas de empleados tendrán salto de página al terminar
         return `
-            <div class="job-pdf-page" style="padding: 30px; ${esUltimo ? '' : 'page-break-after: always;'}">
+            <div class="job-pdf-page" style="padding: 30px; page-break-after: always;">
                 
-                <!-- CABECERA REPETIDA EN CADA HOJA -->
+                <!-- CABECERA DE LA HOJA DEL EMPLEADO -->
                 <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <img src="../img/logonegro.png" alt="Logo" style="height: 52px; width: auto;" onerror="this.src='../../logo.jpeg'">
@@ -527,8 +538,9 @@ window.exportarNominaSemanalAPdf = () => {
                     <table style="width: 100%; border-collapse: collapse; font-size: 12.5px;">
                         <thead>
                             <tr style="background: #f1f5f9;">
+                                <th style="padding: 8px 14px; text-align: center; font-weight: 600; color: #475569; width: 22%;">Fecha (MM/DD/YYYY)</th>
                                 <th style="padding: 8px 14px; text-align: left; font-weight: 600; color: #475569;">Cliente / Trabajo</th>
-                                <th style="padding: 8px 14px; text-align: right; font-weight: 600; color: #475569;">Monto</th>
+                                <th style="padding: 8px 14px; text-align: right; font-weight: 600; color: #475569; width: 20%;">Monto</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -536,40 +548,86 @@ window.exportarNominaSemanalAPdf = () => {
                         </tbody>
                         <tfoot>
                             <tr style="background: #f8fafc;">
-                                <td style="padding: 8px 14px; text-align: right; font-weight: 700; color: #0F2D4A;">Pago Total Quincena</td>
+                                <td colspan="2" style="padding: 8px 14px; text-align: right; font-weight: 700; color: #0F2D4A;">Pago Total Quincena</td>
                                 <td style="padding: 8px 14px; text-align: right; font-weight: 700; color: #d97706; font-size: 14px;">$${d.total.toFixed(2)}</td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
 
-                ${totalGlobalHtml}
-
                 <!-- PIE DE PÁGINA INDIVIDUAL -->
                 <div style="margin-top: 36px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align: center; font-size: 9.5px; color: #94a3b8;">
                     Documento confidencial generado automáticamente por el sistema RemoMN · ${new Date().toLocaleString('es-ES')}
                 </div>
-
             </div>
         `;
     });
 
-    // Unimos todas las hojas
-    contenedorImpresion.innerHTML = paginas.join('');
+    // 2. CREAMOS LA HOJA FINAL EXCLUSIVA PARA EL JEFE (Resumen Administrativo)
+    const hojaResumen = `
+        <div class="job-pdf-page" style="padding: 30px;">
+            
+            <!-- CABECERA RESUMEN -->
+            <div style="border-bottom: 3px solid #12CFF4; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <img src="../img/logonegro.png" alt="Logo" style="height: 52px; width: auto;" onerror="this.src='../../logo.jpeg'">
+                    <div>
+                        <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #0B0B0D; text-transform: uppercase; letter-spacing: 0.5px;">Resumen de Nómina</h1>
+                        <p style="margin: 3px 0 0 0; color: #12CFF4; font-size: 11px; font-weight: 700; letter-spacing: 0.8px;">REMOMN — COPIA ADMINISTRACIÓN</p>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <p style="margin: 0; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600;">Período</p>
+                    <p style="margin: 2px 0 0 0; font-size: 13px; color: #0F2D4A; font-weight: 700;">${strInicio} — ${strFin}</p>
+                </div>
+            </div>
 
-    // Configuramos html2pdf permitiendo el modo css para los saltos de página
+            <!-- TABLA DE TOTALES POR TRABAJADOR -->
+            <div style="margin-bottom: 22px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <div style="background: #0F2D4A; color: #fff; padding: 10px 14px; font-weight: 700; font-size: 14px;">
+                    Desglose de Pagos por Subcontratista
+                </div>
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                        <tr style="background: #f1f5f9;">
+                            <th style="padding: 8px 14px; text-align: left; font-weight: 600; color: #475569;">Nombre del Trabajador</th>
+                            <th style="padding: 8px 14px; text-align: right; font-weight: 600; color: #475569; width: 120px;">Pago Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filasResumenHtml}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- GRAN TOTAL DE LA EMPRESA (El recuadro verde) -->
+            <div style="margin-top: 24px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 800; color: #1b5e20; text-transform: uppercase; font-size: 13px;">Total Nómina Global Empresa</span>
+                <span style="font-weight: 800; color: #2e7d32; font-size: 20px;">$${totalNominaGlobal.toFixed(2)}</span>
+            </div>
+
+            <div style="margin-top: 36px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align: center; font-size: 9.5px; color: #94a3b8;">
+                Documento administrativo confidencial · ${new Date().toLocaleString('es-ES')}
+            </div>
+        </div>
+    `;
+
+    // Unimos todas las hojas de trabajadores y pegamos el resumen al final
+    contenedorImpresion.innerHTML = paginas.join('') + hojaResumen;
+
+    // Configuramos html2pdf
     const opt = {
-        margin: [15, 15, 15, 15], // Márgenes igual que en bodega
+        margin: [15, 15, 15, 15], 
         filename: `Nomina_Quincenal_${nombreArchivoClean}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2.5, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] } // CRÍTICO: Activa los saltos de página por CSS
+        pagebreak: { mode: ['css', 'legacy'] } 
     };
 
     Swal.fire({
         title: 'Generando PDF...',
-        text: 'Preparando desglose individual por empleado...',
+        text: 'Preparando recibos individuales y resumen de administración...',
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
     });

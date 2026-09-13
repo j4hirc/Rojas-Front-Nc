@@ -350,11 +350,11 @@ window.filtrarMateriales = () => {
 async function cargarTrabajos() {
     try {
         // 🔥 CORREGIDO: Usamos API_URL como lo tenías originalmente
-        const response = await fetch(`${API_URL}/all`, { 
-            method: 'GET', 
-            headers: { 'Authorization': `Bearer ${userToken}` } 
+        const response = await fetch(`${API_URL}/all`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${userToken}` }
         });
-        
+
         if (response.ok) {
             allJobsCache = await response.json();
 
@@ -388,8 +388,8 @@ async function cargarTrabajos() {
                 }
             }
         }
-    } catch (error) { 
-        console.error("Error al cargar trabajos", error); 
+    } catch (error) {
+        console.error("Error al cargar trabajos", error);
         Swal.fire('Error', 'No se pudieron cargar los trabajos.', 'error');
     }
 }
@@ -431,14 +431,14 @@ window.filtrarTrabajosCombinados = () => {
 
     // 🔥 ORDENAMIENTO EXACTO COMO TU BASE DE DATOS (El más nuevo arriba)
     trabajosFiltrados.sort((a, b) => {
-        let timeB = Array.isArray(b.jobDate) 
-            ? new Date(b.jobDate[0], b.jobDate[1] - 1, b.jobDate[2]).getTime() 
+        let timeB = Array.isArray(b.jobDate)
+            ? new Date(b.jobDate[0], b.jobDate[1] - 1, b.jobDate[2]).getTime()
             : new Date(b.jobDate || 0).getTime();
-            
-        let timeA = Array.isArray(a.jobDate) 
-            ? new Date(a.jobDate[0], a.jobDate[1] - 1, a.jobDate[2]).getTime() 
+
+        let timeA = Array.isArray(a.jobDate)
+            ? new Date(a.jobDate[0], a.jobDate[1] - 1, a.jobDate[2]).getTime()
             : new Date(a.jobDate || 0).getTime();
-            
+
         if (timeB !== timeA) {
             return timeB - timeA;
         }
@@ -512,11 +512,12 @@ function renderizarTrabajos(trabajos) {
         tr.style.backgroundColor = hexARgba(colorSubcontratista, 0.06);
         tr.innerHTML = `
     <td>
-        <div class="cell-wrap">
-            <strong>${job.clientName}</strong><br>
-            <small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small>
-        </div>
-    </td>
+    <div class="cell-wrap">
+        <strong>${job.clientName}</strong><br>
+        <small style="color:#666;"><i class="fa-solid fa-phone"></i> ${job.clientPhone}</small>
+        ${job.quickbooksInvoice ? `<br><small style="color:#0f4c81; font-weight:600;"><i class="fa-solid fa-file-invoice-dollar"></i> QB: ${job.quickbooksInvoice}</small>` : ''}
+    </div>
+</td>
     <td>
         <div class="cell-wrap">
             ${job.address}<br>
@@ -538,19 +539,25 @@ function renderizarTrabajos(trabajos) {
     <td>${priorityBadge}</td>
     <td style="font-weight: bold; color: #2e7d32;">$${job.pay.toFixed(2)}</td>
     <td>
-        <div class="acciones-cell" style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
-            ${btnPlanoTable}
-            <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #0f4c81; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
-                <i class="fa-solid fa-camera"></i>
-            </a>
-            <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
-                <i class="fa-solid fa-pen"></i>
-            </button>
-            <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
-                <i class="fa-solid fa-trash"></i>
-            </button>
-        </div>
-    </td>
+    <div class="acciones-cell" style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+        ${btnPlanoTable}
+
+        <button class="btn-edit" onclick="generarPdfFactura(${job.jobId})" 
+            style="background:#7c3aed; color:white;" title="Generar PDF Factura">
+            <i class="fa-solid fa-file-invoice"></i>
+        </button>
+
+        <a href="../evidencias/evidencias.html?jobId=${job.jobId}" class="btn-edit" style="background: #0f4c81; color: white; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;" title="Ver Evidencias">
+            <i class="fa-solid fa-camera"></i>
+        </a>
+        <button class="btn-edit" onclick="abrirModalEditarJob(${job.jobId})" title="Editar">
+            <i class="fa-solid fa-pen"></i>
+        </button>
+        <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" title="Eliminar">
+            <i class="fa-solid fa-trash"></i>
+        </button>
+    </div>
+</td>
     `;
         tbody.appendChild(tr);
 
@@ -597,6 +604,10 @@ function renderizarTrabajos(trabajos) {
                     </button>
                     <button class="btn-delete" onclick="eliminarTrabajo(${job.jobId})" style="flex: 1; padding: 8px; border-radius: 8px; background: #FBE9E7; color: #d32f2f; border: none; font-weight: bold; cursor: pointer;">
                         <i class="fa-solid fa-trash"></i> Eliminar
+                    </button>
+                    <button onclick="generarPdfFactura(${job.jobId})" 
+                        style="flex:1; padding:8px; border-radius:8px; background:#7c3aed; color:white; border:none; font-weight:bold; cursor:pointer; font-size:13px;">
+                        <i class="fa-solid fa-file-invoice"></i> PDF Factura
                     </button>
                 </div>
             `;
@@ -703,6 +714,7 @@ window.abrirModalEditarJob = async (id) => {
             document.getElementById('jobLat').value = data.latitude;
             document.getElementById('jobLng').value = data.longitude;
             document.getElementById('jobSafeBox').value = data.safeDepositBoxCodes || '';
+            document.getElementById('jobQuickbooksInvoice').value = data.quickbooksInvoice || '';
             document.getElementById('jobPay').value = data.pay;
             document.getElementById('jobStatus').value = data.status || 'PENDING';
             document.getElementById('jobEmployee').value = data.employeeId;
@@ -973,6 +985,7 @@ window.guardarTrabajo = async () => {
         latitude: parseFloat(document.getElementById('jobLat').value),
         longitude: parseFloat(document.getElementById('jobLng').value),
         safeDepositBoxCodes: document.getElementById('jobSafeBox').value.trim(),
+        quickbooksInvoice: document.getElementById('jobQuickbooksInvoice').value.trim(),
         status: document.getElementById('jobStatus').value,
         pay: parseFloat(document.getElementById('jobPay').value),
         employeeId: parseInt(document.getElementById('jobEmployee').value),
@@ -1265,6 +1278,104 @@ function formatearFecha(fecha) {
     }
     return fecha;
 }
+window.generarPdfFactura = (jobId) => {
+    const job = allJobsCache.find(j => j.jobId === jobId);
+    if (!job) return;
+
+    if (!job.quickbooksInvoice || job.status !== 'COMPLETED') {
+        return Swal.fire({
+            icon: 'warning',
+            title: 'No disponible',
+            text: 'Solo se puede generar la factura si el trabajo está Completado y tiene número de QuickBooks.',
+            confirmButtonColor: '#0f4c81'
+        });
+    }
+
+    const fecha = formatearFecha(job.jobDate);
+    const invoice = job.quickbooksInvoice || 'Sin número';
+
+    // Contenedor temporal para el PDF
+    const contenedor = document.createElement('div');
+    contenedor.style.cssText = 'padding: 40px; font-family: Poppins, Arial, sans-serif; color: #1e293b; background: white; width: 700px;';
+
+    contenedor.innerHTML = `
+        <div style="text-align:center; border-bottom: 3px solid #0f4c81; padding-bottom: 20px; margin-bottom: 30px;">
+            <h1 style="margin:0; color:#0f4c81; font-size: 28px;">RemoMN</h1>
+            <p style="margin:8px 0 0 0; color:#64748b; font-size:14px;">Documento de Factura / Invoice</p>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <table style="width:100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding:8px 0; width:40%; color:#64748b;">Número de Invoice QuickBooks:</td>
+                    <td style="padding:8px 0; font-weight:700; font-size:18px; color:#0f4c81;">${invoice}</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0; color:#64748b;">Fecha del Trabajo:</td>
+                    <td style="padding:8px 0; font-weight:600;">${fecha}</td>
+                </tr>
+                <tr>
+                    <td style="padding:8px 0; color:#64748b;">Estado:</td>
+                    <td style="padding:8px 0; font-weight:600;">${job.status}</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="background:#f8fafc; padding:20px; border-radius:10px; margin-bottom:25px;">
+            <h3 style="margin:0 0 15px 0; color:#0f4c81; font-size:16px;">Datos del Cliente</h3>
+            <p style="margin:6px 0;"><strong>Cliente:</strong> ${job.clientName}</p>
+            <p style="margin:6px 0;"><strong>Teléfono:</strong> ${job.clientPhone || 'No registrado'}</p>
+            <p style="margin:6px 0;"><strong>Dirección:</strong> ${job.address}</p>
+        </div>
+
+        <div style="background:#f8fafc; padding:20px; border-radius:10px; margin-bottom:25px;">
+            <h3 style="margin:0 0 15px 0; color:#0f4c81; font-size:16px;">Asignación</h3>
+            <p style="margin:6px 0;"><strong>Subcontratista:</strong> ${job.nameEmployee || 'Sin asignar'}</p>
+            <p style="margin:6px 0;"><strong>Manager:</strong> ${job.nameManager || 'Sin asignar'}</p>
+            <p style="margin:6px 0;"><strong>Pago:</strong> <span style="font-size:18px; font-weight:700; color:#198754;">$${parseFloat(job.pay || 0).toFixed(2)}</span></p>
+        </div>
+
+        ${job.description ? `
+        <div style="margin-bottom:25px;">
+            <h3 style="margin:0 0 10px 0; color:#0f4c81; font-size:16px;">Descripción</h3>
+            <p style="margin:0; color:#475569; white-space:pre-wrap;">${job.description.split('[MATERIALES PRE-ASIGNADOS]:')[0].trim()}</p>
+        </div>
+        ` : ''}
+
+        <div style="margin-top:40px; text-align:center; font-size:12px; color:#94a3b8; border-top:1px solid #e2e8f0; padding-top:15px;">
+            Documento generado automáticamente · RemoMN
+        </div>
+    `;
+
+    // Generar y descargar
+    const opt = {
+        margin: [12, 12, 12, 12],
+        filename: `Factura_QB_${invoice}_${(job.clientName || 'Trabajo').replace(/[^a-zA-Z0-9]/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    Swal.fire({
+        title: 'Generando PDF...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    html2pdf().set(opt).from(contenedor).save()
+        .then(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'PDF generado',
+                text: 'El documento se descargó correctamente.',
+                confirmButtonColor: '#0f4c81',
+                timer: 2000
+            });
+        })
+        .catch(() => {
+            Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
+        });
+};
 
 function fechaParaInput(fecha) {
     if (!fecha) return '';
